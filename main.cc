@@ -4,5 +4,9 @@
 
 int main(){
     std::cout << "Hello, World!\n";
+
+    #ifdef DEBUG
+    NavierStokes::test();
+    #endif
     return 0;
 }
