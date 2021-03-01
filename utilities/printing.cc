@@ -9,18 +9,22 @@
 
 void utilities::print_state(const state &cons)
 {
-    print_state(cons, "\n", "\n", ", ");
+    print_array1(cons, "\n", "\n", ", ");
 }
 
 
-
-void utilities::print_state(
-    const state &cons, std::string &prefix, std::string &suffix, std::string &delim
+/**
+ * @brief Prints a 1D std::array
+ */
+void utilities::print_array1(
+    const state &arr, const std::string &prefix, const std::string &suffix,
+    const std::string &delim
 )
 {
+    int N = arr.size();
     std::cout << prefix;
-    for(double x: cons){
-        printf("%e%s", x, delim);
+    for(int i=0; i<N; i++){
+        printf("%e%s", arr[i], delim.c_str());
     }
     std::cout << suffix;
 }
