@@ -49,9 +49,7 @@ class NavierStokes
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
     );
-    
     NavierStokes(const std::string gas_name);
-    
     void set_modelling_params(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
@@ -59,6 +57,8 @@ class NavierStokes
     
     void assert_positivity(const state &cons) const;
     double get_p(const state &cons) const;
+    
+    void get_inv_flux(const state &cons, const dealii::Tensor<1,dim> &dir, state &f) const;
     
     #ifdef DEBUG
     static void test();

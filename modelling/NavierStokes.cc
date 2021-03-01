@@ -113,6 +113,34 @@ double NavierStokes::get_p(const state &cons) const
 
 
 
+/**
+ * @brief Calculates inviscid flux in a given direction based on given conservative state
+ * 
+ * @pre Parameter @p dir has to be a unit vector. No checks regarding this are done
+ * 
+ * The positivity of @p cons is not checked in this function. This is just a mathematical operation
+ */
+void NavierStokes::get_inv_flux(
+    const state &cons, const dealii::Tensor<1,dim> &dir, state &f
+) const
+{
+    dealii::Tensor<1,dim> vel; // velocity vector
+    for(int d=0; d<dim; d++){
+        vel[d] = cons[1+d]/cons[0];
+    }
+    double p = get_p(cons);
+    
+    double vel_n = dealii::scalar_product(vel, dir); // normal velocity
+    
+    f[0] = cons[0]*vel_n;
+    for(int d=0; d<dim; d++){
+        f[1+d] = vel_n*cons[1+d] + p*dir[d];
+    }
+    f[4] = (cons[4] + p)*vel_n;
+}
+
+
+
 /* ------------------------------------------------------------------------------------ */
 
 
