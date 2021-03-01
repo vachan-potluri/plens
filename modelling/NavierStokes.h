@@ -12,6 +12,10 @@
 
 #include "vars.h"
 
+#ifdef DEBUG
+#include <iostream>
+#endif
+
 #ifndef NAVIERSTOKES_H
 #define NAVIERSTOKES_H
 
@@ -44,6 +48,15 @@ class NavierStokes
         const double mu0, const double T0, const double S
     );
     NavierStokes(const std::string gas_name);
+    void set_modelling_params(
+        const double gma, const double M, const double Pr,
+        const double mu0, const double T0, const double S
+    );
+    
+    #ifdef DEBUG
+    static void test();
+    void print_modelling_params() const;
+    #endif
 };
 
 #endif
