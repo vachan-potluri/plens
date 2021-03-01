@@ -24,7 +24,7 @@ ENDIF(BUILD_SPACETIME)
 
 ADD_SUBDIRECTORY(modelling)
 
-ADD_EXECUTABLE(plens
+ADD_EXECUTABLE(plens.out
     main.cc
 )
 
