@@ -70,8 +70,12 @@ void NavierStokes::set_modelling_params(
 
 /**
  * @brief Asserts positivity of density and pressure/thermal energy of given state
+ * 
+ * Making this function @p static is not possible because this function internally calls
+ * NavierStokes::get_p().
  */
-void NavierStokes::assert_positivity(const state &cons){
+void NavierStokes::assert_positivity(const state &cons) const
+{
     AssertThrow(
         cons[0] > 0,
         dealii::StandardExceptions::ExcMessage("Negative density encountered!")
@@ -90,14 +94,19 @@ void NavierStokes::assert_positivity(const state &cons){
  * 
  * This function blindly calculates pressure, based on a formula. The return value can be negative
  * too.
+ * 
+ * Making this function @p static is not possible because this function requires the value of
+ * @f$\gamma@f$. An alternative (to make this static) could be to calculate thermal energy instead
+ * of pressure. However, it really adds no value and the non-static nature of this function doesn't
+ * add any significant disadvantage.
  */
-double NavierStokes::get_p(const state &cons)
+double NavierStokes::get_p(const state &cons) const
 {
     double ske=0; // specific kinetic energy
     for(int dir=0; dir<dim; dir++){
         ske += pow(cons[1+dir], 2);
     }
-    ske *= cons[0];
+    ske *= 0.5*cons[0];
     
     return (gma_-1)*(cons[4]-ske);
 }
@@ -129,8 +138,10 @@ void NavierStokes::test()
     }
     
     {
-        NavierStokes::state cons = {-1,1,1,100};
-        Navier::Stokes::assert_positivity(cons);
+        NavierStokes ns("air");
+        NavierStokes::state cons = {1,1,1,1,1.50000001};
+        std::cout << "Pressure " << ns.get_p(cons) << "\n";
+        ns.assert_positivity(cons);
     }
 }
 

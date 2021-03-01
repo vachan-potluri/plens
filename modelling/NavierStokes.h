@@ -38,7 +38,7 @@
 class NavierStokes
 {
     public:
-    constexpr int dim = 3; // dimension
+    static constexpr int dim = 3; // dimension
     using state = std::array<double,5>; // for conservative state array/vector
     
     private:
@@ -57,8 +57,8 @@ class NavierStokes
         const double mu0, const double T0, const double S
     );
     
-    static void assert_positivity(const state &cons);
-    static double get_p(const state &cons);
+    void assert_positivity(const state &cons) const;
+    double get_p(const state &cons) const;
     
     #ifdef DEBUG
     static void test();
