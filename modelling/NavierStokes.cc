@@ -68,6 +68,46 @@ void NavierStokes::set_modelling_params(
 
 
 
+/**
+ * @brief Asserts positivity of density and pressure/thermal energy of given state
+ */
+void NavierStokes::assert_positivity(const state &cons){
+    AssertThrow(
+        cons[0] > 0,
+        dealii::StandardExceptions::ExcMessage("Negative density encountered!")
+    );
+    
+    AssertThrow(
+        get_p(cons) > 0,
+        dealii::StandardExceptions::ExcMessage("Negative pressure encountered!")
+    );
+}
+
+
+
+/**
+ * @brief Get pressure from given conservative state
+ * 
+ * This function blindly calculates pressure, based on a formula. The return value can be negative
+ * too.
+ */
+double NavierStokes::get_p(const state &cons)
+{
+    double ske=0; // specific kinetic energy
+    for(int dir=0; dir<dim; dir++){
+        ske += pow(cons[1+dir], 2);
+    }
+    ske *= cons[0];
+    
+    return (gma_-1)*(cons[4]-ske);
+}
+
+
+
+/* ------------------------------------------------------------------------------------ */
+
+
+
 #ifdef DEBUG
 void NavierStokes::test()
 {
@@ -89,8 +129,8 @@ void NavierStokes::test()
     }
     
     {
-        NavierStokes ns("nitrogen");
-        ns.print_modelling_params();
+        NavierStokes::state cons = {-1,1,1,100};
+        Navier::Stokes::assert_positivity(cons);
     }
 }
 

@@ -19,8 +19,6 @@
 #ifndef NAVIERSTOKES_H
 #define NAVIERSTOKES_H
 
-using namespace dealii;
-
 /**
  * @class NavierStokes
  * @brief Provides functionality for 3D perfect gas laminar simulations of NS equations
@@ -35,10 +33,14 @@ using namespace dealii;
  * \mu = \mu_0 \left( \frac{T}{T_0} \right)^{3/2} \frac{T_0+S}{T+S}
  * k = \frac{\mu c_p}{\text{Pr}}
  * @f]
- * For air and N2, a second constructor sets all these values.
+ * For air and N2, a second constructor is provided to set all these values.
  */
 class NavierStokes
 {
+    public:
+    constexpr int dim = 3; // dimension
+    using state = std::array<double,5>; // for conservative state array/vector
+    
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
     
@@ -47,11 +49,16 @@ class NavierStokes
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
     );
+    
     NavierStokes(const std::string gas_name);
+    
     void set_modelling_params(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
     );
+    
+    static void assert_positivity(const state &cons);
+    static double get_p(const state &cons);
     
     #ifdef DEBUG
     static void test();
