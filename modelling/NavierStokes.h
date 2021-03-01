@@ -14,6 +14,7 @@
 
 #ifdef DEBUG
 #include <iostream>
+#include <utilities/printing.h>
 #endif
 
 #ifndef NAVIERSTOKES_H

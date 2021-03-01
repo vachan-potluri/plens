@@ -149,6 +149,7 @@ void NavierStokes::get_inv_flux(
 void NavierStokes::test()
 {
     std::cout << "\n\n\n\nTesting class NavierStokes\n";
+    using state = NavierStokes::state;
     
     {
         NavierStokes ns("air");
@@ -167,9 +168,18 @@ void NavierStokes::test()
     
     {
         NavierStokes ns("air");
-        NavierStokes::state cons = {1,1,1,1,1.50000001};
+        state cons = {1,2,1,3,8};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
         ns.assert_positivity(cons);
+        
+        std::array<state, 3> fluxes;
+        std::array<dealii::Tensor<1,dim>, 3> dir_vecs; // initialised to 0
+        for(int d=0; d<dim; d++) dir_vecs[d][d] = 1;
+        for(int d=0; d<dim; d++){
+            ns.get_inv_flux(cons, dir_vecs[d], fluxes[d]);
+            std::cout << d << " direction flux";
+            utilities::print_state(fluxes[d]);
+        }
     }
 }
 
