@@ -1,0 +1,9 @@
+ADD_LIBRARY(modelling SHARED
+        NavierStokes.cc
+)
+
+TARGET_INCLUDE_DIRECTORIES(modelling PUBLIC "..")
+
+DEAL_II_SETUP_TARGET(modelling)
+
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
