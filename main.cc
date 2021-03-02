@@ -1,4 +1,4 @@
-#include "modelling/vars.h"
+#include "modelling/var_enums.h"
 #include "modelling/NavierStokes.h"
 #include <iostream>
 

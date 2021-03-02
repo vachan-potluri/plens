@@ -10,7 +10,7 @@
 #include <cmath> // for pow
 #include <array>
 
-#include "vars.h"
+#include "var_enums.h"
 
 #ifdef DEBUG
 #include <iostream>
