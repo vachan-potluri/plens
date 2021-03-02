@@ -62,6 +62,8 @@ class NavierStokes
     
     void get_inv_flux(const state &cons, const dealii::Tensor<1,dim> &dir, state &f) const;
     
+    void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
+    
     #ifdef DEBUG
     static void test();
     void print_modelling_params() const;

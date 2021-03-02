@@ -155,6 +155,75 @@ void NavierStokes::get_inv_flux(
 
 
 
+/**
+ * @brief HLLC x-flux function.
+ *
+ * Prefix 'l' and 'r' for left and right. 'c' for conservative. Assumes the interface between
+ * @p lcs and @p rcs has normal in x-direction. See detailed class documentation for refs.
+ *
+ * Positivity of state is not asserted, this function is a pure mathematical operation.
+ */
+void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) const
+{
+    dealii::Tensor<1,dim> xdir = {1,0,0};
+    // wave speed estimates
+    double sql = sqrt(lcs[0]), sqr = sqrt(rcs[0]); // 'sq'uare roots of densities
+    double pl = get_p(lcs), pr = get_p(rcs); // pressures
+    double ul = lcs[1]/lcs[0]; ur = rcs[1]/rcs[0];
+    
+    double ut = (ul*sql + ur*sqr)/(sql + sqr); // u tilde
+    double Ht = ( (lcs[4]+pl)/sql + (rcs[4]+pr)/sqr )/(sql + sqr); // H tilde
+    double at = sqrt((gma_-1)*(Ht - 0.5*ut*ut)); // a tilde
+    
+    double sl = ut-at, sr = ut+at; // left and right wave speeds
+    // star wave speed
+    double s = ( pr-pl + lcs[1]*(sl-ul) - rcs[1]*(sr-ur) )/(lcs[1]*(sl-ul) - rcs[1]*(sr-ur));
+    
+    // cases
+    if(sl>0){
+        // left state at interface
+        get_inv_flux(lcs, xdir, f);
+    }
+    else if(s>0){
+        // left star state at interface
+        double temp = (sl-ul)/(sl-s);
+        state lss = {
+            temp*lcs[0],
+            temp*lcs[0]*s,
+            temp*lcs[2],
+            temp*lcs[3],
+            temp*( lcs[4] + (s-ul)*( lcs[0]*s + pl/(sl-ul) ))
+        }; // left star state
+        
+        state lf; // flux based on lcs
+        get_inv_flux(lcs, xdir, lf);
+        
+        for(cvar var: cvar_list) f[var] = lf[var] + sl*(lss[var] - lcs[var]);
+    }
+    else if(sr>0){
+        // right star state at interface
+        double temp = (sr-ur)/(sr-s);
+        state lss = {
+            temp*rcs[0],
+            temp*rcs[0]*s,
+            temp*rcs[2],
+            temp*rcs[3],
+            temp*( rcs[4] + (s-ur)*( rcs[0]*s + pr/(sr-ur) ))
+        }; // right star state
+        
+        state rf; // flux based on rcs
+        get_inv_flux(rcs, xdir, rf);
+        
+        for(cvar var: cvar_list) f[var] = rf[var] + sr*(rss[var] - rcs[var]);
+    }
+    else{
+        // right state at interface
+        get_inv_flux(rcs, xdir, f);
+    }
+}
+
+
+
 /* ------------------------------------------------------------------------------------ */
 
 
