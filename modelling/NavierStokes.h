@@ -56,7 +56,8 @@ class NavierStokes
         const double mu0, const double T0, const double S
     );
     
-    void assert_positivity(const state &cons) const;
+    static void assert_positivity(const state &cons);
+    static double get_e(const state &cons);
     double get_p(const state &cons) const;
     
     void get_inv_flux(const state &cons, const dealii::Tensor<1,dim> &dir, state &f) const;

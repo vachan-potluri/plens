@@ -69,12 +69,9 @@ void NavierStokes::set_modelling_params(
 
 
 /**
- * @brief Asserts positivity of density and pressure/thermal energy of given state
- * 
- * Making this function @p static is not possible because this function internally calls
- * NavierStokes::get_p().
+ * @brief Asserts positivity of density and thermal energy of given state
  */
-void NavierStokes::assert_positivity(const state &cons) const
+void NavierStokes::assert_positivity(const state &cons)
 {
     AssertThrow(
         cons[0] > 0,
@@ -82,9 +79,28 @@ void NavierStokes::assert_positivity(const state &cons) const
     );
     
     AssertThrow(
-        get_p(cons) > 0,
-        dealii::StandardExceptions::ExcMessage("Negative pressure encountered!")
+        get_e(cons) > 0, // safe since density already asserted positive
+        dealii::StandardExceptions::ExcMessage("Negative energy encountered!")
     );
+}
+
+
+
+/**
+ * @brief Get thermal energy from given conservative state
+ *
+ * This is purely a mathematical operation, the returned value might be negative. Also, division
+ * by density is involved here, so related errors migh occur.
+ */
+double NavierStokes::get_e(const state &cons)
+{
+    double ske=0; // specific kinetic energy
+    for(int dir=0; dir<dim; dir++){
+        ske += pow(cons[1+dir], 2);
+    }
+    ske *= 0.5/cons[0];
+    
+    return (cons[4]-ske)/cons[0];
 }
 
 
@@ -93,12 +109,10 @@ void NavierStokes::assert_positivity(const state &cons) const
  * @brief Get pressure from given conservative state
  * 
  * This function blindly calculates pressure, based on a formula. The return value can be negative
- * too.
+ * too. There is a division by density involved here, so related errors might occur.
  * 
  * Making this function @p static is not possible because this function requires the value of
- * @f$\gamma@f$. An alternative (to make this static) could be to calculate thermal energy instead
- * of pressure. However, it really adds no value and the non-static nature of this function doesn't
- * add any significant disadvantage.
+ * @f$\gamma@f$.
  */
 double NavierStokes::get_p(const state &cons) const
 {
@@ -106,7 +120,7 @@ double NavierStokes::get_p(const state &cons) const
     for(int dir=0; dir<dim; dir++){
         ske += pow(cons[1+dir], 2);
     }
-    ske *= 0.5*cons[0];
+    ske *= 0.5/cons[0];
     
     return (gma_-1)*(cons[4]-ske);
 }
@@ -167,8 +181,9 @@ void NavierStokes::test()
     
     {
         NavierStokes ns("air");
-        state cons = {1,2,1,3,8};
+        state cons = {2,2,4,6,14.0000000001};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
+        std::cout << "Energy " << ns.get_e(cons) << "\n";
         ns.assert_positivity(cons);
         
         std::array<state, 3> fluxes;
