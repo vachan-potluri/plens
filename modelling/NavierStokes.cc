@@ -250,7 +250,7 @@ void NavierStokes::test()
     
     {
         NavierStokes ns("air");
-        state cons = {2,2,4,6,14.0000000001};
+        state cons = {2,2,4,6,15};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
         std::cout << "Energy " << ns.get_e(cons) << "\n";
         ns.assert_positivity(cons);
@@ -263,6 +263,14 @@ void NavierStokes::test()
             std::cout << d << " direction flux";
             utilities::print_state(fluxes[d]);
         }
+    }
+    
+    {
+        NavierStokes ns("air");
+        state lcs = {1.5,-3,1.5,4.5,23}, rcs = {2,-2,4,4,34}, f; // from WJ-02-Mar-2021
+        ns.hllc_xflux(lcs, rcs, f);
+        std::cout << "HLLC flux";
+        utilities::print_state(f);
     }
 }
 
