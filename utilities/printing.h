@@ -6,10 +6,10 @@
 #include <iostream>
 #include <array>
 
+#include "modelling/state.h"
+
 #ifndef PRINTING_H
 #define PRINTING_H
-
-using state = std::array<double, 5>;
 
 namespace utilities{
     void print_state(const state &cons);

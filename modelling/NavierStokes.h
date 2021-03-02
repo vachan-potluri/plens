@@ -11,6 +11,7 @@
 #include <array>
 
 #include "var_enums.h"
+#include "state.h"
 
 #ifdef DEBUG
 #include <iostream>
@@ -40,7 +41,6 @@ class NavierStokes
 {
     public:
     static constexpr int dim = 3; // dimension
-    using state = std::array<double,5>; // for conservative state array/vector
     
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;

@@ -149,7 +149,6 @@ void NavierStokes::get_inv_flux(
 void NavierStokes::test()
 {
     std::cout << "\n\n\n\nTesting class NavierStokes\n";
-    using state = NavierStokes::state;
     
     {
         NavierStokes ns("air");
