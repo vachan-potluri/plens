@@ -165,11 +165,11 @@ void NavierStokes::get_inv_flux(
  */
 void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) const
 {
-    dealii::Tensor<1,dim> xdir = {1,0,0};
+    dealii::Tensor<1,dim> xdir({1,0,0});
     // wave speed estimates
     double sql = sqrt(lcs[0]), sqr = sqrt(rcs[0]); // 'sq'uare roots of densities
     double pl = get_p(lcs), pr = get_p(rcs); // pressures
-    double ul = lcs[1]/lcs[0]; ur = rcs[1]/rcs[0];
+    double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0];
     
     double ut = (ul*sql + ur*sqr)/(sql + sqr); // u tilde
     double Ht = ( (lcs[4]+pl)/sql + (rcs[4]+pr)/sqr )/(sql + sqr); // H tilde
@@ -177,7 +177,7 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
     
     double sl = ut-at, sr = ut+at; // left and right wave speeds
     // star wave speed
-    double s = ( pr-pl + lcs[1]*(sl-ul) - rcs[1]*(sr-ur) )/(lcs[1]*(sl-ul) - rcs[1]*(sr-ur));
+    double s = ( pr-pl + lcs[1]*(sl-ul) - rcs[1]*(sr-ur) )/(lcs[0]*(sl-ul) - rcs[0]*(sr-ur));
     
     // cases
     if(sl>0){
@@ -203,7 +203,7 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
     else if(sr>0){
         // right star state at interface
         double temp = (sr-ur)/(sr-s);
-        state lss = {
+        state rss = {
             temp*rcs[0],
             temp*rcs[0]*s,
             temp*rcs[2],
