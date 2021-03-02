@@ -41,28 +41,38 @@ class NavierStokes
 {
     public:
     static constexpr int dim = 3; // dimension
+    // Choices for inviscid flux scheme
+    enum class inv_surf_flux_scheme{
+        hllc,
+        rusanov
+    };
     
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
+    std::function< void (const state&, const state&, state&) > inv_surf_xflux_fn;
     
     public:
     NavierStokes(
         const double gma, const double M, const double Pr,
-        const double mu0, const double T0, const double S
+        const double mu0, const double T0, const double S,
+        const inv_surf_flux_scheme ifs
     );
-    NavierStokes(const std::string gas_name);
+    NavierStokes(const std::string gas_name, const inv_surf_flux_scheme ifs);
     void set_modelling_params(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
     );
+    void set_inv_surf_flux_scheme(const inv_surf_flux_scheme ifs);
     
     static void assert_positivity(const state &cons);
     static double get_e(const state &cons);
     double get_p(const state &cons) const;
+    double get_a(const state &cons) const;
     
     void get_inv_flux(const state &cons, const dealii::Tensor<1,dim> &dir, state &f) const;
     
     void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
+    void rusanov_xflux(const state &lcs, const state &rcs, state &f) const;
     
     #ifdef DEBUG
     static void test();

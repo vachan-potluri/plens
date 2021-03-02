@@ -13,10 +13,12 @@
  * Calls NavierStokes::set_modelling_params() internally
  */
 NavierStokes::NavierStokes(
-    const double gma, const double M, const double Pr, double mu0, const double T0, const double S
+    const double gma, const double M, const double Pr, double mu0, const double T0, const double S,
+    const inv_surf_flux_scheme ifs = inv_surf_flux_scheme::hllc
 )
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
+    set_inv_surf_flux_scheme(ifs);
 }
 
 
@@ -24,7 +26,10 @@ NavierStokes::NavierStokes(
 /**
  * @brief Constructor for air and N2
  */
-NavierStokes::NavierStokes(const std::string gas_name)
+NavierStokes::NavierStokes(
+    const std::string gas_name,
+    const inv_surf_flux_scheme ifs = inv_surf_flux_scheme::hllc
+)
 {
     bool gas_supported = (gas_name=="air" || gas_name=="N2");
     AssertThrow(
@@ -49,6 +54,7 @@ NavierStokes::NavierStokes(const std::string gas_name)
     
     // set the values
     set_modelling_params(gma, M, Pr, mu0, T0, S);
+    set_inv_surf_flux_scheme(ifs);
 }
 
 
@@ -64,6 +70,25 @@ void NavierStokes::set_modelling_params(
 )
 {
     gma_ = gma; M_ = M; Pr_ = Pr; mu0_ = mu0; T0_ = T0; S_ = S;
+}
+
+
+
+/**
+ * @brief Sets inviscid surface (numerical) flux function
+ */
+void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme ifs)
+{
+    if(ifs == inv_surf_flux_scheme::hllc){
+        inv_surf_xflux_fn = [=](const state &lcs, const state &rcs, state &f){
+            this->hllc_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux_fn = [=](const state &lcs, const state &rcs, state &f){
+            this->rusanov_xflux(lcs, rcs, f);
+        };
+    }
 }
 
 
@@ -123,6 +148,19 @@ double NavierStokes::get_p(const state &cons) const
     ske *= 0.5/cons[0];
     
     return (gma_-1)*(cons[4]-ske);
+}
+
+
+
+/**
+ * @brief Get speed of sound from given conservative state
+ *
+ * Internally calls NavierStokes::get_p() and returns @f$\sqrt{\gamma p/\rho}@f$. Positivity of
+ * density and pressure are not checked.
+ */
+double NavierStokes::get_a(const state &cons) const
+{
+    return sqrt(gma_*get_p(cons)/cons[0]);
 }
 
 
@@ -224,6 +262,30 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
 
 
 
+/**
+ * @brief Rusanov x-flux function
+ *
+ * Every other detail same as in NavierStokes::hllc_xflux()
+ */
+void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) const
+{
+    dealii::Tensor<1,dim> xdir({1,0,0});
+    
+    state lf, rf; // left and right conservative fluxes
+    double al = get_a(lcs), ar = get_a(rcs); // left and right sound speeds
+    double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // left & right flow speeds
+    double S; // the "single wave" speed
+    
+    get_inv_flux(lcs, xdir, lf);
+    get_inv_flux(rcs, xdir, rf);
+    
+    S = std::max(fabs(ul)+al, fabs(ur)+ar);
+    
+    for(cvar var: cvar_list) f[var] = 0.5*(lf[var] + rf[var]) - 0.5*S*(rcs[var] - lcs[var]);
+}
+
+
+
 /* ------------------------------------------------------------------------------------ */
 
 
@@ -267,9 +329,13 @@ void NavierStokes::test()
     
     {
         NavierStokes ns("air");
-        state lcs = {1.5,-3,1.5,4.5,23}, rcs = {2,-2,4,4,34}, f; // from WJ-02-Mar-2021
+        state lcs = {1.5,3,1.5,4.5,23}, rcs = {2,2,4,4,34}, f; // from WJ-02-Mar-2021
         ns.hllc_xflux(lcs, rcs, f);
-        std::cout << "HLLC flux";
+        std::cout << "HLLC x flux";
+        utilities::print_state(f);
+        
+        ns.rusanov_xflux(lcs,rcs,f);
+        std::cout << "Rusanov x flux";
         utilities::print_state(f);
     }
 }
