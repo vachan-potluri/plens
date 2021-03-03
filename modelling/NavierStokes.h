@@ -64,35 +64,58 @@
  * The relevant function is NavierStokes::get_inv_surf_flux(). This function returns surface normal
  * flux on a face between two states. It internally uses NavierStokes::inv_surf_xflux by rotating
  * coordinate system to align with normal provided. See the function description for more details.
+ * Ideally, it would be preferred to link inviscid surface flux to the inviscid volume flux as
+ * described in section 3.4 of Gassner, Winters & Kopriva (2016). However, this is not strictly
+ * necessary. Currently the linking is not being done.
+ *
+ * For volume flux, Chandrashekhar flux described in eqs. (3.16, 3.18-20) of Gassner, Winters &
+ * Kopriva (2016) is used. However, the framework itself is kept open to addition of any further
+ * options. The volume fluxes can handle direction directly and there is no need for the two step
+ * approach taken for inviscid surface fluxes.
  */
 class NavierStokes
 {
     public:
     static constexpr int dim = 3; // dimension
-    // Choices for inviscid (surface) flux scheme
+    // Choices for inviscid surface and volume flux scheme
     enum class inv_surf_flux_scheme{
         hllc,
         rusanov
     };
+    enum class inv_vol_flux_scheme{
+        chandrashekhar
+    };
     
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
+    
     std::function< void (const state&, const state&, state&) > inv_surf_xflux;
     void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
     void rusanov_xflux(const state &lcs, const state &rcs, state &f) const;
+    
+    std::function< void (const state&, const state&, const int dir, state&) > inv_vol_flux;
+    void chandrashekhar_flux(
+        const state &cs1, const state &cs2, const int dir, state &f
+    ) const;
     
     public:
     NavierStokes(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S,
-        const inv_surf_flux_scheme isfs
+        const inv_surf_flux_scheme isfs,
+        const inv_vol_flux_scheme ivfs
     );
-    NavierStokes(const std::string gas_name, const inv_surf_flux_scheme ifs);
+    NavierStokes(
+        const std::string gas_name,
+        const inv_surf_flux_scheme isfs,
+        const inv_vol_flux_scheme ivfs
+    );
     void set_modelling_params(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
     );
-    void set_inv_surf_flux_scheme(const inv_surf_flux_scheme ifs);
+    void set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs);
+    void set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs);
     
     static void assert_positivity(const state &cons);
     static double get_e(const state &cons);

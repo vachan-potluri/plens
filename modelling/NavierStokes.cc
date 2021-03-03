@@ -14,7 +14,8 @@
  */
 NavierStokes::NavierStokes(
     const double gma, const double M, const double Pr, double mu0, const double T0, const double S,
-    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc
+    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
+    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar
 )
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
@@ -29,6 +30,7 @@ NavierStokes::NavierStokes(
 NavierStokes::NavierStokes(
     const std::string gas_name,
     const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc
+    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar
 )
 {
     bool gas_supported = (gas_name=="air" || gas_name=="N2");
@@ -89,6 +91,19 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->rusanov_xflux(lcs, rcs, f);
         };
     }
+}
+
+
+
+/**
+ * @brief Sets the invsicid volume flux function NavierStokes::inv_vol_flux
+ */
+void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
+{
+    // only one option available currently
+    inv_vol_flux = [=](const state &cs1, const state &cs2, const int dir, const state &f){
+        this->chandrashekhar_flux(cs1, cs2, dir, f);
+    };
 }
 
 
@@ -194,6 +209,86 @@ void NavierStokes::get_inv_flux(
 
 
 /**
+ * @brief Calculates inviscid surface (numerical) flux
+ *
+ * This function uses NavierStokes::inv_surf_xflux (one of NavierStokes::hllc_xflux() and
+ * NavierStokes::rusanov_xflux() based on the argument provided in constructor). The algorithm
+ * for this function is described in detail in WJ-23-Feb-2021.
+ *
+ * 1. Rotate the coordinate system such that x-direction aligned with @p normal. Store the rotation
+ * matrix.
+ * 2. Rotate the velocites to orient them along new coordinate axes.
+ * 3. Pass the rotated states to NavierStokes::inv_surf_xflux and get the normal flux
+ * 4. Rotate back the flux momentum components of the above calculated flux
+ *
+ * @param[in] ocs 'Owner' conservative state
+ * @param[in] ncs 'Neighbor' conservative state
+ * @param[in] normal The normal vector of the face shared by owner and neighbor. This must be a
+ * unit vector and must point from owner side to neighbor side
+ * @param[out] f The resultant surface normal flux
+ *
+ * Positivity of @p ocs and @p ncs is not asserted
+ */
+void NavierStokes::get_inv_surf_flux(
+    const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
+) const
+{
+    // Step 1: rotate coordinate system
+    std::array<dealii::Tensor<1,3>, 3> dir_vecs; // initialised to 0
+    for(int d=0; d<dim; d++) dir_vecs[d][d] = 1;
+    
+    dealii::Tensor<1,dim> m = dealii::cross_product_3d(dir_vecs[0], normal); // m = x cross n
+    double M = m.norm(); // magnitude of m
+    m /= M; // now m is a unit vector <-- rotation axis
+    double theta = asin(M); // <-- rotation angle
+    
+    // rotation matrix
+    dealii::FullMatrix<double> R(dim);
+    R.copy_from(
+        dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
+            dealii::Point<dim>(m), theta
+        )// returns tensor
+    ); // copies from second order tensor
+    
+    // Step 2: get rotated states
+    dealii::Vector<double> osmom(dim), nsmom(dim), // owner and neighbor specific momentum
+        osmom_r(dim), nsmom_r(dim); // rotated specific momentum
+    for(int d=0; d<dim; d++){
+        osmom[d] = ocs[1+d];
+        nsmom[d] = ncs[1+d];
+    }
+    // get the momentum components wrt rotated coordinate system
+    R.Tvmult(osmom_r, osmom); // osmom_r = R^-1 * osmom, R^T = R^{-1}
+    R.Tvmult(nsmom_r, nsmom);
+    
+    state ocs_r, ncs_r; // rotated states
+    ocs_r[0] = ocs[0];
+    ncs_r[0] = ncs[0];
+    for(int d=0; d<dim; d++){
+        ocs_r[1+d] = osmom_r[d];
+        ncs_r[1+d] = nsmom_r[d];
+    }
+    ocs_r[4] = ocs[4];
+    ncs_r[4] = ncs[4];
+    
+    // Step 3: get normal flux wrt rotated coordinate system
+    state f_r;
+    inv_surf_xflux(ocs_r, ncs_r, f_r);
+    
+    // Step 4: rotate back coordinate system and obtain the appropriate momentum components
+    dealii::Vector<double> mom_flux_r(3), mom_flux(3); // momentum fluxes
+    for(int d=0; d<dim; d++) mom_flux_r[d] = f_r[d];
+    // get momentum flux components w.r.t original coordinate system
+    R.vmult(mom_flux, mom_flux_r);
+    
+    f[0] = f_r[0];
+    for(int d=0; d<dim; d++) f[d] = mom_flux[d];
+    f[4] = f_r[4];
+}
+
+
+
+/**
  * @brief HLLC x-flux function.
  *
  * Prefix 'l' and 'r' for left and right. 'c' for conservative. Assumes the interface between
@@ -287,81 +382,17 @@ void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) c
 
 
 /**
- * @brief Calculates inviscid surface (numerical) flux
+ * @brief Chandrashekhar inviscid volume flux.
  *
- * This function uses NavierStokes::inv_surf_xflux (one of NavierStokes::hllc_xflux() and
- * NavierStokes::rusanov_xflux() based on the argument provided in constructor). The algorithm
- * for this function is described in detail in WJ-23-Feb-2021.
- *
- * 1. Rotate the coordinate system such that x-direction aligned with @p normal. Store the rotation
- * matrix.
- * 2. Rotate the velocites to orient them along new coordinate axes.
- * 3. Pass the rotated states to NavierStokes::inv_surf_xflux and get the normal flux
- * 4. Rotate back the flux momentum components of the above calculated flux
- *
- * @param[in] ocs 'Owner' conservative state
- * @param[in] ncs 'Neighbor' conservative state
- * @param[in] normal The normal vector of the face shared by owner and neighbor. This must be a
- * unit vector and must point from owner side to neighbor side
- * @param[out] f The resultant surface normal flux
- *
- * Positivity of @p ocs and @p ncs is not asserted
+ * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016). Direction is taken as an @p int
+ * because only cartesian components are required. It has to be one of {0,1,2}. Checking on @p dir
+ * is not done.
  */
-void NavierStokes::get_inv_surf_flux(
-    const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
+void NavierStokes::chandrashekhar_flux(
+    const state &cs1, const state &cs2, const int dir, state &f
 ) const
 {
-    // Step 1: rotate coordinate system
-    std::array<dealii::Tensor<1,3>, 3> dir_vecs; // initialised to 0
-    for(int d=0; d<dim; d++) dir_vecs[d][d] = 1;
-    
-    dealii::Tensor<1,dim> m = dealii::cross_product_3d(dir_vecs[0], normal); // m = x cross n
-    double M = m.norm(); // magnitude of m
-    m /= M; // now m is a unit vector <-- rotation axis
-    double theta = asin(M); // <-- rotation angle
-    
-    // rotation matrix
-    dealii::FullMatrix<double> R(dim);
-    R.copy_from(
-        dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
-            dealii::Point<dim>(m), theta
-        )// returns tensor
-    ); // copies from second order tensor
-    
-    // Step 2: get rotated states
-    dealii::Vector<double> osmom(dim), nsmom(dim), // owner and neighbor specific momentum
-        osmom_r(dim), nsmom_r(dim); // rotated specific momentum
-    for(int d=0; d<dim; d++){
-        osmom[d] = ocs[1+d];
-        nsmom[d] = ncs[1+d];
-    }
-    // get the momentum components wrt rotated coordinate system
-    R.Tvmult(osmom_r, osmom); // osmom_r = R^-1 * osmom, R^T = R^{-1}
-    R.Tvmult(nsmom_r, nsmom);
-    
-    state ocs_r, ncs_r; // rotated states
-    ocs_r[0] = ocs[0];
-    ncs_r[0] = ncs[0];
-    for(int d=0; d<dim; d++){
-        ocs_r[1+d] = osmom_r[d];
-        ncs_r[1+d] = nsmom_r[d];
-    }
-    ocs_r[4] = ocs[4];
-    ncs_r[4] = ncs[4];
-    
-    // Step 3: get normal flux wrt rotated coordinate system
-    state f_r;
-    inv_surf_xflux(ocs_r, ncs_r, f_r);
-    
-    // Step 4: rotate back coordinate system and obtain the appropriate momentum components
-    dealii::Vector<double> mom_flux_r(3), mom_flux(3); // momentum fluxes
-    for(int d=0; d<dim; d++) mom_flux_r[d] = f_r[d];
-    // get momentum flux components w.r.t original coordinate system
-    R.vmult(mom_flux, mom_flux_r);
-    
-    f[0] = f_r[0];
-    for(int d=0; d<dim; d++) f[d] = mom_flux[d];
-    f[4] = f_r[4];
+    //
 }
 
 
