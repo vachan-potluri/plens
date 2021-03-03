@@ -29,7 +29,7 @@ NavierStokes::NavierStokes(
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
-    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc
+    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
     const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar
 )
 {
@@ -101,7 +101,7 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
 void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
 {
     // only one option available currently
-    inv_vol_flux = [=](const state &cs1, const state &cs2, const int dir, const state &f){
+    inv_vol_flux = [=](const state &cs1, const state &cs2, const int dir, state &f){
         this->chandrashekhar_flux(cs1, cs2, dir, f);
     };
 }
