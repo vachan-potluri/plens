@@ -14,11 +14,11 @@
  */
 NavierStokes::NavierStokes(
     const double gma, const double M, const double Pr, double mu0, const double T0, const double S,
-    const inv_surf_flux_scheme ifs = inv_surf_flux_scheme::hllc
+    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc
 )
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
-    set_inv_surf_flux_scheme(ifs);
+    set_inv_surf_flux_scheme(isfs);
 }
 
 
@@ -28,7 +28,7 @@ NavierStokes::NavierStokes(
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
-    const inv_surf_flux_scheme ifs = inv_surf_flux_scheme::hllc
+    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc
 )
 {
     bool gas_supported = (gas_name=="air" || gas_name=="N2");
@@ -54,7 +54,7 @@ NavierStokes::NavierStokes(
     
     // set the values
     set_modelling_params(gma, M, Pr, mu0, T0, S);
-    set_inv_surf_flux_scheme(ifs);
+    set_inv_surf_flux_scheme(isfs);
 }
 
 
@@ -77,9 +77,9 @@ void NavierStokes::set_modelling_params(
 /**
  * @brief Sets inviscid surface (numerical) flux function
  */
-void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme ifs)
+void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
 {
-    if(ifs == inv_surf_flux_scheme::hllc){
+    if(isfs == inv_surf_flux_scheme::hllc){
         inv_surf_xflux_fn = [=](const state &lcs, const state &rcs, state &f){
             this->hllc_xflux(lcs, rcs, f);
         };

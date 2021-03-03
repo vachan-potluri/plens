@@ -36,12 +36,30 @@
  * k = \frac{\mu c_p}{\text{Pr}}
  * @f]
  * For air and N2, a second constructor is provided to set all these values.
+ *
+ * Notes about the DGSEM limiter algorithm are linked in WJ-22-Feb-2021.
+ * This class provides functionality for flux calculation in 3 stages of the DGSEM algorithm:
+ * 1. Auxiliary variable calculation (@f$\nabla\vec{v}@f$ and @f$\nabla T@f$)
+ * 2. Inviscid flux calculation
+ * 3. Viscous flux calculation
+ *
+ * Functions required in each of these stages are identified by 'aux', 'inv' and 'vis'. Further,
+ * these fluxes are required in two types: 1. surface normal flux and 2. two-point volume flux. The
+ * two-point volume flux is unique to the DGSEM algorithm. This distinction in functions is made
+ * using 'surf' and 'vol'. Thus in total, there are 6 kinds of fluxes. For all these types of
+ * fluxes, the arguments are two appropriate conservative states. The auxiliary variables could
+ * also directly be calculated from primitive state, but using conservative state was suggested in
+ * Bassi & Rebay (1997). For viscous fluxes, additionally, auxiliary variables
+ * (@f$\mathbf{\tau}@f$ and @f$\vec{q}^{''}@f$) are also required.
+ *
+ * This class provides functions for operation on conservative state. Some of them are @p static.
+ * These are used for inviscid flux calculation.
  */
 class NavierStokes
 {
     public:
     static constexpr int dim = 3; // dimension
-    // Choices for inviscid flux scheme
+    // Choices for inviscid (surface) flux scheme
     enum class inv_surf_flux_scheme{
         hllc,
         rusanov
@@ -55,7 +73,7 @@ class NavierStokes
     NavierStokes(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S,
-        const inv_surf_flux_scheme ifs
+        const inv_surf_flux_scheme isfs
     );
     NavierStokes(const std::string gas_name, const inv_surf_flux_scheme ifs);
     void set_modelling_params(
