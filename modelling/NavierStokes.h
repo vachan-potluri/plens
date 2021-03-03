@@ -5,7 +5,9 @@
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/tensor.h>
+#include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
+#include <deal.II/physics/transformations.h>
 
 #include <cmath> // for pow
 #include <array>
@@ -52,8 +54,16 @@
  * Bassi & Rebay (1997). For viscous fluxes, additionally, auxiliary variables
  * (@f$\mathbf{\tau}@f$ and @f$\vec{q}^{''}@f$) are also required.
  *
- * This class provides functions for operation on conservative state. Some of them are @p static.
- * These are used for inviscid flux calculation.
+ * If any identifier from {surf, vol} is missing, then that function is a theoretical function.
+ * E.g. NavierStokes::get_inv_flux() takes a conservative state and direction to give the
+ * theoretical inviscid flux in that direction.
+ *
+ * Prefixes 'get' and 'set' are used only for public functions. Private functions don't need them.
+ *
+ * Strategy for calculating surface normal (numerical) inviscid flux:
+ * The relevant function is NavierStokes::get_inv_surf_flux(). This function returns surface normal
+ * flux on a face between two states. It internally uses NavierStokes::inv_surf_xflux by rotating
+ * coordinate system to align with normal provided. See the function description for more details.
  */
 class NavierStokes
 {
@@ -67,7 +77,9 @@ class NavierStokes
     
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
-    std::function< void (const state&, const state&, state&) > inv_surf_xflux_fn;
+    std::function< void (const state&, const state&, state&) > inv_surf_xflux;
+    void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
+    void rusanov_xflux(const state &lcs, const state &rcs, state &f) const;
     
     public:
     NavierStokes(
@@ -89,8 +101,9 @@ class NavierStokes
     
     void get_inv_flux(const state &cons, const dealii::Tensor<1,dim> &dir, state &f) const;
     
-    void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
-    void rusanov_xflux(const state &lcs, const state &rcs, state &f) const;
+    void get_inv_surf_flux(
+        const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
+    ) const;
     
     #ifdef DEBUG
     static void test();
