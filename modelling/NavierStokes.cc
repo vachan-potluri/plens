@@ -200,7 +200,7 @@ void NavierStokes::get_inv_flux(
     }
     double p = get_p(cons);
     
-    double vel_n = dealii::scalar_product(vel, dir); // normal velocity
+    double vel_n = dealii::scalar_product(vel, dir); // velocity in the direction 'dir'
     
     f[0] = cons[0]*vel_n;
     for(int d=0; d<dim; d++){
@@ -387,15 +387,41 @@ void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) c
 /**
  * @brief Chandrashekhar inviscid volume flux.
  *
- * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016). Direction is taken as an @p int
- * because only cartesian components are required. It has to be one of {0,1,2}. Checking on @p dir
- * is not done. Also, positivity of the states provided is not asserted.
+ * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016). Positivity of the states
+ * provided is not asserted. @p dir has to be a unit vector.
  */
 void NavierStokes::chandrashekhar_flux(
     const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
 ) const
 {
-    double beta1, beta2;
+    double p1 = get_p(cs1), p2 = get_p(cs2);
+    double beta1 = 0.5*cs1[0]/p1, beta2 = 0.5*cs2[0]/p2;
+    double beta_ln = (beta1-beta2)/(log(beta1) - log(beta2));
+    
+    double p_hat = 0.5*(cs1[0]+cs2[0])/(beta1+beta2);
+    double rho_ln = (cs1[0]-cs2[0])/(log(cs1[0]) - log(cs2[0]));
+    
+    dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
+    double v1, v2; // temporary quantities
+    for(int d=0; d<dim; d++){
+        v1 = cs1[1+d]/cs1[0];
+        v2 = cs2[1+d]/cs2[0];
+        vel_avg[d] = 0.5*(v1+v2);
+        vel_sq_avg[d] = 0.5*(v1*v1 + v2*v2);
+    }
+    
+    double H_hat = 0.5/((gma_-1)*beta_ln) + p_hat/rho_ln; // initialise
+    for(int d=0; d<dim; d++){
+        H_hat += vel_avg[d]*vel_avg[d] - 0.5*vel_sq_avg[d];
+    }
+    
+    double vel_n = dealii::scalar_product(vel_avg, dir); // velocity in the direction 'dir'
+    
+    f[0] = vel_n*rho_ln;
+    for(int d=0; d<dim; d++){
+        f[1+d] = rho_ln*vel_n*vel_avg[d] + p_hat*dir[d];
+    }
+    f[4] = rho_ln*vel_n*H_hat;
 }
 
 
