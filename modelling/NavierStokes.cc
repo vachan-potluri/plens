@@ -284,7 +284,7 @@ void NavierStokes::get_inv_surf_flux(
     
     // Step 4: rotate back coordinate system and obtain the appropriate momentum components
     dealii::Vector<double> mom_flux_r(3), mom_flux(3); // momentum fluxes
-    for(int d=0; d<dim; d++) mom_flux_r[d] = f_r[d];
+    for(int d=0; d<dim; d++) mom_flux_r[d] = f_r[1+d];
     // get momentum flux components w.r.t original coordinate system
     R.vmult(mom_flux, mom_flux_r);
     
