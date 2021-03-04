@@ -26,3 +26,9 @@ void Testing::new_block() const
     std::cout << "\n\n----------------------------------------------------------------\n";
 }
 
+void Testing::new_block(const std::string &msg) const
+{
+    new_block();
+    std::cout << msg << "\n";
+}
+

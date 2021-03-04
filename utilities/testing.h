@@ -31,6 +31,7 @@ class Testing
     Testing(const std::string &name, const std::string &type);
     void begin() const;
     void new_block() const;
+    void new_block(const std::string &msg) const;
 };
 
 }// namespace utilities
