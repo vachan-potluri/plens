@@ -237,10 +237,9 @@ void NavierStokes::get_inv_surf_flux(
 ) const
 {
     // Step 1: rotate coordinate system
-    std::array<dealii::Tensor<1,3>, 3> dir_vecs; // initialised to 0
-    for(int d=0; d<dim; d++) dir_vecs[d][d] = 1;
+    dealii::Tensor<1,dim> xdir({1,0,0});
     
-    dealii::Tensor<1,dim> m = dealii::cross_product_3d(dir_vecs[0], normal); // m = x cross n
+    dealii::Tensor<1,dim> m = dealii::cross_product_3d(xdir, normal); // m = x cross n
     double M = m.norm(); // magnitude of m
     m /= M; // now m is a unit vector <-- rotation axis
     double theta = asin(M); // <-- rotation angle
@@ -252,6 +251,11 @@ void NavierStokes::get_inv_surf_flux(
             dealii::Point<dim>(m), theta
         )// returns tensor
     ); // copies from second order tensor
+    
+    /*std::cout << "Rotation axis: " << m[0] << " " << m[1] << " " << m[2]
+        << "\nRotation angle (in rad) " << theta
+        << "\nRotation matrix\n";
+    R.print_formatted(std::cout);*/
     
     // Step 2: get rotated states
     dealii::Vector<double> osmom(dim), nsmom(dim), // owner and neighbor specific momentum
@@ -285,7 +289,7 @@ void NavierStokes::get_inv_surf_flux(
     R.vmult(mom_flux, mom_flux_r);
     
     f[0] = f_r[0];
-    for(int d=0; d<dim; d++) f[d] = mom_flux[d];
+    for(int d=0; d<dim; d++) f[1+d] = mom_flux[d];
     f[4] = f_r[4];
 }
 
@@ -433,25 +437,28 @@ void NavierStokes::chandrashekhar_flux(
 #ifdef DEBUG
 void NavierStokes::test()
 {
-    std::cout << "\n\n\n\nTesting class NavierStokes\n";
+    utilities::Testing t("NavierStokes", "class");
     
     {
+        t.new_block();
         NavierStokes ns("air");
         ns.print_modelling_params();
     }
     
     {
+        t.new_block();
         NavierStokes ns("N2");
         ns.print_modelling_params();
     }
     
     {
+        t.new_block();
         NavierStokes ns(1,2,3,4,5,6);
         ns.print_modelling_params();
     }
     
     {
-        // testing get_inv_flux()
+        t.new_block("testing get_inv_flux()");
         NavierStokes ns("air");
         state cons = {2,2,4,6,15};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
@@ -469,7 +476,7 @@ void NavierStokes::test()
     }
     
     {
-        // testing hllc_xflux() and rusanov_xflux()
+        t.new_block("testing hllc_xflux() and rusanov_xflux()");
         NavierStokes ns("air");
         state lcs = {1.5,3,1.5,4.5,23}, rcs = {2,2,4,4,34}, f; // from WJ-02-Mar-2021
         ns.hllc_xflux(lcs, rcs, f);
@@ -482,14 +489,14 @@ void NavierStokes::test()
     }
     
     {
-        // testing get_inv_surf_flux() and get_inv_vol_flux()
+        t.new_block("testing get_inv_surf_flux() and get_inv_vol_flux()");
         NavierStokes ns("air");
-        state ocs = {1.5,1.5,3,4.5,23}, ncs = {2,4,2,4,34}, f; // from previous block, swap x & y
+        state ocs = {1.5,-1.5,3,4.5,23}, ncs = {2,-4,2,4,34}, f; // from previous block, rotate x & y
         dealii::Tensor<1,dim> dir({0,1,0}); // y-dir
         ns.get_inv_surf_flux(ocs, ncs, dir, f);
         std::cout << "Inviscid surface flux";
         utilities::print_state(f); // should be equal to HLLC flux printed in previous block, with
-                                   // x & y components swapped
+                                   // x & y components rotated
         
         ns.get_inv_vol_flux(ocs, ncs, dir, f);
         std::cout << "Inviscid volume flux";

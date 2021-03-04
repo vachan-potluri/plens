@@ -18,6 +18,7 @@
 #ifdef DEBUG
 #include <iostream>
 #include <utilities/printing.h>
+#include <utilities/testing.h>
 #endif
 
 #ifndef NAVIERSTOKES_H
