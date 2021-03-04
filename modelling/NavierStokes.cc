@@ -502,13 +502,49 @@ void NavierStokes::test()
     {
         t.new_block("testing get_inv_surf_flux() and get_inv_vol_flux()");
         NavierStokes ns("air");
-        state ocs = {1.5,-1.5,3,4.5,23}, ncs = {2,-4,2,4,34}, f; // from previous block, rotate x & y
-        dealii::Tensor<1,dim> dir({0,1,0}); // y-dir
+        
+        std::cout << "\nTrivial case: normal along x dir\n";
+        state ocs = {1.5,3,1.5,4.5,23}, ncs = {2,2,4,4,34}, f; // from previous block
+        dealii::Tensor<1,dim> dir({1,0,0});
+        ns.get_inv_surf_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid surface flux";
+        utilities::print_state(f); // should be same as HLLC output of previous block
+        ns.get_inv_vol_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid volume flux";
+        utilities::print_state(f);
+        
+        std::cout << "\nTrivial case: normal along -x dir\n";
+        ocs = {1.5,-3,-1.5,-4.5,23};
+        ncs = {2,-2,-4,-4,34};
+        dir[0] = -1; dir[1] = 0; dir[2] = 0; // -x dir
+        ns.get_inv_surf_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid surface flux";
+        utilities::print_state(f); // should be same as HLLC output of previous block, but with
+                                   // velocities reversed
+        ns.get_inv_vol_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid volume flux";
+        utilities::print_state(f);
+        
+        std::cout << "\nNormal along y dir, with velocities rotated by 90 degrees ccw in xy plane\n";
+        ocs = {1.5,-1.5,3,4.5,23};
+        ncs = {2,-4,2,4,34}; // from previous case, rotate x & y
+        dir[0] = 0; dir[1] = 1; dir[2] = 0; // y dir
         ns.get_inv_surf_flux(ocs, ncs, dir, f);
         std::cout << "Inviscid surface flux";
         utilities::print_state(f); // should be equal to HLLC flux printed in previous block, with
                                    // x & y components rotated
+        ns.get_inv_vol_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid volume flux";
+        utilities::print_state(f);
         
+        std::cout << "\nNormal along z dir, with velocities rotated by 90 degrees cw in xz plane\n";
+        ocs = {1.5,-4.5,1.5,3,23};
+        ncs = {2,-4,4,2,34}; // from previous case, rotate x & z
+        dir[0] = 0; dir[1] = 0; dir[2] = 1; // z dir
+        ns.get_inv_surf_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid surface flux";
+        utilities::print_state(f); // should be equal to HLLC flux printed in previous block, with
+                                   // x & z components rotated
         ns.get_inv_vol_flux(ocs, ncs, dir, f);
         std::cout << "Inviscid volume flux";
         utilities::print_state(f);
