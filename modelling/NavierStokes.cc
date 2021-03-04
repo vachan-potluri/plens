@@ -20,6 +20,7 @@ NavierStokes::NavierStokes(
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
     set_inv_surf_flux_scheme(isfs);
+    set_inv_vol_flux_scheme(ivfs);
 }
 
 
@@ -57,6 +58,7 @@ NavierStokes::NavierStokes(
     // set the values
     set_modelling_params(gma, M, Pr, mu0, T0, S);
     set_inv_surf_flux_scheme(isfs);
+    set_inv_vol_flux_scheme(ivfs);
 }
 
 
