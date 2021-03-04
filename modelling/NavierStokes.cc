@@ -451,6 +451,7 @@ void NavierStokes::test()
     }
     
     {
+        // testing get_inv_flux()
         NavierStokes ns("air");
         state cons = {2,2,4,6,15};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
@@ -468,6 +469,7 @@ void NavierStokes::test()
     }
     
     {
+        // testing hllc_xflux() and rusanov_xflux()
         NavierStokes ns("air");
         state lcs = {1.5,3,1.5,4.5,23}, rcs = {2,2,4,4,34}, f; // from WJ-02-Mar-2021
         ns.hllc_xflux(lcs, rcs, f);
@@ -476,6 +478,21 @@ void NavierStokes::test()
         
         ns.rusanov_xflux(lcs,rcs,f);
         std::cout << "Rusanov x flux";
+        utilities::print_state(f);
+    }
+    
+    {
+        // testing get_inv_surf_flux() and get_inv_vol_flux()
+        NavierStokes ns("air");
+        state ocs = {1.5,1.5,3,4.5,23}, ncs = {2,4,2,4,34}, f; // from previous block, swap x & y
+        dealii::Tensor<1,dim> dir({0,1,0}); // y-dir
+        ns.get_inv_surf_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid surface flux";
+        utilities::print_state(f); // should be equal to HLLC flux printed in previous block, with
+                                   // x & y components swapped
+        
+        ns.get_inv_vol_flux(ocs, ncs, dir, f);
+        std::cout << "Inviscid volume flux";
         utilities::print_state(f);
     }
 }
