@@ -93,12 +93,15 @@ class NavierStokes
     void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
     void rusanov_xflux(const state &lcs, const state &rcs, state &f) const;
     
-    std::function< void (const state&, const state&, const int dir, state&) > inv_vol_flux;
     void chandrashekhar_flux(
-        const state &cs1, const state &cs2, const int dir, state &f
+        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
     ) const;
     
     public:
+    std::function< void (
+        const state&, const state&, const dealii::Tensor<1,dim> &dir, state&
+    ) > get_inv_vol_flux;
+    
     NavierStokes(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S,

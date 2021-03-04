@@ -101,7 +101,8 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
 void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
 {
     // only one option available currently
-    inv_vol_flux = [=](const state &cs1, const state &cs2, const int dir, state &f){
+    get_inv_vol_flux = [=](
+        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f){
         this->chandrashekhar_flux(cs1, cs2, dir, f);
     };
 }
@@ -386,13 +387,13 @@ void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) c
  *
  * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016). Direction is taken as an @p int
  * because only cartesian components are required. It has to be one of {0,1,2}. Checking on @p dir
- * is not done.
+ * is not done. Also, positivity of the states provided is not asserted.
  */
 void NavierStokes::chandrashekhar_flux(
-    const state &cs1, const state &cs2, const int dir, state &f
+    const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
 ) const
 {
-    //
+    double beta1, beta2;
 }
 
 
