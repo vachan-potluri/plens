@@ -241,16 +241,27 @@ void NavierStokes::get_inv_surf_flux(
     
     dealii::Tensor<1,dim> m = dealii::cross_product_3d(xdir, normal); // m = x cross n
     double M = m.norm(); // magnitude of m
-    m /= M; // now m is a unit vector <-- rotation axis
-    double theta = asin(M); // <-- rotation angle
     
-    // rotation matrix
-    dealii::FullMatrix<double> R(dim);
-    R.copy_from(
-        dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
-            dealii::Point<dim>(m), theta
-        )// returns tensor
-    ); // copies from second order tensor
+    dealii::FullMatrix<double> R(dim); // rotation matrix
+    if(M > 1e-3){
+        // this tolerance corrsponds to an angle of ~0.06 degrees between x and n
+        m /= M; // now m is a unit vector <-- rotation axis
+        double theta = asin(M); // <-- rotation angle
+        
+        R.copy_from(
+            dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
+                dealii::Point<dim>(m), theta
+            )// returns tensor
+        ); // copies from second order tensor
+    }
+    else{
+        // either x is parallel or anti-parallel to n
+        R = dealii::IdentityMatrix(dim);
+        if(normal[0] < 0){
+            // n is anti-parallel to x
+            R *= -1;
+        }
+    }
     
     /*std::cout << "Rotation axis: " << m[0] << " " << m[1] << " " << m[2]
         << "\nRotation angle (in rad) " << theta
@@ -265,7 +276,7 @@ void NavierStokes::get_inv_surf_flux(
         nsmom[d] = ncs[1+d];
     }
     // get the momentum components wrt rotated coordinate system
-    R.Tvmult(osmom_r, osmom); // osmom_r = R^-1 * osmom, R^T = R^{-1}
+    R.Tvmult(osmom_r, osmom); // osmom_r = R^{-1} * osmom, R^T = R^{-1}
     R.Tvmult(nsmom_r, nsmom);
     
     state ocs_r, ncs_r; // rotated states
@@ -286,7 +297,7 @@ void NavierStokes::get_inv_surf_flux(
     dealii::Vector<double> mom_flux_r(3), mom_flux(3); // momentum fluxes
     for(int d=0; d<dim; d++) mom_flux_r[d] = f_r[1+d];
     // get momentum flux components w.r.t original coordinate system
-    R.vmult(mom_flux, mom_flux_r);
+    R.vmult(mom_flux, mom_flux_r); // mom_flux = R * mom_flux_r
     
     f[0] = f_r[0];
     for(int d=0; d<dim; d++) f[1+d] = mom_flux[d];
