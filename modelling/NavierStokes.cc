@@ -8,9 +8,10 @@
 
 
 /**
- * @brief Constructor. Set values explicitly.
- * 
- * Calls NavierStokes::set_modelling_params() internally
+ * @brief Constructor. Set parameter values explicitly.
+ *
+ * Internally calls NavierStokes::set_modelling_params(), NavierStokes::set_inv_surf_flux_scheme()
+ * and NavierStokes::set_inv_vol_flux_scheme().
  */
 NavierStokes::NavierStokes(
     const double gma, const double M, const double Pr, double mu0, const double T0, const double S,
@@ -26,7 +27,10 @@ NavierStokes::NavierStokes(
 
 
 /**
- * @brief Constructor for air and N2
+ * @brief Special constructor for air and N2.
+ *
+ * Internally calls NavierStokes::set_modelling_params(), NavierStokes::set_inv_surf_flux_scheme()
+ * and NavierStokes::set_inv_vol_flux_scheme().
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
@@ -38,7 +42,7 @@ NavierStokes::NavierStokes(
     AssertThrow(
         gas_supported,
         dealii::StandardExceptions::ExcMessage(
-            "Unsupported gas name. Only 'air' and 'N2' are supported"
+            "Unsupported gas name. Only 'air' and 'N2' are currently supported"
         )
     );
     
@@ -68,6 +72,8 @@ NavierStokes::NavierStokes(
  * 
  * All values must be in SI units. No assertions are made on the provided data. They are blindly
  * trusted.
+ *
+ * @pre All parameters provided must be positive and in SI units
  */
 void NavierStokes::set_modelling_params(
     const double gma, const double M, const double Pr, double mu0, const double T0, const double S
@@ -79,7 +85,8 @@ void NavierStokes::set_modelling_params(
 
 
 /**
- * @brief Sets inviscid surface (numerical) flux function: NavierStokes::inv_surf_xflux
+ * @brief Sets the inviscid surface (numerical) uni-directional flux function:
+ * NavierStokes::inv_surf_xflux.
  */
 void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
 {
@@ -99,6 +106,9 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
 
 /**
  * @brief Sets the invsicid volume flux function NavierStokes::inv_vol_flux
+ *
+ * @note Currently only Chandrashekhar volume flux is available. So he parameter @p ivfs is not used
+ * at all currently.
  */
 void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
 {
@@ -134,6 +144,8 @@ void NavierStokes::assert_positivity(const state &cons)
  *
  * This is purely a mathematical operation, the returned value might be negative. Also, division
  * by density is involved here, so related errors migh occur.
+ *
+ * @pre <tt>cons[0]</tt> must be positive
  */
 double NavierStokes::get_e(const state &cons)
 {
@@ -155,7 +167,10 @@ double NavierStokes::get_e(const state &cons)
  * too. There is a division by density involved here, so related errors might occur.
  * 
  * Making this function @p static is not possible because this function requires the value of
- * @f$\gamma@f$.
+ * @f$\gamma@f$. Doesn't use NavierStokes::get_e(). That approach would involve one additional
+ * division and multiplication. Since this function is often called, that would be redundant.
+ *
+ * @pre <tt>cons[0]</tt> must be positive
  */
 double NavierStokes::get_p(const state &cons) const
 {
@@ -175,6 +190,8 @@ double NavierStokes::get_p(const state &cons) const
  *
  * Internally calls NavierStokes::get_p() and returns @f$\sqrt{\gamma p/\rho}@f$. Positivity of
  * density and pressure are not checked.
+ *
+ * @pre @p cons must pass the test of NavierStokes::assert_positivity()
  */
 double NavierStokes::get_a(const state &cons) const
 {
@@ -186,9 +203,8 @@ double NavierStokes::get_a(const state &cons) const
 /**
  * @brief Calculates inviscid flux in a given direction based on given conservative state
  * 
- * @pre Parameter @p dir has to be a unit vector. No checks regarding this are done
- * 
- * The positivity of @p cons is not checked in this function. This is just a mathematical operation
+ * @pre @p cons must pass the test of NavierStokes::assert_positivity()
+ * @pre @p dir has to be a unit vector
  */
 void NavierStokes::get_inv_flux(
     const state &cons, const dealii::Tensor<1,dim> &dir, state &f
@@ -220,17 +236,22 @@ void NavierStokes::get_inv_flux(
  *
  * 1. Rotate the coordinate system such that x-direction aligned with @p normal. Store the rotation
  * matrix.
- * 2. Rotate the velocites to orient them along new coordinate axes.
- * 3. Pass the rotated states to NavierStokes::inv_surf_xflux and get the normal flux
- * 4. Rotate back the flux momentum components of the above calculated flux
+ * 2. Obtain the velocity components w.r.t. this new coordinate system. The components obtained this
+ * way are equivalent to the components of velocity when rotated in a way opposite to what is
+ * described in the first point. Thus the new components are @f$R^{-1}\vec{v} = R^T\vec{v}@f$.
+ * 3. Pass the 'rotated' states to NavierStokes::inv_surf_xflux and get the 'rotated' normal flux.
+ * The adjective rotated here is for the coordinate system, and not the state itself.
+ * 4. Rotate back the coordinate system and get the momentum flux components in actual coordinate
+ * system using the above calculated flux.
  *
  * @param[in] ocs 'Owner' conservative state
  * @param[in] ncs 'Neighbor' conservative state
- * @param[in] normal The normal vector of the face shared by owner and neighbor. This must be a
- * unit vector and must point from owner side to neighbor side
+ * @param[in] normal The normal vector of the face shared by owner and neighbor. This @b must be a
+ * unit vector and @b must point from owner side to neighbor side
  * @param[out] f The resultant surface normal flux
  *
- * Positivity of @p ocs and @p ncs is not asserted
+ * @pre @p ocs and @p ncs must pass the test of NavierStokes::assert_positivity()
+ * @pre @p normal has to be a unit vector
  */
 void NavierStokes::get_inv_surf_flux(
     const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
@@ -262,11 +283,6 @@ void NavierStokes::get_inv_surf_flux(
             R *= -1;
         }
     }
-    
-    /*std::cout << "Rotation axis: " << m[0] << " " << m[1] << " " << m[2]
-        << "\nRotation angle (in rad) " << theta
-        << "\nRotation matrix\n";
-    R.print_formatted(std::cout);*/
     
     // Step 2: get rotated states
     dealii::Vector<double> osmom(dim), nsmom(dim), // owner and neighbor specific momentum
@@ -310,9 +326,15 @@ void NavierStokes::get_inv_surf_flux(
  * @brief HLLC x-flux function.
  *
  * Prefix 'l' and 'r' for left and right. 'c' for conservative. Assumes the interface between
- * @p lcs and @p rcs has normal in x-direction. See detailed class documentation for refs.
+ * @p lcs and @p rcs has normal in x-direction. See Toro 3rd ed, secs 3.2.4, 10.4 and 10.5. The
+ * choice of left and right wave speeds here is as follows
+ * @f[
+ * S_L = \tilde{u} - \tilde{a}
+ * S_L = \tilde{u} + \tilde{a}
+ * @f]
+ * where @f$\tilde{\cdot}@f$ represents Roe average.
  *
- * Positivity of state is not asserted, this function is a pure mathematical operation.
+ * @pre @p lcs and @p rcs must pass the test of NavierStokes::assert_positivity()
  */
 void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) const
 {
@@ -378,7 +400,9 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
 /**
  * @brief Rusanov x-flux function
  *
- * Every other detail same as in NavierStokes::hllc_xflux()
+ * Similar to NavierStokes::hllc_xflux(). See Toro 3rd ed, sec 10.5.1.
+ *
+ * @pre @p lcs and @p rcs must pass the test of NavierStokes::assert_positivity()
  */
 void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) const
 {
@@ -402,8 +426,10 @@ void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) c
 /**
  * @brief Chandrashekhar inviscid volume flux.
  *
- * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016). Positivity of the states
- * provided is not asserted. @p dir has to be a unit vector.
+ * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016).
+ *
+ * @pre @p dir has to be a unit vector
+ * @pre @p cs1 and @p cs2 must pass the test of NavierStokes::assert_positivity()
  */
 void NavierStokes::chandrashekhar_flux(
     const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
