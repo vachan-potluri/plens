@@ -155,7 +155,7 @@ class NavierStokes
         const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
     ) const; // inv vol flux
     
-    void br1_flux(const state &cs1, const state &cs2, state &f); // aux surf & vol flux
+    void br1_flux(const state &cs1, const state &cs2, state &f) const; // aux surf & vol flux
     
     public:
     std::function< void (

@@ -93,6 +93,36 @@ void NavierStokes::set_modelling_params(
 
 
 /**
+ * @brief Sets the auxiliary surface (numerical) flux function: NavierStokes::get_aux_surf_flux.
+ *
+ * @note Currently only BR1 flux is supported, @p asfs is unused param
+ */
+void NavierStokes::set_aux_surf_flux_scheme(const aux_surf_flux_scheme asfs)
+{
+    get_aux_surf_flux = [=](
+        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f){
+        this->br1_flux(cs1, cs2, f); // dir unused for BR1
+    };
+}
+
+
+
+/**
+ * @brief Sets the auxiliary volume (numerical) flux function: NavierStokes::get_aux_vol_flux.
+ *
+ * @note Currently only BR1 flux is supported, @p asfs is unused param
+ */
+void NavierStokes::set_aux_vol_flux_scheme(const aux_vol_flux_scheme avfs)
+{
+    get_aux_vol_flux = [=](
+        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f){
+        this->br1_flux(cs1, cs2, f); // dir unused for BR1
+    };
+}
+
+
+
+/**
  * @brief Sets the inviscid surface (numerical) uni-directional flux function:
  * NavierStokes::inv_surf_xflux.
  */
@@ -471,6 +501,20 @@ void NavierStokes::chandrashekhar_flux(
         f[1+d] = rho_ln*vel_n*vel_avg[d] + p_hat*dir[d];
     }
     f[4] = rho_ln*vel_n*H_hat;
+}
+
+
+
+/**
+ * @brief BR1 surface and volume flux for auxiliary variables
+ *
+ * Simply calculates the average of states
+ *
+ * @note Positivity of @p cs1 and @p cs2 is not checked
+ */
+void NavierStokes::br1_flux(const state &cs1, const state &cs2, state &f) const
+{
+    for(cvar var: cvar_list) f[var] = 0.5*(cs1[var] + cs2[var]);
 }
 
 
