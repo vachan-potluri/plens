@@ -15,11 +15,15 @@
  */
 NavierStokes::NavierStokes(
     const double gma, const double M, const double Pr, double mu0, const double T0, const double S,
+    const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
+    const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
     const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
     const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar
 )
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
+    set_aux_surf_flux_scheme(asfs);
+    set_aux_vol_flux_scheme(avfs);
     set_inv_surf_flux_scheme(isfs);
     set_inv_vol_flux_scheme(ivfs);
 }
@@ -34,6 +38,8 @@ NavierStokes::NavierStokes(
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
+    const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
+    const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
     const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
     const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar
 )
@@ -61,6 +67,8 @@ NavierStokes::NavierStokes(
     
     // set the values
     set_modelling_params(gma, M, Pr, mu0, T0, S);
+    set_aux_surf_flux_scheme(asfs);
+    set_aux_vol_flux_scheme(avfs);
     set_inv_surf_flux_scheme(isfs);
     set_inv_vol_flux_scheme(ivfs);
 }

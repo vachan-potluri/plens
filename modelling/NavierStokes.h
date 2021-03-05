@@ -43,7 +43,11 @@
  *
  * Notes about the DGSEM limiter algorithm are linked in WJ-22-Feb-2021 entry.
  * This class provides functionality for flux calculation in 3 stages of the DGSEM algorithm:
- * 1. Auxiliary variable calculation (@f$\nabla\vec{v}@f$ and @f$\nabla T@f$)
+ * 1. Auxiliary variable calculation (@f$\nabla\vec{v}@f$ and @f$\nabla T@f$). To be mathematically
+ * precise, @f$\tau@f$ and @f$\vec{q}^{''}@f$ are the auxiliary variables. Since these can be
+ * obtained through linear operations of @f$\nabla\vec{v}@f$ and @f$\nabla T@f$ (appropriately 
+ * using @f$\mu@f$ and @f$k@f$), the term is used to refer to either set of variables depending on
+ * the context.
  * 2. Inviscid flux calculation
  * 3. Viscous flux calculation
  *
@@ -58,7 +62,10 @@
  * \nabla u = \frac{1}{\rho} \left( \nabla (\rho u) - u \nabla\rho \right)
  * @f]
  * This would make the calculation of @f$\nabla T@f$ very cumbersome, but some helping functions
- * will probably be provided here when the code reaches that stage.
+ * will probably be provided here when the code reaches that stage. Different algorithms differ in
+ * how the auxiliary variable flux is calculated at the surface (and also in volume specifically for
+ * the DGSEM method). Currently, only a simple average, as used by Bassi & Rebay (1997) is
+ * implemented. This is labelled BR1.
  *
  * For calculating surface normal (numerical) inviscid flux, the relevant function is
  * NavierStokes::get_inv_surf_flux(). This function returns surface normal flux on a face between
@@ -94,6 +101,15 @@ class NavierStokes
 {
     public:
     static constexpr int dim = 3; // dimension
+    
+    // Choices for auxiliary variable surface and volume flux scheme
+    enum class aux_surf_flux_scheme{
+        BR1
+    };
+    enum class aux_vol_flux_scheme{
+        BR1
+    };
+    
     // Choices for inviscid surface and volume flux scheme
     enum class inv_surf_flux_scheme{
         hllc,
@@ -122,11 +138,15 @@ class NavierStokes
     NavierStokes(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S,
+        const aux_surf_flux_scheme asfs,
+        const aux_vol_flux_scheme avfs,
         const inv_surf_flux_scheme isfs,
         const inv_vol_flux_scheme ivfs
     );
     NavierStokes(
         const std::string gas_name,
+        const aux_surf_flux_scheme asfs,
+        const aux_vol_flux_scheme avfs,
         const inv_surf_flux_scheme isfs,
         const inv_vol_flux_scheme ivfs
     );
@@ -134,6 +154,8 @@ class NavierStokes
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
     );
+    void set_aux_surf_flux_scheme(const aux_surf_flux_scheme asfs){};
+    void set_aux_vol_flux_scheme(const aux_vol_flux_scheme avfs){};
     void set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs);
     void set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs);
     
