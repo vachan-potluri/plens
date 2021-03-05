@@ -65,7 +65,30 @@
  * will probably be provided here when the code reaches that stage. Different algorithms differ in
  * how the auxiliary variable flux is calculated at the surface (and also in volume specifically for
  * the DGSEM method). Currently, only a simple average, as used by Bassi & Rebay (1997) is
- * implemented. This is labelled BR1.
+ * implemented. This is labelled BR1. As a result, the 'aux' functions return
+ * @f$\{\rho^*, (\rho u)^*, (\rho v)^*, (\rho w)^*, (\rho E)^*\}@f$ for surface flux (note usage of
+ * conservative variables).
+ *
+ * One important note here. Unlike inv fluxes, the aux fluxes need not vary with direction. For
+ * illustration, consider solving
+ * @f[
+ * W - \frac{\partial \rho}{\partial x} = 0
+ * @f]
+ * where @f$W=\partial \rho/\partial x@f$ is the auxiliary/additional variable we wish to solve. The
+ * surface term in weak formulation would be
+ * @f[
+ * \int_{\partial \Omega_e} \rho^* \vec{n}\,dA
+ * @f]
+ * and the volume contribution will be calculated using two-point fluxes as described in Appendix B
+ * of Gassner, Winters & Kopriva (2016). Note that for this specific case, @f$G@f$ and @f$H@f$ used
+ * are in eqs (B.5) and (B.6) identically zero. And moreover, if the gradient direction is changed
+ * such that we now require @f$W=\partial \rho/\partial y@f$, then @f$F@f$ and @f$H@f$ are
+ * identically zero along with a special equality: @f$F(W)@f$ of the first case is exactly equal to
+ * @f$G(W)@f$ of the second case. Thus, the direction is really not required. Only the metric term
+ * factors change for different directions and this is taken care elsewhere. That said, there can
+ * however be formulations where both surface and volume fluxes are direction dependent. Hence the
+ * variables NavierStokes::get_aux_surf_flux and NavierStokes::get_aux_vol_flux have direction.
+ * However, BR1 does not require direction.
  *
  * For calculating surface normal (numerical) inviscid flux, the relevant function is
  * NavierStokes::get_inv_surf_flux(). This function returns surface normal flux on a face between
@@ -123,17 +146,21 @@ class NavierStokes
     double gma_, M_, Pr_, mu0_, T0_, S_;
     
     std::function< void (const state&, const state&, state&) > inv_surf_xflux;
+    
+    // inv surf fluxes
     void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
     void rusanov_xflux(const state &lcs, const state &rcs, state &f) const;
     
     void chandrashekhar_flux(
         const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
-    ) const;
+    ) const; // inv vol flux
+    
+    void br1_flux(const state &cs1, const state &cs2, state &f); // aux surf & vol flux
     
     public:
     std::function< void (
         const state&, const state&, const dealii::Tensor<1,dim> &dir, state&
-    ) > get_inv_vol_flux;
+    ) > get_aux_surf_flux, get_aux_vol_flux, get_inv_vol_flux;
     
     NavierStokes(
         const double gma, const double M, const double Pr,
@@ -154,8 +181,8 @@ class NavierStokes
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S
     );
-    void set_aux_surf_flux_scheme(const aux_surf_flux_scheme asfs){};
-    void set_aux_vol_flux_scheme(const aux_vol_flux_scheme avfs){};
+    void set_aux_surf_flux_scheme(const aux_surf_flux_scheme asfs);
+    void set_aux_vol_flux_scheme(const aux_vol_flux_scheme avfs);
     void set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs);
     void set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs);
     
