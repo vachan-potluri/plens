@@ -627,6 +627,17 @@ void NavierStokes::test()
         std::cout << "Inviscid volume flux";
         utilities::print_state(f);
     }
+    
+    {
+        t.new_block("testing aux surf and vol functions");
+        NavierStokes ns("air");
+        state cs1={3,5,7,9,11}, cs2={33,55,77,99,1111}, f;
+        dealii::Tensor<1,3> dir({10,20,30}); // invalid, but doesn't matter for BR1 scheme
+        ns.get_aux_surf_flux(cs1, cs2, dir, f);
+        utilities::print_state(f);
+        ns.get_aux_vol_flux(cs1, cs2, dir, f);
+        utilities::print_state(f);
+    }
 }
 
 
