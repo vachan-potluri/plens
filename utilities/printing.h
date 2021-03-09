@@ -7,14 +7,18 @@
 #include <array>
 
 #include "modelling/state.h"
+#include "modelling/avars.h"
 
 #ifndef PRINTING_H
 #define PRINTING_H
 
 namespace utilities{
     void print_state(const state &cons);
+    void print_avars(const avars &a);
+    
+    template <int size>
     void print_array1(
-        const state &cons, const std::string &prefix, const std::string &suffix,
+        const std::array<double, size> &arr, const std::string &prefix, const std::string &suffix,
         const std::string &delim
     );
 }
