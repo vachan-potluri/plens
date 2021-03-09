@@ -118,7 +118,7 @@ class cavars
         AssertThrow(
             !only_state,
             dealii::StandardExceptions::ExcMessage(
-                "Calling get_avars() without setting avars invalid!"
+                "Calling get_avars() without setting avars (in constructor) invalid!"
             )
         );
         return *ap_;
@@ -134,7 +134,7 @@ class cavars
         AssertThrow(
             !only_state,
             dealii::StandardExceptions::ExcMessage(
-                "Calling get_avars() without setting avars invalid!"
+                "Calling get_avars() without setting avars (in constructor) invalid!"
             )
         );
         return *ap_;
@@ -198,6 +198,25 @@ class cavars
             }
             std::cout << "avars out of scope";
             utilities::print_avars(ca.get_avars());
+        }
+        
+        {
+            t.new_block("Unset avars behaviour");
+            state s={1,2,3,4,5};
+            cavars ca(&s);
+            // utilities::print_avars(ca.get_avars()); // throw exception
+        }
+        
+        {
+            t.new_block("Const behaviour test");
+            state s={1,2,3,4,5};
+            avars a={1,2,3,4,5,6,7,8,9};
+            cavars ca(&s, &a);
+            // const state &s2 = ca.get_state();
+            // s2[0] = 0; // error
+            
+            const cavars ca2(&s, &a);
+            const state &s2 = ca.get_state(); // OK
         }
     }
     #endif
