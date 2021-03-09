@@ -29,7 +29,9 @@ class Testing
     
     public:
     Testing(const std::string &name, const std::string &type);
+    ~Testing();
     void begin() const;
+    void end() const;
     void new_block() const;
     void new_block(const std::string &msg) const;
 };
