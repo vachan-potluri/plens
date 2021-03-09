@@ -10,14 +10,14 @@
 #include <deal.II/base/exceptions.h>
 
 #include <array>
-#include <memory>
 
 #include "state.h"
 #include "avars.h"
-#include "utilities/testing.h"
 
 #ifdef DEBUG
 #include <iostream>
+#include "utilities/testing.h"
+#include "utilities/printing.h"
 #endif
 
 /**
@@ -26,34 +26,53 @@
  * together.
  *
  * The main usage of this class is in viscous flux (surface and volume) calculation. This will also
- * be useful for BC functions. It stores shared pointers to a @p state variable and a @p avars
- * variable and provides read and write access to their data. Shared pointers are used because in
- * general, a @p state object and a @p avars object are constructed independently and then combined
- * through this class thus reducing the number of arguments required for passing in functions that
- * require both these quantities.
+ * be useful for BC functions. It stores pointers to a @p state variable and a @p avars variable
+ * and provides read and write access to their data. Since pointers are stored, the behaviour
+ * of this class becomes undefined if the original objects go out of scope. However, in the specific
+ * setting of plens, this is not an issue as the usage of this class is only like a wrapper.
  *
- * The read write access is not provided directly, but indirectly through cavars::get_state and
- * cavars::get_avars. This is the safest way. And really, I don't think any more fancy functionality
- * is required for this, because all the other classes internally use @p state and @p avars
- * directly.
+ * The read write access is not provided directly, but indirectly through cavars::get_state() and
+ * cavars::get_avars(). This is the safest way. And really, I don't think any more fancy
+ * functionality is required for this, because all the other classes internally use @p state and
+ * @p avars directly.
  */
 class cavars
 {
     private:
-    std::shared_ptr<state> sp_; // pointer to state
-    std::shared_ptr<avars> ap_; // pointer to avars
+    state* sp_; // pointer to state
+    avars* ap_; // pointer to avars
     bool only_state; // true: only pointer to a state is set, false: both pointers set
+    
+    
+    
+    /**
+     * @brief (Re)Setter for state variable pointer
+     */
+    void set_state(state *sp)
+    {
+        sp_ = sp;
+    }
+    
+    
+    
+    /**
+     * @brief (Re)Setter for avars variable pointer
+     */
+    void set_avars(avars *ap)
+    {
+        ap_ = ap;
+        only_state = false;
+    }
     
     public:
     /**
-     * @brief Constructor. Assigns shared pointers cavars::sp_ and cavars::ap_ to @p sp and @p ap.
-     * cavars::only_state is set to false
+     * @brief Constructor. Assigns pointers cavars::sp_ and cavars::ap_ to @p sp and @p ap.
+     * cavars::only_state is set to false (internally, in cavars::set_avars())
      */
     cavars(state *sp, avars *ap)
     {
         set_state(sp);
         set_avars(ap);
-        only_state = false;
     }
     
     
@@ -67,38 +86,6 @@ class cavars
     {
         set_state(sp);
         only_state = true;
-    }
-    
-    
-    
-    /**
-     * @brief Desctructor. Releases the ownership of pointers
-     */
-    ~cavars()
-    {
-        sp_.reset();
-        ap_.reset();
-    }
-    
-    
-    
-    /**
-     * @brief (Re)Setter for state variable pointer
-     */
-    void set_state(state *sp)
-    {
-        sp_.reset(sp); // reset requires address
-    }
-    
-    
-    
-    /**
-     * @brief (Re)Setter for avars variable pointer
-     */
-    void set_avars(avars *ap)
-    {
-        ap_.reset(ap); // reset requires address
-        only_state = false;
     }
     
     
@@ -160,11 +147,57 @@ class cavars
     {
         utilities::Testing t("cavars", "class");
         {
-            t.new_block("Testing construction");
+            t.new_block("Testing construction (both)");
             state s={1,2,3,4};
             avars a={1,2,3,4,5,6,7,8,9};
             cavars ca(&s, &a);
-            std::cout << "Hi\n";
+            std::cout << "OK\n";
+        }
+        
+        {
+            t.new_block("Testing construction (only state)");
+            state s={1,2,3,4};
+            cavars ca(&s);
+            std::cout << "OK\n";
+        }
+        
+        {
+            t.new_block("Value modification testing");
+            state s={1,2,3,4,5};
+            avars a={1,2,3,4,5,6,7,8,9};
+            cavars ca(&s, &a);
+            
+            std::cout << "\nStage 1";
+            utilities::print_state(ca.get_state());
+            utilities::print_avars(ca.get_avars());
+            
+            s[2] = 300;
+            a[6] = 700;
+            std::cout << "\nStage 2";
+            utilities::print_state(ca.get_state());
+            utilities::print_avars(ca.get_avars());
+            
+            state &s2 = ca.get_state();
+            avars &a2 = ca.get_avars();
+            s2[1] = -100;
+            a2[3] = -400;
+            std::cout << "\nStage 3";
+            utilities::print_state(ca.get_state());
+            utilities::print_avars(ca.get_avars());
+        }
+        
+        {
+            t.new_block("Out of scope behaviour");
+            state s={1,2,3,4,5};
+            cavars ca(&s);
+            {
+                avars a={1,2,3,4,5,6,7,8,9};
+                ca.set_avars(&a);
+                std::cout << "avars in scope";
+                utilities::print_avars(ca.get_avars());
+            }
+            std::cout << "avars out of scope";
+            utilities::print_avars(ca.get_avars());
         }
     }
     #endif
