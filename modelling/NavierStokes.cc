@@ -361,7 +361,7 @@ void NavierStokes::get_inv_surf_flux(
 
 
 /**
- * @brief Gives the symmetric stress tensor based on cavars provided
+ * @brief Gives the symmetric stress tensor based on avars provided
  */
 void NavierStokes::get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,dim> &st)
 {
@@ -381,12 +381,27 @@ void NavierStokes::get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,
  * variables provided by @p cav
  *
  * @pre @p dir has to be a unit vector
+ * @pre The conservative state stored in @p cav must have non-zero density
  */
 void NavierStokes::get_dif_flux(
     const cavars &cav, const dealii::Tensor<1,dim> &dir, state &f
 )
 {
+    const state &cons = cav.get_state();
+    const avars &av = cav.get_avars();
+    dealii::Tensor<1,dim> vel;
+    dealii::SymmetricTensor<2,dim> st;
+    get_stress_tensor(av, st);
+    
+    dealii::Tensor<1,dim> mom_flux = st*dir;
     f[0] = 0; // density flux
+    f[4] = 0; // initialise
+    for(int d=0; d<dim; d++){
+        vel[d] = cons[1+d]/cons[0];
+        f[1+d] = mom_flux[d];
+        f[4] += av[6+d]*dir[d] + vel[d]*mom_flux[d];
+    }
+    
 }
 
 
