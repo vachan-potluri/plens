@@ -408,6 +408,8 @@ void NavierStokes::get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,
  * @brief Calculates diffusive flux in direction @p dir based on the conservative and auxiliary
  * variables provided by @p cav
  *
+ * Internally uses NavierStokes::get_stress_tensor()
+ *
  * @pre @p dir has to be a unit vector
  * @pre The conservative state stored in @p cav must have non-zero density
  */
@@ -590,9 +592,30 @@ void NavierStokes::chandrashekhar_flux(
  *
  * @note Positivity of @p cs1 and @p cs2 is not checked
  */
-void NavierStokes::br1_flux(const state &cs1, const state &cs2, state &f) const
+void NavierStokes::br1_flux(const state &cs1, const state &cs2, state &f)
 {
     for(cvar var: cvar_list) f[var] = 0.5*(cs1[var] + cs2[var]);
+}
+
+
+
+/**
+ * @brief BR1 surface and volume flux for diffusive flux in NS equations
+ *
+ * Simply returns the average of fluxes based on @p cav1 and @p cav2. Internally uses
+ * NavierStokes::get_dif_flux()
+ *
+ * @pre @p dir must be unit vector
+ * @pre Conservative states associated with @p cav1 and @p cav2 must have positive density
+ */
+void NavierStokes::br1_flux(
+    const cavars &cav1, const cavars &cav2, const dealii::Tensor<1,dim> &dir, state &f
+)
+{
+    state f1, f2;
+    get_dif_flux(cav1, dir, f1);
+    get_dif_flux(cav2, dir, f2);
+    for(cvar var: cvar_list) f[var] = 0.5*(f1[var] + f2[var]);
 }
 
 
