@@ -246,7 +246,7 @@ double NavierStokes::get_a(const state &cons) const
  */
 void NavierStokes::get_inv_flux(
     const state &cons, const dealii::Tensor<1,dim> &dir, state &f
-)
+) const
 {
     dealii::Tensor<1,dim> vel; // velocity vector
     for(int d=0; d<dim; d++){
@@ -361,6 +361,22 @@ void NavierStokes::get_inv_surf_flux(
 
 
 /**
+ * @brief Gives the symmetric stress tensor based on cavars provided
+ */
+void NavierStokes::get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,dim> &st)
+{
+    int i=0;
+    for(int row=0; row<dim; row++){
+        for(int col=row; col<dim; col++){
+            st[row][col] = av[i];
+            i++;
+        }
+    }
+}
+
+
+
+/**
  * @brief Calculates diffusive flux in direction @p dir based on the conservative and auxiliary
  * variables provided by @p cav
  *
@@ -372,6 +388,10 @@ void NavierStokes::get_dif_flux(
 {
     f[0] = 0; // density flux
 }
+
+
+
+// # # # # # # # # # Private Functions # # # # # # # # # # # #
 
 
 

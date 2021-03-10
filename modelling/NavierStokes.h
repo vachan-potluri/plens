@@ -5,6 +5,7 @@
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/tensor.h>
+#include <deal.II/base/symmetric_tensor.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/physics/transformations.h>
@@ -202,6 +203,7 @@ class NavierStokes
         const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
     ) const;
     
+    static void get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,dim> &st);
     static void get_dif_flux(const cavars &cav, const dealii::Tensor<1,dim> &dir, state &f);
     
     #ifdef DEBUG
