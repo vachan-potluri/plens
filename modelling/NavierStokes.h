@@ -116,6 +116,14 @@
  * auxiliary variables in a single address. Currently, only BR1 type viscous/diffusive flux is
  * implemented. It just returns an average of diffusive fluxes based on variables of both sides.
  *
+ * Finally, this class provides wrappers: NavierStokes::surf_flux_wrappers which is an array of surf
+ * flux functions in the order aux, inv, dif. This is useful for assembling surface flux terms of
+ * all cells. It can avoid code repetition. The repetition is otherwise inevitable because diffusive
+ * fluxes can be calculated only after the auxiliary variables are calculated using auxiliary
+ * fluxes. This means, at least two decoupled loops will be required: either aux, inv+dif or
+ * aux+inv, dif. The wrappers provide unified interface to all types of fluxes thus enabling
+ * automation of assembly.
+ *
  * @note If any identifier from {surf, vol} is missing, then that function is a theoretical
  * function. E.g. NavierStokes::get_inv_flux() takes a conservative state and direction to give the
  * theoretical inviscid flux in that direction.
@@ -188,6 +196,11 @@ class NavierStokes
         get_dif_surf_flux,
         get_dif_vol_flux;
     
+    std::array<
+        std::function< void (const cavars&, const cavars&, const dealii::Tensor<1,dim>&, state&) >,
+        3
+    > surf_flux_wrappers;
+    
     NavierStokes(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S,
@@ -217,6 +230,8 @@ class NavierStokes
     void set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs);
     void set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs);
     void set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs);
+    
+    void set_wrappers();
     
     static void assert_positivity(const state &cons);
     static double get_e(const state &cons);

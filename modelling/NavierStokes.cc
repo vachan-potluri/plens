@@ -30,6 +30,7 @@ NavierStokes::NavierStokes(
     set_inv_vol_flux_scheme(ivfs);
     set_dif_surf_flux_scheme(dsfs);
     set_dif_vol_flux_scheme(dvfs);
+    set_wrappers();
 }
 
 
@@ -79,6 +80,7 @@ NavierStokes::NavierStokes(
     set_inv_vol_flux_scheme(ivfs);
     set_dif_surf_flux_scheme(dsfs);
     set_dif_vol_flux_scheme(dvfs);
+    set_wrappers();
 }
 
 
@@ -195,6 +197,33 @@ void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
     ){
         this->br1_flux(cav1, cav2, dir, f);
     };
+}
+
+
+
+/**
+ * @brief Sets surface flux wrappers
+ *
+ * See the class documentation for more details
+ *
+ * @pre All the surf/vol setters must be called before invoking this function
+ */
+void NavierStokes::set_wrappers()
+{
+    // surface flux wrappers
+    surf_flux_wrappers[0] = [=](
+        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+    ){
+        this->get_aux_surf_flux(cav1.get_state(), cav2.get_state(), dir, f);
+    }; // aux
+    
+    surf_flux_wrappers[1] = [=](
+        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+    ){
+        this->get_inv_surf_flux(cav1.get_state(), cav2.get_state(), dir, f);
+    }; // inv
+    
+    surf_flux_wrappers[2] = get_dif_surf_flux; // dif, directly equate function objects
 }
 
 
@@ -600,7 +629,7 @@ void NavierStokes::chandrashekhar_flux(
 /**
  * @brief BR1 surface and volume flux for auxiliary variables
  *
- * Simply calculates the average of states. See the detailed documentation for more details.
+ * Simply calculates the average of states. See the class documentation for more details.
  *
  * @note Positivity of @p cs1 and @p cs2 is not checked
  */
