@@ -22,6 +22,7 @@ IF(BUILD_SPACETIME)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # required on spacetime
 ENDIF(BUILD_SPACETIME)
 
+ADD_SUBDIRECTORY(utilities)
 ADD_SUBDIRECTORY(modelling)
 
 ADD_EXECUTABLE(plens.out
@@ -30,7 +31,7 @@ ADD_EXECUTABLE(plens.out
 
 DEAL_II_SETUP_TARGET(plens.out)
 
-TARGET_LINK_LIBRARIES(plens.out modelling)
+TARGET_LINK_LIBRARIES(plens.out utilities modelling)
 
 # for make debug
 ADD_CUSTOM_TARGET(debug
