@@ -8,7 +8,7 @@ int main(){
 
     #ifdef DEBUG
     cavars::test();
-    //NavierStokes::test();
+    NavierStokes::test();
     #endif
     return 0;
 }

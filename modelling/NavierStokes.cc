@@ -765,6 +765,19 @@ void NavierStokes::test()
         ns.get_dif_flux(cav, dir, f);
         utilities::print_state(f);
     }
+    
+    {
+        t.new_block("testing get_dif_surf/vol_flux()");
+        NavierStokes ns("air");
+        state s1 = {2,4,6,8,9}, s2 = {2,6,4,8,10}, f;
+        avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
+        cavars cav1(&s1, &av1), cav2(&s2, &av2);
+        dealii::Tensor<1,dim> dir({0,0,1});
+        ns.get_dif_surf_flux(cav1, cav2, dir, f);
+        utilities::print_state(f);
+        ns.get_dif_vol_flux(cav1, cav2, dir, f);
+        utilities::print_state(f);
+    }
 }
 
 
