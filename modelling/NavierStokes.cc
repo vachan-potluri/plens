@@ -246,7 +246,7 @@ double NavierStokes::get_a(const state &cons) const
  */
 void NavierStokes::get_inv_flux(
     const state &cons, const dealii::Tensor<1,dim> &dir, state &f
-) const
+)
 {
     dealii::Tensor<1,dim> vel; // velocity vector
     for(int d=0; d<dim; d++){
@@ -356,6 +356,21 @@ void NavierStokes::get_inv_surf_flux(
     f[0] = f_r[0];
     for(int d=0; d<dim; d++) f[1+d] = mom_flux[d];
     f[4] = f_r[4];
+}
+
+
+
+/**
+ * @brief Calculates diffusive flux in direction @p dir based on the conservative and auxiliary
+ * variables provided by @p cav
+ *
+ * @pre @p dir has to be a unit vector
+ */
+void NavierStokes::get_dif_flux(
+    const cavars &cav, const dealii::Tensor<1,dim> &dir, state &f
+)
+{
+    f[0] = 0; // density flux
 }
 
 

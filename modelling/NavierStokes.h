@@ -14,6 +14,8 @@
 
 #include "var_enums.h"
 #include "state.h"
+#include "avars.h"
+#include "cavars.h"
 
 #ifdef DEBUG
 #include <iostream>
@@ -160,7 +162,10 @@ class NavierStokes
     public:
     std::function< void (
         const state&, const state&, const dealii::Tensor<1,dim> &dir, state&
-    ) > get_aux_surf_flux, get_aux_vol_flux, get_inv_vol_flux;
+    ) >
+        get_aux_surf_flux,
+        get_aux_vol_flux,
+        get_inv_vol_flux;
     
     NavierStokes(
         const double gma, const double M, const double Pr,
@@ -196,6 +201,8 @@ class NavierStokes
     void get_inv_surf_flux(
         const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
     ) const;
+    
+    static void get_dif_flux(const cavars &cav, const dealii::Tensor<1,dim> &dir, state &f);
     
     #ifdef DEBUG
     static void test();
