@@ -688,6 +688,20 @@ void NavierStokes::test()
         ns.get_aux_vol_flux(cs1, cs2, dir, f);
         utilities::print_state(f);
     }
+    
+    {
+        t.new_block("testing get_stress_tensor() and get_dif_flux()");
+        NavierStokes ns("air");
+        state cs = {2,4,6,8,9}, f;
+        avars av = {2,3,4,5,6,7,8,9,10};
+        cavars cav(&cs, &av);
+        dealii::Tensor<1,dim> dir({0,0,1});
+        dealii::SymmetricTensor<2,dim> st;
+        ns.get_stress_tensor(av, st);
+        std::cout << "Stress tensor:\n" << st << "\n";
+        ns.get_dif_flux(cav, dir, f);
+        utilities::print_state(f);
+    }
 }
 
 
