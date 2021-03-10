@@ -173,7 +173,13 @@ void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
  * @note Currently only BR1 flux is supported, @p dsfs is an unused param here
  */
 void NavierStokes::set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs)
-{}
+{
+    get_dif_surf_flux = [=](
+        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+    ){
+        this->br1_flux(cav1, cav2, dir, f);
+    };
+}
 
 
 
@@ -183,7 +189,13 @@ void NavierStokes::set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs)
  * @note Currently only BR1 flux is supported, @p dvfs is an unused param here
  */
 void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
-{}
+{
+    get_dif_vol_flux = [=](
+        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+    ){
+        this->br1_flux(cav1, cav2, dir, f);
+    };
+}
 
 
 

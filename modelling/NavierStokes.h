@@ -174,11 +174,17 @@ class NavierStokes
     
     public:
     std::function< void (
-        const state&, const state&, const dealii::Tensor<1,dim> &dir, state&
+        const state&, const state&, const dealii::Tensor<1,dim>&, state&
     ) >
         get_aux_surf_flux,
         get_aux_vol_flux,
         get_inv_vol_flux;
+    
+    std::function< void (
+        const cavars&, const cavars&, const dealii::Tensor<1,dim>&, state&
+    ) >
+        get_dif_surf_flux,
+        get_dif_vol_flux;
     
     NavierStokes(
         const double gma, const double M, const double Pr,
