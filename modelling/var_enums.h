@@ -7,15 +7,12 @@
  * 
  * The ordering of enum avar is as follows, considering the stresses represented by a matrix.
 @verbatim
-    *  *<-*
-     \    |
-      \   |
-    *  *  *
-        \ |
-         \|
-    *  *  *
+    0  1  2
+           
+    *  3  4
+           
+    *  *  5
 @endverbatim
- * The arrow '<' above shows the direction, the line shows the sequence.
  */
 
 #include <array>
@@ -34,12 +31,12 @@ enum pvar {p, u, v, w, T};
 std::array<pvar, 5> pvar_list = {pvar::p, pvar::u, pvar::v, pvar::w, pvar::T};
 std::array<std::string, 5> pvar_names = {"p", "u", "v", "w", "T"};
 
-enum avar {txx, tyy, tzz, tyz, txz, txy, qx, qy, qz};
+enum avar {txx, txy, txz, tyy, tyz, txz, qx, qy, qz};
 std::array<avar, 9> avar_list = {
-    avar::txx, avar::tyy, avar::tzz, avar::tyz, avar::txz, avar::txy, avar::qx, avar::qy, avar::qz
+    avar::txx, avar::txy, avar::txz, avar::tyy, avar::tyz, avar::txz, avar::qx, avar::qy, avar::qz
 };
 std::array<std::string, 9> avar_names = {
-    "txx", "tyy", "tzz", "tyz", "txz", "txy", "qx", "qy", "qz"
+    "txx", "txy", "txz", "tyy", "tyz", "txz", "qx", "qy", "qz"
 };
 
 #endif
