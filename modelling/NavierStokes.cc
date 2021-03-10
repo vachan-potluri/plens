@@ -18,7 +18,9 @@ NavierStokes::NavierStokes(
     const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
     const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
     const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
-    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar
+    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar,
+    const dif_surf_flux_scheme dsfs = dif_surf_flux_scheme::BR1,
+    const dif_vol_flux_scheme dvfs = dif_vol_flux_scheme::BR1
 )
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
@@ -26,6 +28,8 @@ NavierStokes::NavierStokes(
     set_aux_vol_flux_scheme(avfs);
     set_inv_surf_flux_scheme(isfs);
     set_inv_vol_flux_scheme(ivfs);
+    set_dif_surf_flux_scheme(dsfs);
+    set_dif_vol_flux_scheme(dvfs);
 }
 
 
@@ -41,7 +45,9 @@ NavierStokes::NavierStokes(
     const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
     const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
     const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
-    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar
+    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar,
+    const dif_surf_flux_scheme dsfs = dif_surf_flux_scheme::BR1,
+    const dif_vol_flux_scheme dvfs = dif_vol_flux_scheme::BR1
 )
 {
     bool gas_supported = (gas_name=="air" || gas_name=="N2");
@@ -71,6 +77,8 @@ NavierStokes::NavierStokes(
     set_aux_vol_flux_scheme(avfs);
     set_inv_surf_flux_scheme(isfs);
     set_inv_vol_flux_scheme(ivfs);
+    set_dif_surf_flux_scheme(dsfs);
+    set_dif_vol_flux_scheme(dvfs);
 }
 
 
@@ -156,6 +164,26 @@ void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
         this->chandrashekhar_flux(cs1, cs2, dir, f);
     };
 }
+
+
+
+/**
+ * @brief Sets the diffusive surface flux function
+ *
+ * @note Currently only BR1 flux is supported, @p dsfs is an unused param here
+ */
+void NavierStokes::set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs)
+{}
+
+
+
+/**
+ * @brief Sets the diffusive volume flux function
+ *
+ * @note Currently only BR1 flux is supported, @p dvfs is an unused param here
+ */
+void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
+{}
 
 
 

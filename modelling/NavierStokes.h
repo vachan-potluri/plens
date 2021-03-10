@@ -145,6 +145,14 @@ class NavierStokes
         chandrashekhar
     };
     
+    // Choices for diffusive surface and volume flux scheme
+    enum class dif_surf_flux_scheme{
+        BR1
+    };
+    enum class dif_vol_flux_scheme{
+        BR1
+    };
+    
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
     
@@ -174,14 +182,18 @@ class NavierStokes
         const aux_surf_flux_scheme asfs,
         const aux_vol_flux_scheme avfs,
         const inv_surf_flux_scheme isfs,
-        const inv_vol_flux_scheme ivfs
+        const inv_vol_flux_scheme ivfs,
+        const dif_surf_flux_scheme dsfs,
+        const dif_vol_flux_scheme dvfs
     );
     NavierStokes(
         const std::string gas_name,
         const aux_surf_flux_scheme asfs,
         const aux_vol_flux_scheme avfs,
         const inv_surf_flux_scheme isfs,
-        const inv_vol_flux_scheme ivfs
+        const inv_vol_flux_scheme ivfs,
+        const dif_surf_flux_scheme dsfs,
+        const dif_vol_flux_scheme dvfs
     );
     void set_modelling_params(
         const double gma, const double M, const double Pr,
@@ -191,6 +203,8 @@ class NavierStokes
     void set_aux_vol_flux_scheme(const aux_vol_flux_scheme avfs);
     void set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs);
     void set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs);
+    void set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs);
+    void set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs);
     
     static void assert_positivity(const state &cons);
     static double get_e(const state &cons);
@@ -198,7 +212,6 @@ class NavierStokes
     double get_a(const state &cons) const;
     
     void get_inv_flux(const state &cons, const dealii::Tensor<1,dim> &dir, state &f) const;
-    
     void get_inv_surf_flux(
         const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
     ) const;
