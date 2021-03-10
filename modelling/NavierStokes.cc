@@ -807,6 +807,20 @@ void NavierStokes::test()
         ns.get_dif_vol_flux(cav1, cav2, dir, f);
         utilities::print_state(f);
     }
+    
+    {
+        t.new_block("testing surface flux wrappers");
+        NavierStokes ns("air");
+        state s1 = {1.5,-4.5,1.5,3,23}, s2 = {2,-4,4,2,34}, f;
+        avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
+        cavars cav1(&s1, &av1), cav2(&s2, &av2);
+        dealii::Tensor<1,dim> dir({0,0,1});
+        for(int stage=0; stage<3; stage++){
+            ns.surf_flux_wrappers[stage](cav1, cav2, dir, f);
+            std::cout << "Stage " << stage << " flux:";
+            utilities::print_state(f);
+        }
+    }
 }
 
 
