@@ -111,8 +111,10 @@
  * be used directly eventually) are public functions/function variables.
  *
  * For viscous fluxes, additionally, auxiliary variables
- * (@f$\mathbf{\tau}@f$ and @f$\vec{q}^{''}@f$) are also required. More details will be added as we
- * proceed.
+ * (@f$\mathbf{\tau}@f$ and @f$\vec{q}^{''}@f$) are also required. For this purpose, a new class
+ * cavars is introduced. It is just a container like class to allow storing conservative and
+ * auxiliary variables in a single address. Currently, only BR1 type viscous/diffusive flux is
+ * implemented. It just returns an average of diffusive fluxes based on variables of both sides.
  *
  * @note If any identifier from {surf, vol} is missing, then that function is a theoretical
  * function. E.g. NavierStokes::get_inv_flux() takes a conservative state and direction to give the

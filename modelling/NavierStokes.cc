@@ -408,10 +408,10 @@ void NavierStokes::get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,
     int i=0;
     for(int row=0; row<dim; row++){
         for(int col=row; col<dim; col++){
-            st[row][col] = av[i];
+            st[row][col] = av[i]; // automatically sets the symmetrical part too
             i++;
-        }
-    }
+        } // loop over cols with col >= row
+    } // loop over rows
 }
 
 
@@ -431,17 +431,17 @@ void NavierStokes::get_dif_flux(
 {
     const state &cons = cav.get_state();
     const avars &av = cav.get_avars();
-    dealii::Tensor<1,dim> vel;
     dealii::SymmetricTensor<2,dim> st;
     get_stress_tensor(av, st);
     
     dealii::Tensor<1,dim> mom_flux = st*dir;
     f[0] = 0; // density flux
-    f[4] = 0; // initialise
+    f[4] = 0; // initialise energy flux
+    double v; // temporary quantity
     for(int d=0; d<dim; d++){
-        vel[d] = cons[1+d]/cons[0];
+        v = cons[1+d]/cons[0];
         f[1+d] = mom_flux[d];
-        f[4] += av[6+d]*dir[d] + vel[d]*mom_flux[d];
+        f[4] += av[6+d]*dir[d] + v*mom_flux[d];
     }
     
 }
@@ -600,7 +600,7 @@ void NavierStokes::chandrashekhar_flux(
 /**
  * @brief BR1 surface and volume flux for auxiliary variables
  *
- * Simply calculates the average of states
+ * Simply calculates the average of states. See the detailed documentation for more details.
  *
  * @note Positivity of @p cs1 and @p cs2 is not checked
  */
