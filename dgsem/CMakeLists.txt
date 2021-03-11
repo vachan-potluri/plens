@@ -1,5 +1,5 @@
 ADD_LIBRARY(dgsem SHARED
-        
+    plens.cc 
 )
 
 TARGET_INCLUDE_DIRECTORIES(dgsem PUBLIC "..")
