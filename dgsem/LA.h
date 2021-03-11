@@ -8,6 +8,7 @@
 #ifndef LA_H
 #define LA_H
 
+using namespace dealii;
 namespace LA
 {
     using namespace ::LinearAlgebraPETSc;
