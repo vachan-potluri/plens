@@ -6,7 +6,15 @@
 #ifndef BC_H
 #define BC_H
 
+#include <deal.II/dofs/dof_handler.h>
+
+#include <dgsem/LA.h>
+
+#include <array>
+
 namespace BCs{
+
+using namespace dealii;
 
 /**
  * @class BC
@@ -40,11 +48,35 @@ namespace BCs{
  * details on the usage of wrappers.
  *
  * Keeping in mind periodic BC and spatially varying BC, this base class takes const references to
- * dof handler object. The periodic BC class will additionally have some more entities to be set
- * which will be done by that specific class implementation. In each stage getter, the local
- * information about dof will be taken through ldof_data. This will be inevitable for periodic BCs
- * and for spatially varying BCs. Additionally, the local unit normal will also be required.
+ * dof handler object, conservative and auxiliary variables. The periodic BC class will additionally
+ * have some more entities to be set which will be done by that specific class implementation. In
+ * each stage getter, the local information about dof will be taken through ldof_data. This will be
+ * inevitable for periodic BCs and for spatially varying BCs. Additionally, the local unit normal
+ * will also be required.
+ *
+ * These BC objects will work for boundaries involving curved manifolds also provided the normal
+ * used in the getters is correct.
  */
+class BC
+{
+    public:
+    static constexpr int dim = 3; // dimension
+    
+    const DoFHandler<dim>& dof_handler_;
+    
+    // Refs to cvars and avars. These are assumed to hold the values of cvars and avars at the time
+    // of calling getter functions and thus used in the same to finally give the ghost values. One
+    // way to set these correectly is to assign current RK step solutions
+    const std::array<LA::MPI::Vector, 5>& g_cvars_;
+    const std::array<LA::MPI::Vector, 9>& g_avars_;
+    
+    BC(
+        const DoFHandler<dim>& dof_handler,
+        const std::array<LA::MPI::Vector, 5>& g_cvars,
+        const std::array<LA::MPI::Vector, 9>& g_avars
+    );
+    virtual ~BC();
+};
 
 }
 
