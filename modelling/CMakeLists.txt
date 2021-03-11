@@ -1,5 +1,5 @@
 ADD_LIBRARY(modelling SHARED
-        NavierStokes.cc
+    NavierStokes.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(modelling PUBLIC "..")
