@@ -30,8 +30,31 @@ struct ldof_data
     
     /**
      * @brief Constructor
+     *
+     * @pre @p f @f$\in [0,6)@f$, @p dof_id @f$\in [0,(N+1)^2)@f$
      */
     ldof_data(const psize &c, const usi f, const usi d): cell_id(c), face_id(f), dof_id(d) {}
+    
+    
+    
+    #ifdef DEBUG
+    static void test()
+    {
+        utilities::Testing t("ldof_data", "struct");
+        
+        {
+            t.new_block("testing construction");
+            ldof_data ldd(1000, 5, 3);
+            std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.dof_id << "\n";
+        }
+        
+        {
+            t.new_block("testing access");
+            const ldof_data ldd(1000, 5, 3);
+            // ldd.cell_id = 100; // error
+        }
+    }
+    #endif
 };
 
 #endif
