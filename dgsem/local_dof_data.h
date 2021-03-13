@@ -1,5 +1,5 @@
 /**
- * @file ldof_data.h
+ * @file local_dof_data.h
  * @brief A data structure to contain all the info required to describe a dof locally
  */
 
@@ -13,7 +13,7 @@
 #include <utilities/testing.h>
 #endif
 /**
- * @struct ldof_data
+ * @struct LocalDoFData
  * @brief This struct is like a container to hold 'l'ocal dof data
  *
  * The struct contains
@@ -23,7 +23,7 @@
  *
  * This is mainly used in BC class for periodic BC setting or for setting spatially varying BC.
  */
-struct ldof_data
+struct LocalDoFData
 {
     psize cell_id;
     usi face_id, dof_id;
@@ -33,24 +33,24 @@ struct ldof_data
      *
      * @pre @p f @f$\in [0,6)@f$, @p dof_id @f$\in [0,(N+1)^2)@f$
      */
-    ldof_data(const psize &c, const usi f, const usi d): cell_id(c), face_id(f), dof_id(d) {}
+    LocalDoFData(const psize &c, const usi f, const usi d): cell_id(c), face_id(f), dof_id(d) {}
     
     
     
     #ifdef DEBUG
     static void test()
     {
-        utilities::Testing t("ldof_data", "struct");
+        utilities::Testing t("LocalDoFData", "struct");
         
         {
             t.new_block("testing construction");
-            ldof_data ldd(1000, 5, 3);
+            LocalDoFData ldd(1000, 5, 3);
             std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.dof_id << "\n";
         }
         
         {
             t.new_block("testing access");
-            const ldof_data ldd(1000, 5, 3);
+            const LocalDoFData ldd(1000, 5, 3);
             // ldd.cell_id = 100; // error
         }
     }

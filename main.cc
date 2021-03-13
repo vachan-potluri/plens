@@ -1,7 +1,7 @@
 #include "modelling/var_enums.h"
 #include "modelling/cavars.h"
 #include "modelling/navier_stokes.h"
-#include "dgsem/ldof_data.h"
+#include "dgsem/local_dof_data.h"
 #include "dgsem/face_dof_info.h"
 #include <iostream>
 
@@ -11,7 +11,7 @@ int main(){
     #ifdef DEBUG
     CAvars::test();
     NavierStokes::test();
-    ldof_data::test();
+    LocalDoFData::test();
     face_dof_info::test();
     #endif
     return 0;
