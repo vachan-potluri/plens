@@ -18,7 +18,8 @@ BC::BC(
 dof_handler_(dof_handler),
 g_cvars_(g_cvars),
 g_avars_(g_avars),
-degree_(dof_handler.get_fe().degree)
+degree_(dof_handler.get_fe().degree),
+fdi_(dof_handler.get_fe().degree)
 {}
 
 /**

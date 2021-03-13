@@ -8,8 +8,13 @@
 
 #include <deal.II/dofs/dof_handler.h>
 
+#include <modelling/state.h>
+#include <modelling/avars.h>
+#include <modelling/cavars.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
+#include <dgsem/ldof_data.h>
+#include <dgsem/face_dof_info.h>
 
 #include <array>
 
@@ -65,6 +70,7 @@ class BC
     
     const DoFHandler<dim>& dof_handler_;
     const usi degree_; // degree of simulation, obtained from dof handler
+    const face_dof_info fdi_;
     
     // Refs to cvars and avars. These are assumed to hold the values of cvars and avars at the time
     // of calling getter functions and thus used in the same to finally give the ghost values. One
@@ -78,6 +84,11 @@ class BC
         const std::array<LA::MPI::Vector, 9>& g_avars
     );
     virtual ~BC();
+    
+    private:
+    void get_state(const ldof_data &ldd, state &s);
+    void get_avars(const ldof_data &ldd, avars &a);
+    void get_cavars(const ldof_data &ldd, cavars &ca);
 };
 
 }
