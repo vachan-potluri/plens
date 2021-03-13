@@ -130,7 +130,7 @@ class face_dof_info
         
         // Face 5
         for(face_dof=0; face_dof<dofs_per_face; face_dof++){
-            cell_dof = (dim-1)*dofs_per_face + face_dof;
+            cell_dof = degree_*dofs_per_face + face_dof;
             maps[5][face_dof] = cell_dof;
             inverse_maps[5][cell_dof] = face_dof;
         }
