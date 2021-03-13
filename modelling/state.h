@@ -12,7 +12,7 @@
 #ifndef STATE_H
 #define STATE_H
 
-using state = std::array<double, 5>; // for conservative/primitive state array/vector
+using State = std::array<double, 5>; // for conservative/primitive state array/vector
 
 #endif
 

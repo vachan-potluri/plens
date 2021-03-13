@@ -39,7 +39,7 @@
 class cavars
 {
     private:
-    state* sp_; // pointer to state
+    State* sp_; // pointer to state
     avars* ap_; // pointer to avars
     bool only_state; // true: only pointer to a state is set, false: both pointers set
     
@@ -48,7 +48,7 @@ class cavars
     /**
      * @brief (Re)Setter for state variable pointer
      */
-    void set_state(state *sp)
+    void set_state(State *sp)
     {
         sp_ = sp;
     }
@@ -69,7 +69,7 @@ class cavars
      * @brief Constructor. Assigns pointers cavars::sp_ and cavars::ap_ to @p sp and @p ap.
      * cavars::only_state is set to false (internally, in cavars::set_avars())
      */
-    cavars(state *sp, avars *ap)
+    cavars(State *sp, avars *ap)
     {
         set_state(sp);
         set_avars(ap);
@@ -82,7 +82,7 @@ class cavars
      *
      * cavars::ap_ is left unset. cavars::only_state is set to true
      */
-    cavars(state *sp)
+    cavars(State *sp)
     {
         set_state(sp);
         only_state = true;
@@ -93,7 +93,7 @@ class cavars
     /**
      * @brief Returns reference to state object held by cavars::sp_
      */
-    state& get_state()
+    State& get_state()
     {
         return *sp_;
     }
@@ -103,7 +103,7 @@ class cavars
     /**
      * @brief Returns reference to state object held by cavars::sp_ (const version)
      */
-    const state& get_state() const
+    const State& get_state() const
     {
         return *sp_;
     }
@@ -148,7 +148,7 @@ class cavars
         utilities::Testing t("cavars", "class");
         {
             t.new_block("Testing construction (both)");
-            state s={1,2,3,4};
+            State s={1,2,3,4};
             avars a={1,2,3,4,5,6,7,8,9};
             cavars ca(&s, &a);
             std::cout << "OK\n";
@@ -156,14 +156,14 @@ class cavars
         
         {
             t.new_block("Testing construction (only state)");
-            state s={1,2,3,4};
+            State s={1,2,3,4};
             cavars ca(&s);
             std::cout << "OK\n";
         }
         
         {
             t.new_block("Value modification testing");
-            state s={1,2,3,4,5};
+            State s={1,2,3,4,5};
             avars a={1,2,3,4,5,6,7,8,9};
             cavars ca(&s, &a);
             
@@ -177,7 +177,7 @@ class cavars
             utilities::print_state(ca.get_state());
             utilities::print_avars(ca.get_avars());
             
-            state &s2 = ca.get_state();
+            State &s2 = ca.get_state();
             avars &a2 = ca.get_avars();
             s2[1] = -100;
             a2[3] = -400;
@@ -188,7 +188,7 @@ class cavars
         
         {
             t.new_block("Out of scope behaviour");
-            state s={1,2,3,4,5};
+            State s={1,2,3,4,5};
             cavars ca(&s);
             {
                 avars a={1,2,3,4,5,6,7,8,9};
@@ -202,21 +202,21 @@ class cavars
         
         {
             t.new_block("Unset avars behaviour");
-            state s={1,2,3,4,5};
+            State s={1,2,3,4,5};
             cavars ca(&s);
             // utilities::print_avars(ca.get_avars()); // throw exception
         }
         
         {
             t.new_block("Const behaviour test");
-            state s={1,2,3,4,5};
+            State s={1,2,3,4,5};
             avars a={1,2,3,4,5,6,7,8,9};
             cavars ca(&s, &a);
             // const state &s2 = ca.get_state();
             // s2[0] = 0; // error
             
             const cavars ca2(&s, &a);
-            const state &s2 = ca.get_state(); // OK
+            const State &s2 = ca.get_state(); // OK
         }
     }
     #endif

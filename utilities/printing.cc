@@ -7,7 +7,7 @@
 
 
 
-void utilities::print_state(const state &cons)
+void utilities::print_state(const State &cons)
 {
     print_array1<5>(cons, "\n", "\n", ", ");
 }

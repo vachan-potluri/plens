@@ -13,7 +13,7 @@
 #define PRINTING_H
 
 namespace utilities{
-    void print_state(const state &cons);
+    void print_state(const State &cons);
     void print_avars(const avars &a);
     
     template <int size>
