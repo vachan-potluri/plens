@@ -1,6 +1,6 @@
 #include "modelling/var_enums.h"
 #include "modelling/cavars.h"
-#include "modelling/NavierStokes.h"
+#include "modelling/navier_stokes.h"
 #include "dgsem/ldof_data.h"
 #include "dgsem/face_dof_info.h"
 #include <iostream>

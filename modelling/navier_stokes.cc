@@ -1,9 +1,9 @@
 /**
- * @file NavierStokes.cc
+ * @file navier_stokes.cc
  * @brief Class for navier stokes solver
  */
 
-#include "NavierStokes.h"
+#include "navier_stokes.h"
 
 
 

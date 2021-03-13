@@ -1,5 +1,5 @@
 /**
- * @file NavierStokes.h
+ * @file navier_stokes.h
  * @brief Class for navier stokes solver
  */
 
