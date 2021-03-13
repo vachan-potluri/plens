@@ -9,6 +9,7 @@
 #include <deal.II/dofs/dof_handler.h>
 
 #include <dgsem/LA.h>
+#include <dgsem/dtype_aliases.h>
 
 #include <array>
 
