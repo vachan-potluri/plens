@@ -2,6 +2,7 @@
 #include "modelling/cavars.h"
 #include "modelling/NavierStokes.h"
 #include "dgsem/ldof_data.h"
+#include "dgsem/face_dof_info.h"
 #include <iostream>
 
 int main(){
@@ -11,6 +12,7 @@ int main(){
     cavars::test();
     NavierStokes::test();
     ldof_data::test();
+    face_dof_info::test();
     #endif
     return 0;
 }
