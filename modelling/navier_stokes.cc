@@ -177,7 +177,7 @@ void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
 void NavierStokes::set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs)
 {
     get_dif_surf_flux = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, State &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->br1_flux(cav1, cav2, dir, f);
     };
@@ -193,7 +193,7 @@ void NavierStokes::set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs)
 void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
 {
     get_dif_vol_flux = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, State &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->br1_flux(cav1, cav2, dir, f);
     };
@@ -212,13 +212,13 @@ void NavierStokes::set_wrappers()
 {
     // surface flux wrappers
     surf_flux_wrappers[0] = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, State &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->get_aux_surf_flux(cav1.get_state(), cav2.get_state(), dir, f);
     }; // aux
     
     surf_flux_wrappers[1] = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, State &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->get_inv_surf_flux(cav1.get_state(), cav2.get_state(), dir, f);
     }; // inv
@@ -455,7 +455,7 @@ void NavierStokes::get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,
  * @pre The conservative state stored in @p cav must have non-zero density
  */
 void NavierStokes::get_dif_flux(
-    const cavars &cav, const dealii::Tensor<1,dim> &dir, State &f
+    const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f
 )
 {
     const State &cons = cav.get_state();
@@ -650,7 +650,7 @@ void NavierStokes::br1_flux(const State &cs1, const State &cs2, State &f)
  * @pre Conservative states associated with @p cav1 and @p cav2 must have positive density
  */
 void NavierStokes::br1_flux(
-    const cavars &cav1, const cavars &cav2, const dealii::Tensor<1,dim> &dir, State &f
+    const CAvars &cav1, const CAvars &cav2, const dealii::Tensor<1,dim> &dir, State &f
 )
 {
     State f1, f2;
@@ -786,7 +786,7 @@ void NavierStokes::test()
         NavierStokes ns("air");
         State cs = {2,4,6,8,9}, f;
         Avars av = {2,3,4,5,6,7,8,9,10};
-        cavars cav(&cs, &av);
+        CAvars cav(&cs, &av);
         dealii::Tensor<1,dim> dir({0,0,1});
         dealii::SymmetricTensor<2,dim> st;
         ns.get_stress_tensor(av, st);
@@ -800,7 +800,7 @@ void NavierStokes::test()
         NavierStokes ns("air");
         State s1 = {2,4,6,8,9}, s2 = {2,6,4,8,10}, f;
         Avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
-        cavars cav1(&s1, &av1), cav2(&s2, &av2);
+        CAvars cav1(&s1, &av1), cav2(&s2, &av2);
         dealii::Tensor<1,dim> dir({0,0,1});
         ns.get_dif_surf_flux(cav1, cav2, dir, f);
         utilities::print_state(f);
@@ -813,7 +813,7 @@ void NavierStokes::test()
         NavierStokes ns("air");
         State s1 = {1.5,-4.5,1.5,3,23}, s2 = {2,-4,4,2,34}, f;
         Avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
-        cavars cav1(&s1, &av1), cav2(&s2, &av2);
+        CAvars cav1(&s1, &av1), cav2(&s2, &av2);
         dealii::Tensor<1,dim> dir({0,0,1});
         for(int stage=0; stage<3; stage++){
             ns.surf_flux_wrappers[stage](cav1, cav2, dir, f);

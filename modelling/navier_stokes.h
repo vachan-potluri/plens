@@ -179,7 +179,7 @@ class NavierStokes
     static void br1_flux(const State &cs1, const State &cs2, State &f); // aux surf & vol flux
     
     static void br1_flux(
-        const cavars &cav1, const cavars &cav2, const dealii::Tensor<1,dim> &dir, State &f
+        const CAvars &cav1, const CAvars &cav2, const dealii::Tensor<1,dim> &dir, State &f
     ); // dif surf & vol flux
     
     public:
@@ -191,13 +191,13 @@ class NavierStokes
         get_inv_vol_flux;
     
     std::function< void (
-        const cavars&, const cavars&, const dealii::Tensor<1,dim>&, State&
+        const CAvars&, const CAvars&, const dealii::Tensor<1,dim>&, State&
     ) >
         get_dif_surf_flux,
         get_dif_vol_flux;
     
     std::array<
-        std::function< void (const cavars&, const cavars&, const dealii::Tensor<1,dim>&, State&) >,
+        std::function< void (const CAvars&, const CAvars&, const dealii::Tensor<1,dim>&, State&) >,
         3
     > surf_flux_wrappers;
     
@@ -244,7 +244,7 @@ class NavierStokes
     ) const;
     
     static void get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st);
-    static void get_dif_flux(const cavars &cav, const dealii::Tensor<1,dim> &dir, State &f);
+    static void get_dif_flux(const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f);
     
     #ifdef DEBUG
     static void test();

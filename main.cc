@@ -9,7 +9,7 @@ int main(){
     std::cout << "Hello, World!\n";
 
     #ifdef DEBUG
-    cavars::test();
+    CAvars::test();
     NavierStokes::test();
     ldof_data::test();
     face_dof_info::test();

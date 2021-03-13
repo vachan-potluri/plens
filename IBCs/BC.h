@@ -88,7 +88,7 @@ class BC
     private:
     void get_state(const ldof_data &ldd, State &s);
     void get_avars(const ldof_data &ldd, Avars &a);
-    void get_cavars(const ldof_data &ldd, cavars &ca);
+    void get_cavars(const ldof_data &ldd, CAvars &ca);
 };
 
 }
