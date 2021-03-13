@@ -9,7 +9,7 @@
 #include <array>
 
 // the ordering will be as described in the enum avar
-using avars = std::array<double, 9>; // 6 stresses and 3 heat fluxes
+using Avars = std::array<double, 9>; // 6 stresses and 3 heat fluxes
 
 #endif
  

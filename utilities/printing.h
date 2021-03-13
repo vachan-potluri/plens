@@ -14,7 +14,7 @@
 
 namespace utilities{
     void print_state(const State &cons);
-    void print_avars(const avars &a);
+    void print_avars(const Avars &a);
     
     template <int size>
     void print_array1(

@@ -40,7 +40,7 @@ class cavars
 {
     private:
     State* sp_; // pointer to state
-    avars* ap_; // pointer to avars
+    Avars* ap_; // pointer to avars
     bool only_state; // true: only pointer to a state is set, false: both pointers set
     
     
@@ -58,7 +58,7 @@ class cavars
     /**
      * @brief (Re)Setter for avars variable pointer
      */
-    void set_avars(avars *ap)
+    void set_avars(Avars *ap)
     {
         ap_ = ap;
         only_state = false;
@@ -69,7 +69,7 @@ class cavars
      * @brief Constructor. Assigns pointers cavars::sp_ and cavars::ap_ to @p sp and @p ap.
      * cavars::only_state is set to false (internally, in cavars::set_avars())
      */
-    cavars(State *sp, avars *ap)
+    cavars(State *sp, Avars *ap)
     {
         set_state(sp);
         set_avars(ap);
@@ -111,9 +111,9 @@ class cavars
     
     
     /**
-     * @brief Returns reference to avars object held by cavars::ap_
+     * @brief Returns reference to Avars object held by cavars::ap_
      */
-    avars& get_avars()
+    Avars& get_avars()
     {
         AssertThrow(
             !only_state,
@@ -129,7 +129,7 @@ class cavars
     /**
      * @brief Returns reference to avars object held by cavars::ap_ (const version)
      */
-    const avars& get_avars() const
+    const Avars& get_avars() const
     {
         AssertThrow(
             !only_state,
@@ -149,7 +149,7 @@ class cavars
         {
             t.new_block("Testing construction (both)");
             State s={1,2,3,4};
-            avars a={1,2,3,4,5,6,7,8,9};
+            Avars a={1,2,3,4,5,6,7,8,9};
             cavars ca(&s, &a);
             std::cout << "OK\n";
         }
@@ -164,7 +164,7 @@ class cavars
         {
             t.new_block("Value modification testing");
             State s={1,2,3,4,5};
-            avars a={1,2,3,4,5,6,7,8,9};
+            Avars a={1,2,3,4,5,6,7,8,9};
             cavars ca(&s, &a);
             
             std::cout << "\nStage 1";
@@ -178,7 +178,7 @@ class cavars
             utilities::print_avars(ca.get_avars());
             
             State &s2 = ca.get_state();
-            avars &a2 = ca.get_avars();
+            Avars &a2 = ca.get_avars();
             s2[1] = -100;
             a2[3] = -400;
             std::cout << "\nStage 3";
@@ -191,7 +191,7 @@ class cavars
             State s={1,2,3,4,5};
             cavars ca(&s);
             {
-                avars a={1,2,3,4,5,6,7,8,9};
+                Avars a={1,2,3,4,5,6,7,8,9};
                 ca.set_avars(&a);
                 std::cout << "avars in scope";
                 utilities::print_avars(ca.get_avars());
@@ -210,7 +210,7 @@ class cavars
         {
             t.new_block("Const behaviour test");
             State s={1,2,3,4,5};
-            avars a={1,2,3,4,5,6,7,8,9};
+            Avars a={1,2,3,4,5,6,7,8,9};
             cavars ca(&s, &a);
             // const state &s2 = ca.get_state();
             // s2[0] = 0; // error

@@ -14,7 +14,7 @@ void utilities::print_state(const State &cons)
 
 
 
-void utilities::print_avars(const avars &a)
+void utilities::print_avars(const Avars &a)
 {
     print_array1<9>(a, "\n", "\n", ", ");
 }
