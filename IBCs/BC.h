@@ -13,7 +13,7 @@
 #include <modelling/cavars.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
-#include <dgsem/ldof_data.h>
+#include <dgsem/local_dof_data.h>
 #include <dgsem/face_dof_info.h>
 
 #include <array>
@@ -56,9 +56,9 @@ using namespace dealii;
  * Keeping in mind periodic BC and spatially varying BC, this base class takes const references to
  * dof handler object, conservative and auxiliary variables. The periodic BC class will additionally
  * have some more entities to be set which will be done by that specific class implementation. In
- * each stage getter, the local information about dof will be taken through ldof_data. This will be
- * inevitable for periodic BCs and for spatially varying BCs. Additionally, the local unit normal
- * will also be required.
+ * each stage getter, the local information about dof will be taken through LocalDoFData. This
+ * will be inevitable for periodic BCs and for spatially varying BCs. Additionally, the local unit
+ * normal will also be required.
  *
  * These BC objects will work for boundaries involving curved manifolds also provided the normal
  * used in the getters is correct.
@@ -70,7 +70,7 @@ class BC
     
     const DoFHandler<dim>& dof_handler_;
     const usi degree_; // degree of simulation, obtained from dof handler
-    const face_dof_info fdi_;
+    const FaceDoFInfo fdi_;
     
     // Refs to cvars and avars. These are assumed to hold the values of cvars and avars at the time
     // of calling getter functions and thus used in the same to finally give the ghost values. One
@@ -86,9 +86,9 @@ class BC
     virtual ~BC();
     
     private:
-    void get_state(const ldof_data &ldd, state &s);
-    void get_avars(const ldof_data &ldd, avars &a);
-    void get_cavars(const ldof_data &ldd, cavars &ca);
+    void get_state(const LocalDoFData &ldd, State &s);
+    void get_avars(const LocalDoFData &ldd, Avars &a);
+    void get_cavars(const LocalDoFData &ldd, CAvars &ca);
 };
 
 }

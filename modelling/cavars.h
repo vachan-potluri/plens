@@ -21,7 +21,7 @@
 #endif
 
 /**
- * @class cavars
+ * @class CAvars
  * @brief A container like class for storing conservative variables and auxiliary variables
  * together.
  *
@@ -31,16 +31,16 @@
  * of this class becomes undefined if the original objects go out of scope. However, in the specific
  * setting of plens, this is not an issue as the usage of this class is only like a wrapper.
  *
- * The read write access is not provided directly, but indirectly through cavars::get_state() and
- * cavars::get_avars(). This is the safest way. And really, I don't think any more fancy
+ * The read write access is not provided directly, but indirectly through CAvars::get_state() and
+ * CAvars::get_avars(). This is the safest way. And really, I don't think any more fancy
  * functionality is required for this, because all the other classes internally use @p state and
  * @p avars directly.
  */
-class cavars
+class CAvars
 {
     private:
-    state* sp_; // pointer to state
-    avars* ap_; // pointer to avars
+    State* sp_; // pointer to state
+    Avars* ap_; // pointer to avars
     bool only_state; // true: only pointer to a state is set, false: both pointers set
     
     
@@ -48,7 +48,7 @@ class cavars
     /**
      * @brief (Re)Setter for state variable pointer
      */
-    void set_state(state *sp)
+    void set_state(State *sp)
     {
         sp_ = sp;
     }
@@ -58,7 +58,7 @@ class cavars
     /**
      * @brief (Re)Setter for avars variable pointer
      */
-    void set_avars(avars *ap)
+    void set_avars(Avars *ap)
     {
         ap_ = ap;
         only_state = false;
@@ -66,10 +66,10 @@ class cavars
     
     public:
     /**
-     * @brief Constructor. Assigns pointers cavars::sp_ and cavars::ap_ to @p sp and @p ap.
-     * cavars::only_state is set to false (internally, in cavars::set_avars())
+     * @brief Constructor. Assigns pointers CAvars::sp_ and CAvars::ap_ to @p sp and @p ap.
+     * CAvars::only_state is set to false (internally, in CAvars::set_avars())
      */
-    cavars(state *sp, avars *ap)
+    CAvars(State *sp, Avars *ap)
     {
         set_state(sp);
         set_avars(ap);
@@ -80,9 +80,9 @@ class cavars
     /**
      * @brief Constructor using state alone.
      *
-     * cavars::ap_ is left unset. cavars::only_state is set to true
+     * CAvars::ap_ is left unset. CAvars::only_state is set to true
      */
-    cavars(state *sp)
+    CAvars(State *sp)
     {
         set_state(sp);
         only_state = true;
@@ -91,9 +91,9 @@ class cavars
     
     
     /**
-     * @brief Returns reference to state object held by cavars::sp_
+     * @brief Returns reference to state object held by CAvars::sp_
      */
-    state& get_state()
+    State& get_state()
     {
         return *sp_;
     }
@@ -101,9 +101,9 @@ class cavars
     
     
     /**
-     * @brief Returns reference to state object held by cavars::sp_ (const version)
+     * @brief Returns reference to state object held by CAvars::sp_ (const version)
      */
-    const state& get_state() const
+    const State& get_state() const
     {
         return *sp_;
     }
@@ -111,9 +111,9 @@ class cavars
     
     
     /**
-     * @brief Returns reference to avars object held by cavars::ap_
+     * @brief Returns reference to Avars object held by CAvars::ap_
      */
-    avars& get_avars()
+    Avars& get_avars()
     {
         AssertThrow(
             !only_state,
@@ -127,9 +127,9 @@ class cavars
     
     
     /**
-     * @brief Returns reference to avars object held by cavars::ap_ (const version)
+     * @brief Returns reference to avars object held by CAvars::ap_ (const version)
      */
-    const avars& get_avars() const
+    const Avars& get_avars() const
     {
         AssertThrow(
             !only_state,
@@ -145,27 +145,27 @@ class cavars
     #ifdef DEBUG
     static void test()
     {
-        utilities::Testing t("cavars", "class");
+        utilities::Testing t("CAvars", "class");
         {
             t.new_block("Testing construction (both)");
-            state s={1,2,3,4};
-            avars a={1,2,3,4,5,6,7,8,9};
-            cavars ca(&s, &a);
+            State s={1,2,3,4};
+            Avars a={1,2,3,4,5,6,7,8,9};
+            CAvars ca(&s, &a);
             std::cout << "OK\n";
         }
         
         {
             t.new_block("Testing construction (only state)");
-            state s={1,2,3,4};
-            cavars ca(&s);
+            State s={1,2,3,4};
+            CAvars ca(&s);
             std::cout << "OK\n";
         }
         
         {
             t.new_block("Value modification testing");
-            state s={1,2,3,4,5};
-            avars a={1,2,3,4,5,6,7,8,9};
-            cavars ca(&s, &a);
+            State s={1,2,3,4,5};
+            Avars a={1,2,3,4,5,6,7,8,9};
+            CAvars ca(&s, &a);
             
             std::cout << "\nStage 1";
             utilities::print_state(ca.get_state());
@@ -177,8 +177,8 @@ class cavars
             utilities::print_state(ca.get_state());
             utilities::print_avars(ca.get_avars());
             
-            state &s2 = ca.get_state();
-            avars &a2 = ca.get_avars();
+            State &s2 = ca.get_state();
+            Avars &a2 = ca.get_avars();
             s2[1] = -100;
             a2[3] = -400;
             std::cout << "\nStage 3";
@@ -188,10 +188,10 @@ class cavars
         
         {
             t.new_block("Out of scope behaviour");
-            state s={1,2,3,4,5};
-            cavars ca(&s);
+            State s={1,2,3,4,5};
+            CAvars ca(&s);
             {
-                avars a={1,2,3,4,5,6,7,8,9};
+                Avars a={1,2,3,4,5,6,7,8,9};
                 ca.set_avars(&a);
                 std::cout << "avars in scope";
                 utilities::print_avars(ca.get_avars());
@@ -202,21 +202,21 @@ class cavars
         
         {
             t.new_block("Unset avars behaviour");
-            state s={1,2,3,4,5};
-            cavars ca(&s);
+            State s={1,2,3,4,5};
+            CAvars ca(&s);
             // utilities::print_avars(ca.get_avars()); // throw exception
         }
         
         {
             t.new_block("Const behaviour test");
-            state s={1,2,3,4,5};
-            avars a={1,2,3,4,5,6,7,8,9};
-            cavars ca(&s, &a);
+            State s={1,2,3,4,5};
+            Avars a={1,2,3,4,5,6,7,8,9};
+            CAvars ca(&s, &a);
             // const state &s2 = ca.get_state();
             // s2[0] = 0; // error
             
-            const cavars ca2(&s, &a);
-            const state &s2 = ca.get_state(); // OK
+            const CAvars ca2(&s, &a);
+            const State &s2 = ca.get_state(); // OK
         }
     }
     #endif

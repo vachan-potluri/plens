@@ -1,9 +1,9 @@
 /**
- * @file NavierStokes.cc
+ * @file navier_stokes.cc
  * @brief Class for navier stokes solver
  */
 
-#include "NavierStokes.h"
+#include "navier_stokes.h"
 
 
 
@@ -110,7 +110,7 @@ void NavierStokes::set_modelling_params(
 void NavierStokes::set_aux_surf_flux_scheme(const aux_surf_flux_scheme asfs)
 {
     get_aux_surf_flux = [=](
-        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f){
+        const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f){
         this->br1_flux(cs1, cs2, f); // dir unused for BR1
     };
 }
@@ -125,7 +125,7 @@ void NavierStokes::set_aux_surf_flux_scheme(const aux_surf_flux_scheme asfs)
 void NavierStokes::set_aux_vol_flux_scheme(const aux_vol_flux_scheme avfs)
 {
     get_aux_vol_flux = [=](
-        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f){
+        const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f){
         this->br1_flux(cs1, cs2, f); // dir unused for BR1
     };
 }
@@ -139,12 +139,12 @@ void NavierStokes::set_aux_vol_flux_scheme(const aux_vol_flux_scheme avfs)
 void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
 {
     if(isfs == inv_surf_flux_scheme::hllc){
-        inv_surf_xflux = [=](const state &lcs, const state &rcs, state &f){
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->hllc_xflux(lcs, rcs, f);
         };
     }
     else{
-        inv_surf_xflux = [=](const state &lcs, const state &rcs, state &f){
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->rusanov_xflux(lcs, rcs, f);
         };
     }
@@ -162,7 +162,7 @@ void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
 {
     // only one option available currently
     get_inv_vol_flux = [=](
-        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f){
+        const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f){
         this->chandrashekhar_flux(cs1, cs2, dir, f);
     };
 }
@@ -177,7 +177,7 @@ void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
 void NavierStokes::set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs)
 {
     get_dif_surf_flux = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->br1_flux(cav1, cav2, dir, f);
     };
@@ -193,7 +193,7 @@ void NavierStokes::set_dif_surf_flux_scheme(const dif_surf_flux_scheme dsfs)
 void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
 {
     get_dif_vol_flux = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->br1_flux(cav1, cav2, dir, f);
     };
@@ -212,13 +212,13 @@ void NavierStokes::set_wrappers()
 {
     // surface flux wrappers
     surf_flux_wrappers[0] = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->get_aux_surf_flux(cav1.get_state(), cav2.get_state(), dir, f);
     }; // aux
     
     surf_flux_wrappers[1] = [=](
-        const cavars &cav1, const cavars cav2, const dealii::Tensor<1,dim> &dir, state &f
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
     ){
         this->get_inv_surf_flux(cav1.get_state(), cav2.get_state(), dir, f);
     }; // inv
@@ -231,7 +231,7 @@ void NavierStokes::set_wrappers()
 /**
  * @brief Asserts positivity of density and thermal energy of given state
  */
-void NavierStokes::assert_positivity(const state &cons)
+void NavierStokes::assert_positivity(const State &cons)
 {
     AssertThrow(
         cons[0] > 0,
@@ -254,7 +254,7 @@ void NavierStokes::assert_positivity(const state &cons)
  *
  * @pre <tt>cons[0]</tt> must be positive
  */
-double NavierStokes::get_e(const state &cons)
+double NavierStokes::get_e(const State &cons)
 {
     double ske=0; // specific kinetic energy
     for(int dir=0; dir<dim; dir++){
@@ -279,7 +279,7 @@ double NavierStokes::get_e(const state &cons)
  *
  * @pre <tt>cons[0]</tt> must be positive
  */
-double NavierStokes::get_p(const state &cons) const
+double NavierStokes::get_p(const State &cons) const
 {
     double ske=0; // specific kinetic energy
     for(int dir=0; dir<dim; dir++){
@@ -300,7 +300,7 @@ double NavierStokes::get_p(const state &cons) const
  *
  * @pre @p cons must pass the test of NavierStokes::assert_positivity()
  */
-double NavierStokes::get_a(const state &cons) const
+double NavierStokes::get_a(const State &cons) const
 {
     return sqrt(gma_*get_p(cons)/cons[0]);
 }
@@ -314,7 +314,7 @@ double NavierStokes::get_a(const state &cons) const
  * @pre @p dir has to be a unit vector
  */
 void NavierStokes::get_inv_flux(
-    const state &cons, const dealii::Tensor<1,dim> &dir, state &f
+    const State &cons, const dealii::Tensor<1,dim> &dir, State &f
 ) const
 {
     dealii::Tensor<1,dim> vel; // velocity vector
@@ -361,7 +361,7 @@ void NavierStokes::get_inv_flux(
  * @pre @p normal has to be a unit vector
  */
 void NavierStokes::get_inv_surf_flux(
-    const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
+    const State &ocs, const State &ncs, const dealii::Tensor<1,dim> &normal, State &f
 ) const
 {
     // Step 1: rotate coordinate system
@@ -402,7 +402,7 @@ void NavierStokes::get_inv_surf_flux(
     R.Tvmult(osmom_r, osmom); // osmom_r = R^{-1} * osmom, R^T = R^{-1}
     R.Tvmult(nsmom_r, nsmom);
     
-    state ocs_r, ncs_r; // rotated states
+    State ocs_r, ncs_r; // rotated states
     ocs_r[0] = ocs[0];
     ncs_r[0] = ncs[0];
     for(int d=0; d<dim; d++){
@@ -413,7 +413,7 @@ void NavierStokes::get_inv_surf_flux(
     ncs_r[4] = ncs[4];
     
     // Step 3: get normal flux wrt rotated coordinate system
-    state f_r;
+    State f_r;
     inv_surf_xflux(ocs_r, ncs_r, f_r);
     
     // Step 4: rotate back coordinate system and obtain the appropriate momentum components
@@ -432,7 +432,7 @@ void NavierStokes::get_inv_surf_flux(
 /**
  * @brief Gives the symmetric stress tensor based on avars provided
  */
-void NavierStokes::get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,dim> &st)
+void NavierStokes::get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st)
 {
     int i=0;
     for(int row=0; row<dim; row++){
@@ -455,11 +455,11 @@ void NavierStokes::get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,
  * @pre The conservative state stored in @p cav must have non-zero density
  */
 void NavierStokes::get_dif_flux(
-    const cavars &cav, const dealii::Tensor<1,dim> &dir, state &f
+    const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f
 )
 {
-    const state &cons = cav.get_state();
-    const avars &av = cav.get_avars();
+    const State &cons = cav.get_state();
+    const Avars &av = cav.get_avars();
     dealii::SymmetricTensor<2,dim> st;
     get_stress_tensor(av, st);
     
@@ -495,7 +495,7 @@ void NavierStokes::get_dif_flux(
  *
  * @pre @p lcs and @p rcs must pass the test of NavierStokes::assert_positivity()
  */
-void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) const
+void NavierStokes::hllc_xflux(const State &lcs, const State &rcs, State &f) const
 {
     dealii::Tensor<1,dim> xdir({1,0,0});
     // wave speed estimates
@@ -519,7 +519,7 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
     else if(s>0){
         // left star state at interface
         double temp = (sl-ul)/(sl-s);
-        state lss = {
+        State lss = {
             temp*lcs[0],
             temp*lcs[0]*s,
             temp*lcs[2],
@@ -527,7 +527,7 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
             temp*( lcs[4] + (s-ul)*( lcs[0]*s + pl/(sl-ul) ))
         }; // left star state
         
-        state lf; // flux based on lcs
+        State lf; // flux based on lcs
         get_inv_flux(lcs, xdir, lf);
         
         for(cvar var: cvar_list) f[var] = lf[var] + sl*(lss[var] - lcs[var]);
@@ -535,7 +535,7 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
     else if(sr>0){
         // right star state at interface
         double temp = (sr-ur)/(sr-s);
-        state rss = {
+        State rss = {
             temp*rcs[0],
             temp*rcs[0]*s,
             temp*rcs[2],
@@ -543,7 +543,7 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
             temp*( rcs[4] + (s-ur)*( rcs[0]*s + pr/(sr-ur) ))
         }; // right star state
         
-        state rf; // flux based on rcs
+        State rf; // flux based on rcs
         get_inv_flux(rcs, xdir, rf);
         
         for(cvar var: cvar_list) f[var] = rf[var] + sr*(rss[var] - rcs[var]);
@@ -563,11 +563,11 @@ void NavierStokes::hllc_xflux(const state &lcs, const state &rcs, state &f) cons
  *
  * @pre @p lcs and @p rcs must pass the test of NavierStokes::assert_positivity()
  */
-void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) const
+void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) const
 {
     dealii::Tensor<1,dim> xdir({1,0,0});
     
-    state lf, rf; // left and right conservative fluxes
+    State lf, rf; // left and right conservative fluxes
     double al = get_a(lcs), ar = get_a(rcs); // left and right sound speeds
     double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // left & right flow speeds
     double S; // the "single wave" speed
@@ -591,7 +591,7 @@ void NavierStokes::rusanov_xflux(const state &lcs, const state &rcs, state &f) c
  * @pre @p cs1 and @p cs2 must pass the test of NavierStokes::assert_positivity()
  */
 void NavierStokes::chandrashekhar_flux(
-    const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
+    const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
 ) const
 {
     double p1 = get_p(cs1), p2 = get_p(cs2);
@@ -633,7 +633,7 @@ void NavierStokes::chandrashekhar_flux(
  *
  * @note Positivity of @p cs1 and @p cs2 is not checked
  */
-void NavierStokes::br1_flux(const state &cs1, const state &cs2, state &f)
+void NavierStokes::br1_flux(const State &cs1, const State &cs2, State &f)
 {
     for(cvar var: cvar_list) f[var] = 0.5*(cs1[var] + cs2[var]);
 }
@@ -650,10 +650,10 @@ void NavierStokes::br1_flux(const state &cs1, const state &cs2, state &f)
  * @pre Conservative states associated with @p cav1 and @p cav2 must have positive density
  */
 void NavierStokes::br1_flux(
-    const cavars &cav1, const cavars &cav2, const dealii::Tensor<1,dim> &dir, state &f
+    const CAvars &cav1, const CAvars &cav2, const dealii::Tensor<1,dim> &dir, State &f
 )
 {
-    state f1, f2;
+    State f1, f2;
     get_dif_flux(cav1, dir, f1);
     get_dif_flux(cav2, dir, f2);
     for(cvar var: cvar_list) f[var] = 0.5*(f1[var] + f2[var]);
@@ -691,12 +691,12 @@ void NavierStokes::test()
     {
         t.new_block("testing get_inv_flux()");
         NavierStokes ns("air");
-        state cons = {2,2,4,6,15};
+        State cons = {2,2,4,6,15};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
         std::cout << "Energy " << ns.get_e(cons) << "\n";
         ns.assert_positivity(cons);
         
-        std::array<state, 3> fluxes;
+        std::array<State, 3> fluxes;
         std::array<dealii::Tensor<1,dim>, 3> dir_vecs; // initialised to 0
         for(int d=0; d<dim; d++) dir_vecs[d][d] = 1;
         for(int d=0; d<dim; d++){
@@ -709,7 +709,7 @@ void NavierStokes::test()
     {
         t.new_block("testing hllc_xflux() and rusanov_xflux()");
         NavierStokes ns("air");
-        state lcs = {1.5,3,1.5,4.5,23}, rcs = {2,2,4,4,34}, f; // from WJ-02-Mar-2021
+        State lcs = {1.5,3,1.5,4.5,23}, rcs = {2,2,4,4,34}, f; // from WJ-02-Mar-2021
         ns.hllc_xflux(lcs, rcs, f);
         std::cout << "HLLC x flux";
         utilities::print_state(f);
@@ -724,7 +724,7 @@ void NavierStokes::test()
         NavierStokes ns("air");
         
         std::cout << "\nTrivial case: normal along x dir\n";
-        state ocs = {1.5,3,1.5,4.5,23}, ncs = {2,2,4,4,34}, f; // from previous block
+        State ocs = {1.5,3,1.5,4.5,23}, ncs = {2,2,4,4,34}, f; // from previous block
         dealii::Tensor<1,dim> dir({1,0,0});
         ns.get_inv_surf_flux(ocs, ncs, dir, f);
         std::cout << "Inviscid surface flux";
@@ -773,7 +773,7 @@ void NavierStokes::test()
     {
         t.new_block("testing aux surf and vol functions");
         NavierStokes ns("air");
-        state cs1={3,5,7,9,11}, cs2={33,55,77,99,1111}, f;
+        State cs1={3,5,7,9,11}, cs2={33,55,77,99,1111}, f;
         dealii::Tensor<1,3> dir({10,20,30}); // invalid, but doesn't matter for BR1 scheme
         ns.get_aux_surf_flux(cs1, cs2, dir, f);
         utilities::print_state(f);
@@ -784,9 +784,9 @@ void NavierStokes::test()
     {
         t.new_block("testing get_stress_tensor() and get_dif_flux()");
         NavierStokes ns("air");
-        state cs = {2,4,6,8,9}, f;
-        avars av = {2,3,4,5,6,7,8,9,10};
-        cavars cav(&cs, &av);
+        State cs = {2,4,6,8,9}, f;
+        Avars av = {2,3,4,5,6,7,8,9,10};
+        CAvars cav(&cs, &av);
         dealii::Tensor<1,dim> dir({0,0,1});
         dealii::SymmetricTensor<2,dim> st;
         ns.get_stress_tensor(av, st);
@@ -798,9 +798,9 @@ void NavierStokes::test()
     {
         t.new_block("testing get_dif_surf/vol_flux()");
         NavierStokes ns("air");
-        state s1 = {2,4,6,8,9}, s2 = {2,6,4,8,10}, f;
-        avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
-        cavars cav1(&s1, &av1), cav2(&s2, &av2);
+        State s1 = {2,4,6,8,9}, s2 = {2,6,4,8,10}, f;
+        Avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
+        CAvars cav1(&s1, &av1), cav2(&s2, &av2);
         dealii::Tensor<1,dim> dir({0,0,1});
         ns.get_dif_surf_flux(cav1, cav2, dir, f);
         utilities::print_state(f);
@@ -811,9 +811,9 @@ void NavierStokes::test()
     {
         t.new_block("testing surface flux wrappers");
         NavierStokes ns("air");
-        state s1 = {1.5,-4.5,1.5,3,23}, s2 = {2,-4,4,2,34}, f;
-        avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
-        cavars cav1(&s1, &av1), cav2(&s2, &av2);
+        State s1 = {1.5,-4.5,1.5,3,23}, s2 = {2,-4,4,2,34}, f;
+        Avars av1 = {2,3,4,5,6,7,8,9,10}, av2 = {12,13,14,15,16,17,18,19,110};
+        CAvars cav1(&s1, &av1), cav2(&s2, &av2);
         dealii::Tensor<1,dim> dir({0,0,1});
         for(int stage=0; stage<3; stage++){
             ns.surf_flux_wrappers[stage](cav1, cav2, dir, f);
