@@ -12,7 +12,7 @@ int main(){
     CAvars::test();
     NavierStokes::test();
     LocalDoFData::test();
-    face_dof_info::test();
+    FaceDoFInfo::test();
     #endif
     return 0;
 }

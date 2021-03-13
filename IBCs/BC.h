@@ -70,7 +70,7 @@ class BC
     
     const DoFHandler<dim>& dof_handler_;
     const usi degree_; // degree of simulation, obtained from dof handler
-    const face_dof_info fdi_;
+    const FaceDoFInfo fdi_;
     
     // Refs to cvars and avars. These are assumed to hold the values of cvars and avars at the time
     // of calling getter functions and thus used in the same to finally give the ghost values. One

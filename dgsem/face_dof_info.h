@@ -14,7 +14,7 @@
 #endif
 
 /**
- * @class face_dof_info
+ * @class FaceDoFInfo
  * @brief This class contains maps that map face-local dof id to cell-local dof id
  *
  * This data comes in handy when looping over dofs on a face. This is mostly required for surface
@@ -26,7 +26,7 @@ for(auto &cell: dof_handler.active_cell_iterators()){
     cell->get_dof_indices(dof_ids);
     for(usi face_id=0; face_id<6; face_id++){
         for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
-            usi ldof = face_dof_info.maps[face_id][face_dof]; // get cell local id of current dof
+            usi ldof = FaceDoFInfo.maps[face_id][face_dof]; // get cell local id of current dof
             usi gdof = dof_ids[ldof]; // global id of current dof
             state cons; // conservative state at current dof
             for(cvar var: cvar_list) cons[var] = g_cvars[var][gdof];
@@ -37,7 +37,7 @@ for(auto &cell: dof_handler.active_cell_iterators()){
  * The maps themselves are easy to construct. See the note <b>pens2D to plens</b> and also see
  * [FE_DGQ](https://www.dealii.org/current/doxygen/deal.II/classFE__DGQ.html) class.
  */
-class face_dof_info
+class FaceDoFInfo
 {
     public:
     static constexpr usi dim = 3; // dimension
@@ -57,7 +57,7 @@ class face_dof_info
     /**
      * @brief Constructor. Sets the degree of FE interpolation.
      */
-    face_dof_info(const usi degree): degree_(degree)
+    FaceDoFInfo(const usi degree): degree_(degree)
     {
         form_maps();
     }
@@ -163,23 +163,23 @@ class face_dof_info
     public:
     static void test()
     {
-        utilities::Testing t("class", "face_dof_info");
+        utilities::Testing t("class", "FaceDoFInfo");
         
         {
             t.new_block("degree 1 maps");
-            face_dof_info fdi(1);
+            FaceDoFInfo fdi(1);
             fdi.print_maps();
         }
         
         {
             t.new_block("degree 2 maps");
-            face_dof_info fdi(2);
+            FaceDoFInfo fdi(2);
             fdi.print_maps();
         }
         
         {
             t.new_block("degree 3 maps");
-            face_dof_info fdi(3);
+            FaceDoFInfo fdi(3);
             fdi.print_maps();
         }
     }
