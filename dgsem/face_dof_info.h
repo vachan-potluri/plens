@@ -41,7 +41,7 @@ class FaceDoFInfo
 {
     public:
     static constexpr usi dim = 3; // dimension
-    const usi degree_;
+    const usi degree;
     /**
      * @brief Forward maps. Access: `maps[face id][face-local dof id]`. The result is cell-local dof
      * id.
@@ -57,7 +57,7 @@ class FaceDoFInfo
     /**
      * @brief Constructor. Sets the degree of FE interpolation.
      */
-    FaceDoFInfo(const usi degree): degree_(degree)
+    FaceDoFInfo(const usi deg): degree(deg)
     {
         form_maps();
     }
@@ -78,7 +78,7 @@ class FaceDoFInfo
      */
     void form_maps()
     {
-        const usi dofs_per_face = (degree_+1)*(degree_+1);
+        const usi dofs_per_face = (degree+1)*(degree+1);
         
         // set size for maps; not reqd for inverse_maps
         for(usi face_id=0; face_id<2*dim; face_id++) maps[face_id].resize(dofs_per_face);
@@ -87,22 +87,22 @@ class FaceDoFInfo
         
         // Face 0
         for(face_dof=0; face_dof<dofs_per_face; face_dof++){
-            cell_dof = (degree_+1)*face_dof;
+            cell_dof = (degree+1)*face_dof;
             maps[0][face_dof] = cell_dof;
             inverse_maps[0][cell_dof] = face_dof;
         }
         
         // Face 1
         for(face_dof=0; face_dof<dofs_per_face; face_dof++){
-            cell_dof = degree_ + (degree_+1)*face_dof;
+            cell_dof = degree + (degree+1)*face_dof;
             maps[1][face_dof] = cell_dof;
             inverse_maps[1][cell_dof] = face_dof;
         }
         
         // Face 2
         face_dof = 0;
-        for(usi i=0; i<=degree_; i++){
-            for(usi j=0; j<=degree_; j++){
+        for(usi i=0; i<=degree; i++){
+            for(usi j=0; j<=degree; j++){
                 cell_dof = i*dofs_per_face + j;
                 maps[2][face_dof] = cell_dof;
                 inverse_maps[2][cell_dof] = face_dof;
@@ -112,9 +112,9 @@ class FaceDoFInfo
         
         // Face 3
         face_dof = 0;
-        for(usi i=0; i<=degree_; i++){
-            for(usi j=0; j<=degree_; j++){
-                cell_dof = (degree_+1)*degree_ + i*dofs_per_face + j;
+        for(usi i=0; i<=degree; i++){
+            for(usi j=0; j<=degree; j++){
+                cell_dof = (degree+1)*degree + i*dofs_per_face + j;
                 maps[3][face_dof] = cell_dof;
                 inverse_maps[3][cell_dof] = face_dof;
                 face_dof++;
@@ -130,7 +130,7 @@ class FaceDoFInfo
         
         // Face 5
         for(face_dof=0; face_dof<dofs_per_face; face_dof++){
-            cell_dof = degree_*dofs_per_face + face_dof;
+            cell_dof = degree*dofs_per_face + face_dof;
             maps[5][face_dof] = cell_dof;
             inverse_maps[5][cell_dof] = face_dof;
         }
@@ -142,7 +142,7 @@ class FaceDoFInfo
     private:
     void print_maps()
     {
-        const usi dofs_per_face = (degree_+1)*(degree_+1);
+        const usi dofs_per_face = (degree+1)*(degree+1);
         
         std::cout << "Maps\n";
         for(usi face_id=0; face_id<6; face_id++){
