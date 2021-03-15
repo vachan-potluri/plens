@@ -22,7 +22,7 @@ void Testing::begin() const
 {
     std::cout << "\n\n\n\n"
     << "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n\n"
-    << "Testing " << type_ << " '" << name_ << "'\n\n"
+    << "Testing " << name_ << " " << type_ << "\n\n"
     << "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n\n";
 }
 
