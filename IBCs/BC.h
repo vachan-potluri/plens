@@ -68,20 +68,20 @@ class BC
     public:
     static constexpr int dim = 3; // dimension
     
-    const DoFHandler<dim>& dof_handler_;
-    const usi degree_; // degree of simulation, obtained from dof handler
-    const FaceDoFInfo fdi_;
+    const DoFHandler<dim>& dof_handler;
+    const usi degree; // degree of simulation, obtained from dof handler
+    const FaceDoFInfo fdi;
     
     // Refs to cvars and avars. These are assumed to hold the values of cvars and avars at the time
     // of calling getter functions and thus used in the same to finally give the ghost values. One
     // way to set these correectly is to assign current RK step solutions
-    const std::array<LA::MPI::Vector, 5>& g_cvars_;
-    const std::array<LA::MPI::Vector, 9>& g_avars_;
+    const std::array<LA::MPI::Vector, 5>& g_cvars;
+    const std::array<LA::MPI::Vector, 9>& g_avars;
     
     BC(
-        const DoFHandler<dim>& dof_handler,
-        const std::array<LA::MPI::Vector, 5>& g_cvars,
-        const std::array<LA::MPI::Vector, 9>& g_avars
+        const DoFHandler<dim>& dh,
+        const std::array<LA::MPI::Vector, 5>& gcv,
+        const std::array<LA::MPI::Vector, 9>& gav
     );
     virtual ~BC();
     

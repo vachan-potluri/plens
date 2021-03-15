@@ -11,15 +11,15 @@ using namespace BCs;
  * @brief Constructor. Takes and sets the relevant references.
  */
 BC::BC(
-    const DoFHandler<dim>& dof_handler,
-    const std::array<LA::MPI::Vector, 5>& g_cvars,
-    const std::array<LA::MPI::Vector, 9>& g_avars
+    const DoFHandler<dim>& dh,
+    const std::array<LA::MPI::Vector, 5>& gcv,
+    const std::array<LA::MPI::Vector, 9>& gav
 ):
-dof_handler_(dof_handler),
-g_cvars_(g_cvars),
-g_avars_(g_avars),
-degree_(dof_handler.get_fe().degree),
-fdi_(dof_handler.get_fe().degree)
+dof_handler(dh),
+g_cvars(gcv),
+g_avars(gav),
+degree(dh.get_fe().degree),
+fdi(dh.get_fe().degree)
 {}
 
 /**
