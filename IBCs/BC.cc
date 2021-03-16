@@ -28,6 +28,8 @@ fdi(dh.get_fe().degree)
 
 /**
  * @brief Default destructor.
+ *
+ * This destructor is not made pure virtual to allow testing of the base class BC.
  */
 BC::~BC() = default;
 
@@ -76,13 +78,41 @@ psize BC::get_global_dof_id(const LocalDoFData &ldd) const
 /**
  * @brief Gives state @p s based on @p ldd
  *
- * Internally, the function uses BC::cell_map_ to get the cell accessor and then the relevant 'cell'
- * functions to get the global dof index. The global dof index is used with BC::g_cvars to get the
- * state.
+ * Internally uses BC::get_global_dof_id()
  */
 void BC::get_state(const LocalDoFData &ldd, State &s) const
 {
     const psize gdof_id = get_global_dof_id(ldd);
     for(cvar var: cvar_list) s[var] = g_cvars[var][gdof_id];
+}
+
+
+
+/**
+ * @brief Gives avars @p a based on @p ldd
+ *
+ * Internally uses BC::get_global_dof_id()
+ */
+void BC::get_avars(const LocalDoFData &ldd, Avars &a) const
+{
+    const psize gdof_id = get_global_dof_id(ldd);
+    for(avar var: avar_list) a[var] = g_avars[var][gdof_id];
+}
+
+
+
+/**
+ * @brief Gives cavars @p ca based on @p ldd
+ *
+ * Internally uses BC::get_global_dof_id()
+ */
+void BC::get_cavars(const LocalDoFData &ldd, CAvars &ca) const
+{
+    const psize gdof_id = get_global_dof_id(ldd);
+    
+    State& s = ca.get_state();
+    Avars& a = ca.get_avars();
+    for(cvar var: cvar_list) s[var] = g_cvars[var][gdof_id];
+    for(avar var: avar_list) a[var] = g_avars[var][gdof_id];
 }
 
