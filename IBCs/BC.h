@@ -65,10 +65,13 @@ using namespace dealii;
  */
 class BC
 {
-    private:
+    protected:
     /**
-     * A map between cell id and cell iterator. This will work only for unrefined grids. The
-     * relation satisfied by a pair @p p in this map is: `p.second->index() = p.first`.
+     * A map between cell id and cell iterator for owned cells.
+     *
+     * This will work only for unrefined grids. The relation satisfied by a pair @p p in this map
+     * is: `p.second->index() = p.first`. For hp grids, a cell index cannot uniquely determine a
+     * cell iterator.
      */
     std::map<psize, DoFHandler<dim>::active_cell_iterator> cell_map_;
     
