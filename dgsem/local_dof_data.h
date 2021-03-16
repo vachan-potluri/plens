@@ -28,14 +28,16 @@
 struct LocalDoFData
 {
     psize cell_id;
-    usi face_id, dof_id;
+    usi face_id, face_dof_id;
     
     /**
      * @brief Constructor
      *
      * @pre @p f @f$\in [0,6)@f$, @p dof_id @f$\in [0,(N+1)^2)@f$
      */
-    LocalDoFData(const psize &c, const usi f, const usi d): cell_id(c), face_id(f), dof_id(d) {}
+    LocalDoFData(const psize &c, const usi f, const usi d):
+        cell_id(c), face_id(f), face_dof_id(d)
+    {}
     
     
     
@@ -47,7 +49,7 @@ struct LocalDoFData
         {
             t.new_block("testing construction");
             LocalDoFData ldd(1000, 5, 3);
-            std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.dof_id << "\n";
+            std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.face_dof_id << "\n";
         }
         
         {
