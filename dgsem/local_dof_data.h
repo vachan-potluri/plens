@@ -14,7 +14,7 @@
 #endif
 /**
  * @struct LocalDoFData
- * @brief This struct is like a container to hold 'l'ocal dof data
+ * @brief This struct is like a container to hold a face's 'l'ocal dof data
  *
  * The struct contains
  * 1. Cell id
@@ -22,6 +22,8 @@
  * 3. DoF id wrt face @f$[0, (N+1)^2)@f$
  *
  * This is mainly used in BC class for periodic BC setting or for setting spatially varying BC.
+ * Often, this is used in conjunction with FaceDoFInfo and DoFHandler<dim>::cell_iterator to get
+ * the global dof from the stored local data.
  */
 struct LocalDoFData
 {
