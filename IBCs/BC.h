@@ -18,6 +18,7 @@
 #include <dgsem/face_dof_info.h>
 
 #include <array>
+#include <map>
 
 namespace BCs{
 
@@ -99,6 +100,7 @@ class BC
     
     protected:
     void form_cell_map();
+    psize get_global_dof_id(const LocalDoFData &ldd) const;
     void get_state(const LocalDoFData &ldd, State &s) const;
     void get_avars(const LocalDoFData &ldd, Avars &a) const;
     void get_cavars(const LocalDoFData &ldd, CAvars &ca) const;
