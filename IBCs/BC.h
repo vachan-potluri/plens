@@ -7,6 +7,7 @@
 #define BC_H
 
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_accessor.h>
 
 #include <modelling/state.h>
 #include <modelling/avars.h>
@@ -65,16 +66,6 @@ using namespace dealii;
  */
 class BC
 {
-    protected:
-    /**
-     * A map between cell id and cell iterator for owned cells.
-     *
-     * This will work only for unrefined grids. The relation satisfied by a pair @p p in this map
-     * is: `p.second->index() = p.first`. For hp grids, a cell index cannot uniquely determine a
-     * cell iterator.
-     */
-    std::map<psize, DoFHandler<dim>::active_cell_iterator> cell_map_;
-    
     public:
     static constexpr int dim = 3; // dimension
     
@@ -88,6 +79,17 @@ class BC
     const std::array<LA::MPI::Vector, 5>& g_cvars;
     const std::array<LA::MPI::Vector, 9>& g_avars;
     
+    protected:
+    /**
+     * A map between cell id and cell iterator for owned cells.
+     *
+     * This will work only for unrefined grids. The relation satisfied by a pair @p p in this map
+     * is: `p.second->index() = p.first`. For hp grids, a cell index cannot uniquely determine a
+     * cell iterator.
+     */
+    std::map<psize, DoFHandler<dim>::active_cell_iterator> cell_map_;
+    
+    public:
     BC(
         const DoFHandler<dim>& dh,
         const std::array<LA::MPI::Vector, 5>& gcv,
@@ -95,7 +97,7 @@ class BC
     );
     virtual ~BC();
     
-    private:
+    protected:
     void form_cell_map();
     void get_state(const LocalDoFData &ldd, State &s) const;
     void get_avars(const LocalDoFData &ldd, Avars &a) const;
