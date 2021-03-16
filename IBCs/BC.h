@@ -65,6 +65,13 @@ using namespace dealii;
  */
 class BC
 {
+    private:
+    /**
+     * A map between cell id and cell iterator. This will work only for unrefined grids. The
+     * relation satisfied by a pair @p p in this map is: `p.second->index() = p.first`.
+     */
+    std::map<psize, DoFHandler<dim>::active_cell_iterator> cell_map_;
+    
     public:
     static constexpr int dim = 3; // dimension
     
@@ -86,9 +93,10 @@ class BC
     virtual ~BC();
     
     private:
-    void get_state(const LocalDoFData &ldd, State &s);
-    void get_avars(const LocalDoFData &ldd, Avars &a);
-    void get_cavars(const LocalDoFData &ldd, CAvars &ca);
+    void form_cell_map();
+    void get_state(const LocalDoFData &ldd, State &s) const;
+    void get_avars(const LocalDoFData &ldd, Avars &a) const;
+    void get_cavars(const LocalDoFData &ldd, CAvars &ca) const;
 };
 
 }
