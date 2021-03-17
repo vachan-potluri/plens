@@ -91,6 +91,20 @@ class CAvars
     
     
     /**
+     * @brief Assignment operator overload
+     *
+     * @pre `cav.only_state` must be `false` because this function internally calls
+     * CAvars::get_avars() of @p cav
+     */
+    void operator=(const CAvars &cav)
+    {
+        *sp_ = cav.get_state();
+        *ap_ = cav.get_avars();
+    }
+    
+    
+    
+    /**
      * @brief Returns reference to state object held by CAvars::sp_
      */
     State& get_state()
@@ -217,6 +231,25 @@ class CAvars
             
             const CAvars ca2(&s, &a);
             const State &s2 = ca.get_state(); // OK
+        }
+        
+        {
+            t.new_block("operator= test");
+            State s1={1,2,3,4,5};
+            Avars a1={1,2,3,4,5,6,7,8,9};
+            CAvars ca1(&s1, &a1);
+            
+            State s2={10,20,30,40,50};
+            Avars a2={10,20,30,40,50,60,70,80,90};
+            CAvars ca2(&s2, &a2);
+            
+            std::cout << "Before";
+            utilities::print_state(ca1.get_state());
+            utilities::print_avars(ca1.get_avars());
+            ca1 = ca2;
+            std::cout << "\nAfter";
+            utilities::print_state(ca1.get_state());
+            utilities::print_avars(ca1.get_avars());            
         }
     }
     #endif
