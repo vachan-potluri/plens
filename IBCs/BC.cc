@@ -62,7 +62,9 @@ psize BC::get_global_dof_id(const LocalDoFData &ldd) const
 {
     // operator[] of std::map doesn't have a const version, hence use at()
     const DoFHandler<dim>::active_cell_iterator cell = cell_map_.at(ldd.cell_id);
-    std::vector<unsigned int> dof_ids; // global dof ids held by this cell
+    
+    // global dof ids held by this cell
+    std::vector<unsigned int> dof_ids(dof_handler.get_fe().dofs_per_cell);
     cell->get_dof_indices(dof_ids);
     
     // get cell local dof id from face local dof id
@@ -115,4 +117,35 @@ void BC::get_cavars(const LocalDoFData &ldd, CAvars &ca) const
     for(cvar var: cvar_list) s[var] = g_cvars[var][gdof_id];
     for(avar var: avar_list) a[var] = g_avars[var][gdof_id];
 }
+
+
+
+#ifdef DEBUG
+void BC::test()
+{
+    utilities::Testing t("BC", "class");
+    utilities::BCTestData bctd(2,2); // refinement and degree
+    
+    BC bc(bctd.dof_handler, bctd.g_cvars, bctd.g_avars);
+    
+    {
+        t.new_block("testing cavars getter");
+        State cons;
+        Avars av;
+        CAvars ca(&cons,&av);
+        DoFHandler<dim>::active_cell_iterator cell =
+            bctd.dof_handler.active_cell_iterators().begin();
+            // assuming "begin" is owned by this process
+        ++cell; // assuming the next iterator is also owned by this process
+        LocalDoFData ldd(cell->index(), 1, 3);
+        
+        psize gdof_id = bc.get_global_dof_id(ldd);
+        bc.get_cavars(ldd, ca);
+        
+        std::cout << "Global dof: " << gdof_id;
+        utilities::print_state(ca.get_state());
+        utilities::print_avars(ca.get_avars());
+    }
+}
+#endif
 

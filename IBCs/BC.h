@@ -20,6 +20,14 @@
 #include <array>
 #include <map>
 
+#ifdef DEBUG
+#include <iostream>
+#include <vector>
+#include <utilities/testing.h>
+#include <utilities/printing.h>
+#include "bc_test_data.h"
+#endif
+
 namespace BCs{
 
 using namespace dealii;
@@ -104,6 +112,11 @@ class BC
     void get_state(const LocalDoFData &ldd, State &s) const;
     void get_avars(const LocalDoFData &ldd, Avars &a) const;
     void get_cavars(const LocalDoFData &ldd, CAvars &ca) const;
+    
+    public:
+    #ifdef DEBUG
+    static void test();
+    #endif
 };
 
 }
