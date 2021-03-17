@@ -1,5 +1,5 @@
 /**
- * @file BCTest.h
+ * @file bc_test_data.h
  * @brief Defines a struct with some variables useful for testing BCs
  */
 
@@ -23,7 +23,7 @@
 #include <modelling/avars.h>
 
 /**
- * @struct BCTest
+ * @struct BCTestData
  * @brief Contains for variables useful for testing BCs
  *
  * A triangulation, dof handler and sample conservative and auxiliary variable vectors are stored
@@ -33,7 +33,7 @@ using namespace dealii;
 
 namespace utilities{
 
-struct BCTest
+struct BCTestData
 {
     static constexpr int dim = 3;
     
@@ -50,7 +50,7 @@ struct BCTest
      *
      * Takes the hyper cube refinement and fe degree as parameters
      */
-    BCTest(const usi refinement, const usi degree):
+    BCTestData(const usi refinement, const usi degree):
     triang(MPI_COMM_WORLD),
     fe(degree),
     dof_handler(triang)
