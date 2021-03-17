@@ -30,6 +30,9 @@
  * in this namespace. These can be used in testing BC classes by including this header
  */
 using namespace dealii;
+
+namespace utilities{
+
 struct BCTest
 {
     static constexpr int dim = 3;
@@ -75,6 +78,8 @@ struct BCTest
         }
     }
 };
+
+} // namespace utilities
 
 #endif
 
