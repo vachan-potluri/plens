@@ -19,6 +19,7 @@
 
 #include <array>
 #include <map>
+#include <functional>
 
 #ifdef DEBUG
 #include <iostream>
@@ -90,6 +91,18 @@ class BC
     const std::array<LA::MPI::Vector, 5>& g_cvars;
     const std::array<LA::MPI::Vector, 9>& g_avars;
     
+    /**
+     * @brief Wrappers to get_ghost_stagex for x=1,2,3
+     *
+     * Having a unified call signature necessitates the usage of CAvars, like in NavierStokes class.
+     * These are set in BC::set_wrappers() which is called from BC::BC(). Hence, these are
+     * automatically set in all derived classes. To know if inheritance of `this` works as expected,
+     * see the small code snippet in WJ-17-Mar-2021.
+     */
+    std::array< std::function<
+        void(const LocalDoFData&, const Tensor<1,dim>&, CAvars&)
+    >, 3 > get_ghost_wrappers;
+    
     protected:
     /**
      * A map between cell id and cell iterator for owned cells.
@@ -111,7 +124,7 @@ class BC
     /**
      * @brief Get ghost values of conservative variables for auxiliary variable calculation
      *
-     * See the class documentation for more details.
+     * See the class documentation for more details. This needs to be overridden in derived classes.
      */
     virtual void get_ghost_stage1(
         const LocalDoFData &ldd,
@@ -122,7 +135,7 @@ class BC
     /**
      * @brief Get ghost values of conservative variables for inviscid flux calculation
      *
-     * See the class documentation for more details.
+     * See the class documentation for more details. This needs to be overridden in derived classes.
      */
     virtual void get_ghost_stage2(
         const LocalDoFData &ldd,
@@ -134,7 +147,7 @@ class BC
      * @brief Get ghost values of conservative and auxiliary variables for calculation of viscous
      * flux.
      *
-     * See the class documentation for more details.
+     * See the class documentation for more details. This needs to be overridden in derived classes.
      */
     virtual void get_ghost_stage3(
         const LocalDoFData &ldd,
@@ -148,6 +161,7 @@ class BC
     void get_state(const LocalDoFData &ldd, State &s) const;
     void get_avars(const LocalDoFData &ldd, Avars &a) const;
     void get_cavars(const LocalDoFData &ldd, CAvars &ca) const;
+    void set_wrappers();
     
     public:
     #ifdef DEBUG

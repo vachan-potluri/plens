@@ -22,6 +22,7 @@ degree(dh.get_fe().degree),
 fdi(dh.get_fe().degree)
 {
     form_cell_map();
+    set_wrappers();
 }
 
 
@@ -116,6 +117,31 @@ void BC::get_cavars(const LocalDoFData &ldd, CAvars &ca) const
     Avars& a = ca.get_avars();
     for(cvar var: cvar_list) s[var] = g_cvars[var][gdof_id];
     for(avar var: avar_list) a[var] = g_avars[var][gdof_id];
+}
+
+
+
+/**
+ * @brief Sets BC::get_ghost_wrappers
+ *
+ * When this function is called during construction of a derived class (assuming the derived ctor
+ * calls the base ctor which inturn calls this function), the wrappers will be set according to
+ * derived class' getters. That's how the usage of this behaves. See the code snippet in
+ * WJ-17-Mar-2021 for example.
+ */
+void BC::set_wrappers()
+{
+    get_ghost_wrappers[0] = [=](const LocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
+        this->get_ghost_stage1(ldd, normal, ca.get_state());
+    };
+    
+    get_ghost_wrappers[1] = [=](const LocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
+        this->get_ghost_stage2(ldd, normal, ca.get_state());
+    };
+    
+    get_ghost_wrappers[2] = [=](const LocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
+        this->get_ghost_stage3(ldd, normal, ca);
+    };
 }
 
 
