@@ -68,7 +68,9 @@ using namespace dealii;
  * have some more entities to be set which will be done by that specific class implementation. In
  * each stage getter, the local information about dof will be taken through LocalDoFData. This
  * will be inevitable for periodic BCs and for spatially varying BCs. Additionally, the local unit
- * normal will also be required.
+ * normal will also be required. Although the normal could in principle be calculated using dof
+ * handler and the local data provided, it would be expensive. Imagine initialising an fe values
+ * object for each function call.
  *
  * These BC objects will work for boundaries involving curved manifolds also provided the normal
  * used in the getters is correct.
@@ -105,6 +107,40 @@ class BC
         const std::array<LA::MPI::Vector, 9>& gav
     );
     virtual ~BC();
+    
+    /**
+     * @brief Get ghost values of conservative variables for auxiliary variable calculation
+     *
+     * See the class documentation for more details.
+     */
+    virtual void get_stage1(
+        const LocalDoFData &ldd,
+        const Tensor<1,dim> &normal,
+        State &cons_gh
+    ) const {}
+    
+    /**
+     * @brief Get ghost values of conservative variables for inviscid flux calculation
+     *
+     * See the class documentation for more details.
+     */
+    virtual void get_stage2(
+        const LocalDoFData &ldd,
+        const Tensor<1,dim> &normal,
+        State &cons_gh
+    ) const {}
+    
+    /**
+     * @brief Get ghost values of conservative and auxiliary variables for calculation of viscous
+     * flux.
+     *
+     * See the class documentation for more details.
+     */
+    virtual void get_stage3(
+        const LocalDoFData &ldd,
+        const Tensor<1,dim> &normal,
+        CAvars &cav_gh
+    ) const {}
     
     protected:
     void form_cell_map();
