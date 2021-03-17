@@ -82,7 +82,6 @@ class BC
     static constexpr int dim = 3; // dimension
     
     const DoFHandler<dim>& dof_handler;
-    const usi degree; // degree of simulation, obtained from dof handler
     const FaceDoFInfo fdi;
     
     // Refs to cvars and avars. These are assumed to hold the values of cvars and avars at the time

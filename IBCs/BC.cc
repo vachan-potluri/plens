@@ -18,7 +18,6 @@ BC::BC(
 dof_handler(dh),
 g_cvars(gcv),
 g_avars(gav),
-degree(dh.get_fe().degree),
 fdi(dh.get_fe().degree)
 {
     form_cell_map();
