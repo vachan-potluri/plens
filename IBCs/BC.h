@@ -113,7 +113,7 @@ class BC
      *
      * See the class documentation for more details.
      */
-    virtual void get_stage1(
+    virtual void get_ghost_stage1(
         const LocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         State &cons_gh
@@ -124,7 +124,7 @@ class BC
      *
      * See the class documentation for more details.
      */
-    virtual void get_stage2(
+    virtual void get_ghost_stage2(
         const LocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         State &cons_gh
@@ -136,7 +136,7 @@ class BC
      *
      * See the class documentation for more details.
      */
-    virtual void get_stage3(
+    virtual void get_ghost_stage3(
         const LocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         CAvars &cav_gh
