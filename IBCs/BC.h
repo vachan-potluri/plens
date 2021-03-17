@@ -75,6 +75,12 @@ using namespace dealii;
  *
  * These BC objects will work for boundaries involving curved manifolds also provided the normal
  * used in the getters is correct.
+ *
+ * @note For auxiliary variable and viscous fluxes, weak-Riemann and weak-Prescribed approaches are
+ * equivalent, it is possible to establish a simple algebraic relation between the weak-Prescribed
+ * fluxes and weak-Riemann ghost variables. However, underlying this relation, the algorithms used
+ * for auxiliary and viscous flux evaluation are sort of assumed. Currently, all derived classes
+ * assume BR1 algorithm (simple avg, see NavierStokes) for these two fluxes.
  */
 class BC
 {
