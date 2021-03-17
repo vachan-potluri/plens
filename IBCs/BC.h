@@ -95,8 +95,8 @@ class BC
      *
      * Having a unified call signature necessitates the usage of CAvars, like in NavierStokes class.
      * These are set in BC::set_wrappers() which is called from BC::BC(). Hence, these are
-     * automatically set in all derived classes. To know if inheritance of `this` works as expected,
-     * see the small code snippet in WJ-17-Mar-2021.
+     * automatically set in all derived classes if the derived ctor calls the base ctor. To know if
+     * inheritance of `this` works as expected, see the small code snippet in WJ-17-Mar-2021.
      */
     std::array< std::function<
         void(const LocalDoFData&, const Tensor<1,dim>&, CAvars&)
