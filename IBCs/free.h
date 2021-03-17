@@ -19,6 +19,11 @@
 
 #include <array>
 
+#ifdef DEBUG
+#include <iostream>
+#include <memory>
+#endif
+
 namespace BCs{
 
 /**
@@ -59,6 +64,10 @@ class Free: public BC
         const Tensor<1,dim> &normal,
         CAvars &ca_gh
     ) const override;
+    
+    #ifdef DEBUG
+    static void test();
+    #endif
 };
 
 }

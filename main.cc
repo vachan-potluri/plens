@@ -7,6 +7,7 @@
 #include "dgsem/local_dof_data.h"
 #include "dgsem/face_dof_info.h"
 #include "IBCs/BC.h"
+#include "IBCs/free.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -20,6 +21,7 @@ int main(int argc, char** argv){
     LocalDoFData::test();
     FaceDoFInfo::test();
     BCs::BC::test();
+    BCs::Free::test();
     #endif
     return 0;
 }
