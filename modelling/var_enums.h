@@ -23,19 +23,19 @@
 
 enum cvar {rho, rhou, rhov, rhow, rhoE};
 // list of cvars for looping
-std::array<cvar, 5> cvar_list = {cvar::rho, cvar::rhou, cvar::rhov, cvar::rhow, cvar::rhoE};
+const std::array<cvar, 5> cvar_list = {cvar::rho, cvar::rhou, cvar::rhov, cvar::rhow, cvar::rhoE};
 // cvar names, for data output
-std::array<std::string, 5> cvar_names = {"rho", "rhou", "rhov", "rhow", "rhoE"};
+const std::array<std::string, 5> cvar_names = {"rho", "rhou", "rhov", "rhow", "rhoE"};
 
 enum pvar {p, u, v, w, T};
-std::array<pvar, 5> pvar_list = {pvar::p, pvar::u, pvar::v, pvar::w, pvar::T};
-std::array<std::string, 5> pvar_names = {"p", "u", "v", "w", "T"};
+const std::array<pvar, 5> pvar_list = {pvar::p, pvar::u, pvar::v, pvar::w, pvar::T};
+const std::array<std::string, 5> pvar_names = {"p", "u", "v", "w", "T"};
 
 enum avar {txx, txy, txz, tyy, tyz, tzz, qx, qy, qz};
-std::array<avar, 9> avar_list = {
+const std::array<avar, 9> avar_list = {
     avar::txx, avar::txy, avar::txz, avar::tyy, avar::tyz, avar::tzz, avar::qx, avar::qy, avar::qz
 };
-std::array<std::string, 9> avar_names = {
+const std::array<std::string, 9> avar_names = {
     "txx", "txy", "txz", "tyy", "tyz", "tzz", "qx", "qy", "qz"
 };
 
