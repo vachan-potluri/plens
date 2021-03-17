@@ -73,8 +73,8 @@ struct BCTestData
         State cons({2,2,6,4,50});
         Avars av({10,11,12,13,14,15,16,17,18});
         for(psize i: locally_owned_dofs){
-            for(cvar var: cvar_list) g_cvars[var] = cons[var]*(i+1);
-            for(avar var: avar_list) g_avars[var] = av[var]*(i+1);
+            for(cvar var: cvar_list) g_cvars[var][i] = cons[var]*(i+1);
+            for(avar var: avar_list) g_avars[var][i] = av[var]*(i+1);
         }
     }
 };
