@@ -8,6 +8,7 @@
 #include "dgsem/face_dof_info.h"
 #include "IBCs/BC.h"
 #include "IBCs/free.h"
+#include "IBCs/outflow.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -22,6 +23,7 @@ int main(int argc, char** argv){
     FaceDoFInfo::test();
     BCs::BC::test();
     BCs::Free::test();
+    BCs::Outflow::test();
     #endif
     return 0;
 }
