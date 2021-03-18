@@ -28,7 +28,7 @@ namespace BCs{
 
 /**
  * @class Free
- * @brief Free boundary condition
+ * @brief Free boundary condition. See the class documentation of BCs::BC
  *
  * In all stages, ghost values are set to inner values. The purpose of this BC is to enable running
  * test cases like shock tube and Riemann 2D problems. The boundary condition for such cases are
@@ -70,7 +70,7 @@ class Free: public BC
     #endif
 };
 
-}
+} // namespace BCs
 
 #endif
 
