@@ -38,6 +38,9 @@ namespace BCs
  * 3. Ghost auxiliary variables equal inner auxiliary variables and ghost velocity (as part of
  * conservative state) is set such that the interface velocity becomes zero (with BR1 viscous flux).
  *
+ * Because stage 1 requires calculating density from pressure and temperature, this class requires
+ * a NavierStokes object pointer.
+ *
  * @note Note the following comments from the class documentation from pens2D.
  * For this BC, Mengaldo et al. (2014) and Bassi & Rebay (1997) disagree only on the way inviscid
  * boundary flux is set. The former uses Weak-Riemann approach while the latter Weak-Prescribed
@@ -52,10 +55,17 @@ class UniformTempWall: public BC
      * 'Pr'escribed temperature: the temperature which we wish to specify at the wall
      */
     const double T_pr_;
+    
     /**
      * The velocity of the wall. This is stored directly by value and not by reference.
      */
     const Tensor<1,dim> vel_pr_;
+    
+    /**
+     * Pointer to a NavierStokes instance. Required for stage 1. This variable is kept private
+     * because it is a raw pointer.
+     */
+    const NavierStokes* ns_ptr_;
     
     public:
     /**
@@ -67,8 +77,9 @@ class UniformTempWall: public BC
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav,
         const double T_pr,
-        const Tensor<1,dim>& vel_pr
-    ): BC(dh, gcv, gav), T_pr(T_pr_), vel_pr_(vel_pr) {}
+        const Tensor<1,dim>& vel_pr,
+        const NavierStokes* ns_ptr
+    ): BC(dh, gcv, gav), T_pr(T_pr_), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
     
     virtual void get_ghost_stage1(
         const LocalDoFData &ldd,
