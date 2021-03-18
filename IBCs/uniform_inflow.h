@@ -1,6 +1,6 @@
 /**
  * @file uniform_inflow.h
- * @brief Spatially uniform iutflow boundary condition
+ * @brief Spatially uniform inflow boundary condition
  */
 
 #ifndef UNIFORM_INFLOW_H
