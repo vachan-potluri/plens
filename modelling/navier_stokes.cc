@@ -15,12 +15,12 @@
  */
 NavierStokes::NavierStokes(
     const double gma, const double M, const double Pr, double mu0, const double T0, const double S,
-    const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
-    const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
-    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
-    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar,
-    const dif_surf_flux_scheme dsfs = dif_surf_flux_scheme::BR1,
-    const dif_vol_flux_scheme dvfs = dif_vol_flux_scheme::BR1
+    const aux_surf_flux_scheme asfs,
+    const aux_vol_flux_scheme avfs,
+    const inv_surf_flux_scheme isfs,
+    const inv_vol_flux_scheme ivfs,
+    const dif_surf_flux_scheme dsfs,
+    const dif_vol_flux_scheme dvfs
 )
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
@@ -43,12 +43,12 @@ NavierStokes::NavierStokes(
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
-    const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
-    const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
-    const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
-    const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar,
-    const dif_surf_flux_scheme dsfs = dif_surf_flux_scheme::BR1,
-    const dif_vol_flux_scheme dvfs = dif_vol_flux_scheme::BR1
+    const aux_surf_flux_scheme asfs,
+    const aux_vol_flux_scheme avfs,
+    const inv_surf_flux_scheme isfs,
+    const inv_vol_flux_scheme ivfs,
+    const dif_surf_flux_scheme dsfs,
+    const dif_vol_flux_scheme dvfs
 )
 {
     bool gas_supported = (gas_name=="air" || gas_name=="N2");
