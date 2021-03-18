@@ -19,6 +19,7 @@
 #include "BC.h"
 
 #include <array>
+#include <string>
 
 #ifdef DEBUG
 #include <iostream>
