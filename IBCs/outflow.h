@@ -12,6 +12,7 @@
 #include <modelling/state.h>
 #include <modelling/avars.h>
 #include <modelling/cavars.h>
+#include <modelling/navier_stokes.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
 #include <dgsem/local_dof_data.h>
@@ -41,10 +42,9 @@ namespace BCs
  * 3. Ghost cavars equal inner cavars
  *
  * For BR1 algorithm of stages 1 and 3, the aforementioned strategy is similar to what Mengaldo et
- * al (2014) suggest. See the documentation of outflow BC in pens2D for more info.
- *
- * Although not generally required, this BC accounts for spatially varying outlet pressure. Time
- * variation is not supported.
+ * al (2014) suggest. See the documentation of outflow BC in pens2D for more info. Since stage 2
+ * requires Mach number calculation, this BC takes a pointer to NavierStokes class instance for
+ * construction.
  */
 class Outflow: public BC
 {
@@ -54,6 +54,11 @@ class Outflow: public BC
      * subsonic.
      */
     double p_pr_;
+    /**
+     * Pointer to a NavierStokes instance. Required for stage 2. This variable is kept private
+     * because it is a raw pointer.
+     */
+    const NavierStokes* ns_ptr_;
     
     public:
     /**
@@ -63,8 +68,9 @@ class Outflow: public BC
         const DoFHandler<dim>& dh,
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav,
-        const double p_pr
-    ): BC(dh, gcv, gav), p_pr_(p_pr) {}
+        const double p_pr,
+        const NavierStokes* ns_ptr
+    ): BC(dh, gcv, gav), p_pr_(p_pr), ns_ptr_(ns_ptr) {}
     
     virtual void get_ghost_stage1(
         const LocalDoFData &ldd,
