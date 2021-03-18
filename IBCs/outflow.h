@@ -19,11 +19,14 @@
 #include "BC.h"
 
 #include <array>
-#include <string>
 
 #ifdef DEBUG
 #include <iostream>
 #include <memory>
+#include <string>
+#include <utilities/testing.h>
+#include <utilities/printing.h>
+#include "bc_test_data.h"
 #endif
 
 namespace BCs
@@ -54,7 +57,7 @@ class Outflow: public BC
      * Outlet pressure. Will be termed 'pr'escribed. This is of use only when the outflow is
      * subsonic.
      */
-    double p_pr_;
+    const double p_pr_;
     /**
      * Pointer to a NavierStokes instance. Required for stage 2. This variable is kept private
      * because it is a raw pointer.
