@@ -138,6 +138,11 @@ class NavierStokes
     public:
     static constexpr int dim = 3; // dimension
     
+    /**
+     * Universal gas constant in SI units. Accurate upto 10 significant digits. Source: Wikipedia
+     */
+    static constexpr double R0 = 8.314462618;
+    
     // Choices for auxiliary variable surface and volume flux scheme
     enum class aux_surf_flux_scheme{
         BR1
@@ -251,6 +256,11 @@ class NavierStokes
      * Gives @f$\gamma@f$ value held by this instance
      */
     inline double get_gma() const {return gma_;}
+    
+    /**
+     * Gives @f$R=R_0/M@f$ value
+     */
+    inline double get_R() const {return R0/M_;}
     
     #ifdef DEBUG
     static void test();
