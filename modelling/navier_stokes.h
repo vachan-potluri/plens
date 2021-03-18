@@ -237,6 +237,7 @@ class NavierStokes
     static double get_e(const State &cons);
     double get_p(const State &cons) const;
     double get_a(const State &cons) const;
+    double get_M(const State &cons) const;
     
     void get_inv_flux(const State &cons, const dealii::Tensor<1,dim> &dir, State &f) const;
     void get_inv_surf_flux(

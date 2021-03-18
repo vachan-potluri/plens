@@ -308,6 +308,20 @@ double NavierStokes::get_a(const State &cons) const
 
 
 /**
+ * Get the Mach number. Internally calls NavierStokes::get_a()
+ *
+ * @pre @p cons must pass the test of NavierStokes::assert_positivity()
+ */
+double NavierStokes::get_M(const State &cons) const
+{
+    double speed_sq(0);
+    for(int d=0; d<dim; d++) speed_sq += (cons[1+d]*cons[1+d])/(cons[0]*cons[0]);
+    return sqrt(speed_sq)/get_a(cons);
+}
+
+
+
+/**
  * @brief Calculates inviscid flux in a given direction based on given conservative state
  * 
  * @pre @p cons must pass the test of NavierStokes::assert_positivity()
@@ -694,6 +708,7 @@ void NavierStokes::test()
         State cons = {2,2,4,6,15};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
         std::cout << "Energy " << ns.get_e(cons) << "\n";
+        std::cout << "Mach number" << ns.get_M(cons) << "\n";
         ns.assert_positivity(cons);
         
         std::array<State, 3> fluxes;
