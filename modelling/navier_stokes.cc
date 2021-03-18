@@ -708,7 +708,7 @@ void NavierStokes::test()
         State cons = {2,2,4,6,15};
         std::cout << "Pressure " << ns.get_p(cons) << "\n";
         std::cout << "Energy " << ns.get_e(cons) << "\n";
-        std::cout << "Mach number" << ns.get_M(cons) << "\n";
+        std::cout << "Mach number " << ns.get_M(cons) << "\n";
         ns.assert_positivity(cons);
         
         std::array<State, 3> fluxes;
