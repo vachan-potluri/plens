@@ -9,6 +9,7 @@
 #include "IBCs/BC.h"
 #include "IBCs/free.h"
 #include "IBCs/outflow.h"
+#include "IBCs/uniform_inflow.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -24,6 +25,7 @@ int main(int argc, char** argv){
     BCs::BC::test();
     BCs::Free::test();
     BCs::Outflow::test();
+    BCs::UniformInflow::test();
     #endif
     return 0;
 }

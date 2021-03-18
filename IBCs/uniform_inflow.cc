@@ -71,3 +71,40 @@ void UniformInflow::get_ghost_stage3(
     get_avars(ldd, av_gh);
 }
 
+
+
+#ifdef DEBUG
+void UniformInflow::test()
+{
+    utilities::Testing t("UniformInflow", "class");
+    utilities::BCTestData bctd(2,2); // refinement and degree
+    
+    State cons_pr({2,1,4,2,20});
+    
+    std::unique_ptr<BC> bc_p =
+        std::make_unique<UniformInflow>(bctd.dof_handler, bctd.g_cvars, bctd.g_avars, cons_pr);
+    
+    {
+        t.new_block("testing ghost getters");
+        Tensor<1,dim> normal; // immaterial
+        LocalDoFData ldd(1, 1, 3); // cell id, face id, face dof id
+        
+        // modify bctd.g_cvars to get subsonic/supersonic state
+        // State cons({1,1,1,2,53}); // p=20, subsonic
+        State cons({1,1,1,2,13}); // p=4, supersonic
+        psize gdof_id = bc_p->get_global_dof_id(ldd);
+        for(cvar var: cvar_list) bctd.g_cvars[var][gdof_id] = cons[var];
+        
+        Avars av;
+        CAvars cav(&cons, &av);
+        
+        for(int i=0; i<3; i++){
+            std::cout << "Stage " << i << "\n";
+            bc_p->get_ghost_wrappers[i](ldd, normal, cav);
+            utilities::print_state(cav.get_state());
+            utilities::print_avars(cav.get_avars());
+        }
+    }
+}
+#endif
+

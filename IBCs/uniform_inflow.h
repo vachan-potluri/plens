@@ -12,6 +12,7 @@
 #include <modelling/state.h>
 #include <modelling/avars.h>
 #include <modelling/cavars.h>
+#include <modelling/var_enums.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
 #include <dgsem/local_dof_data.h>
@@ -22,7 +23,7 @@ namespace BCs
 
 /**
  * @class UniformInflow
- * @brief Spatially uniform iutflow boundary condition. See the class documentation of BCs::BC
+ * @brief Spatially uniform inflow boundary condition. See the class documentation of BCs::BC
  *
  * This BC assumes that all getters are called with velocity component along normal being negative.
  * The algorithm for 3 stages is as follows.
@@ -40,7 +41,8 @@ namespace BCs
  * However the former and latter don't exactly use the same wording for how ghost state is to be
  * calculated for step 2. This class may therefore be modified in future. However, since diffusive
  * contribution tends to be low at inflow, the detail for step 1 and 3 should not matter much.
- * 
+ *
+ * Temporal and spatial variation is not supported here.
  */
 class UniformInflow: public BC
 {
