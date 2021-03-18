@@ -1,6 +1,7 @@
 ADD_LIBRARY(IBCs SHARED
     BC.cc
     free.cc
+    outflow.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(IBCs PUBLIC "..")
