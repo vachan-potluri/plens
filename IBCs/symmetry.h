@@ -24,7 +24,7 @@ namespace BCs{
 
 /**
  * @class Symmetry
- * @brief Implements a symmetric BC.
+ * @brief Implements a symmetric BC. See the class documentation of BCs::BC
  *
  * @note The following note is from the class documentation of pens2D:
  * For this BC, neither Mengaldo et al. (2014) or Bassi & Rebay (1997) have given details. I am
@@ -32,8 +32,8 @@ namespace BCs{
  * are the physical values that would occur at a face and the ghost variabels for step 2 correspond
  * to a ficticious cell beyond the boundary
  *
- * @remark pens2D follows weak-Prescribed approach for "steps" ("stages" here) 1 and 3 while plens
- * follows weak-Riemann approach
+ * @remark pens2D follows weak-Prescribed approach for "steps" ("stages" here) 1 and 3 while here,
+ * we follow weak-Riemann approach
  *
  * The algorithm for the 3 stages is as follows.
  * 1. The ghost conservative state is set such that BR1 auxiliary flux of ghost and inner state
@@ -57,6 +57,8 @@ namespace BCs{
  * @f]
  *
  * This class requires NS pointer for all stages.
+ *
+ * @warning This class uses a raw pointer to a NavierStokes instance.
  */
 class Symmetry: public BC
 {
