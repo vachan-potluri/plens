@@ -10,6 +10,7 @@
 #include "IBCs/free.h"
 #include "IBCs/outflow.h"
 #include "IBCs/uniform_inflow.h"
+#include "IBCs/uniform_temp_wall.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -26,6 +27,7 @@ int main(int argc, char** argv){
     BCs::Free::test();
     BCs::Outflow::test();
     BCs::UniformInflow::test();
+    BCs::UniformTempWall::test();
     #endif
     return 0;
 }

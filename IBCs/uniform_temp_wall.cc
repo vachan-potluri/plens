@@ -76,3 +76,47 @@ void UniformTempWall::get_ghost_stage3(
     get_avars(ldd, av_gh);
 }
 
+
+
+#ifdef DEBUG
+void UniformTempWall::test()
+{
+    utilities::Testing t("UniformTempWall", "class");
+    utilities::BCTestData bctd(2,2); // refinement and degree
+    
+    NavierStokes ns("air");
+    Tensor<1,dim> vel({0.5,0.5,0.5});
+    
+    std::unique_ptr<BC> bc_p =
+        std::make_unique<UniformTempWall>(
+            bctd.dof_handler,
+            bctd.g_cvars,
+            bctd.g_avars,
+            1.5,
+            vel,
+            &ns);
+    
+    {
+        t.new_block("testing ghost getters");
+        Tensor<1,dim> normal; // immaterial
+        LocalDoFData ldd(1, 1, 3); // cell id, face id, face dof id
+        
+        // modify bctd.g_cvars to get subsonic/supersonic state
+        // State cons({1,1,1,2,53}); // p=20, subsonic
+        State cons({1,1,1,2,13}); // p=4, supersonic
+        psize gdof_id = bc_p->get_global_dof_id(ldd);
+        for(cvar var: cvar_list) bctd.g_cvars[var][gdof_id] = cons[var];
+        
+        Avars av;
+        CAvars cav(&cons, &av);
+        
+        for(int i=0; i<3; i++){
+            std::cout << "Stage " << i << "\n";
+            bc_p->get_ghost_wrappers[i](ldd, normal, cav);
+            utilities::print_state(cav.get_state());
+            utilities::print_avars(cav.get_avars());
+        }
+    }
+}
+#endif
+
