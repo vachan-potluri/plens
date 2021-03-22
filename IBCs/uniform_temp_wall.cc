@@ -49,3 +49,30 @@ void UniformTempWall::get_ghost_stage2(
     for(int d=0; d<dim; d++) cons_gh[1+d] = -cons_in[1+d]; // reverse velocity
 }
 
+
+
+/**
+ * Ghost aux vars are set to inner aux vars and ghost cons state is set as in stage 1.
+ *
+ * @note @p normal is unused
+ */
+void UniformTempWall::get_ghost_stage3(
+    const LocalDoFData &ldd,
+    const Tensor<1,dim> &normal,
+    CAvars &ca_gh
+) const
+{
+    State cons_in, cons_pr;
+    State& cons_gh = ca_gh.get_state();
+    get_state(ldd, cons_in);
+    
+    double p_in = ns_ptr_->get_p(cons_in);
+    double rho_pr = p_in/(ns_ptr_->get_R()*T_pr_);
+    Tensor<1,dim> vel; // initialise to 0
+    ns_ptr_->prim_to_cons(rho_pr, vel, p_in, cons_pr);
+    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons_in[var];
+    
+    Avars& av_gh = ca_gh.get_avars();
+    get_avars(ldd, av_gh);
+}
+
