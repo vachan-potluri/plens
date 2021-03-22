@@ -14,6 +14,7 @@
 #include <modelling/avars.h>
 #include <modelling/cavars.h>
 #include <modelling/var_enums.h>
+#include <modelling/navier_stokes.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
 #include <dgsem/local_dof_data.h>
@@ -79,7 +80,7 @@ class UniformTempWall: public BC
         const double T_pr,
         const Tensor<1,dim>& vel_pr,
         const NavierStokes* ns_ptr
-    ): BC(dh, gcv, gav), T_pr(T_pr_), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
+    ): BC(dh, gcv, gav), T_pr_(T_pr), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
     
     virtual void get_ghost_stage1(
         const LocalDoFData &ldd,

@@ -3,6 +3,7 @@ ADD_LIBRARY(IBCs SHARED
     free.cc
     outflow.cc
     uniform_inflow.cc
+    uniform_temp_wall.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(IBCs PUBLIC "..")
