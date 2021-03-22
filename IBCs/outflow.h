@@ -49,6 +49,8 @@ namespace BCs
  * al (2014) suggest. See the documentation of outflow BC in pens2D for more info. Since stage 2
  * requires Mach number calculation, this BC takes a pointer to NavierStokes class instance for
  * construction.
+ *
+ * @warning This class uses a raw pointer to a NavierStokes instance.
  */
 class Outflow: public BC
 {
