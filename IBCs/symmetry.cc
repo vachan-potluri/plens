@@ -32,6 +32,8 @@ void Symmetry::get_ghost_stage1(
     for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons_in[var];
 }
 
+
+
 /**
  * Sets the ghost state according to the algo described in class documentation
  *
@@ -53,5 +55,36 @@ void Symmetry::get_ghost_stage2(
     
     double p_in = ns_ptr_->get_p(cons_in);
     ns_ptr_->prim_to_cons(cons_in[0], vel_gh, p_in, cons_gh); // sets cons_gh
+}
+
+
+
+/**
+ * Sets the ghost state according to the algo described in class documentation
+ *
+ * @pre @p normal has to be a unit vector
+ */
+void Symmetry::get_ghost_stage3(
+    const LocalDoFData &ldd,
+    const Tensor<1,dim> &normal,
+    CAvars &cav_gh
+) const
+{
+    State cons_in, cons_pr; // cons_pr will be set in this fn
+    State& cons_gh = cav.get_state();
+    get_state(ldd, cons_in);
+    
+    Tensor<1,dim> vel_in, vel_pr;
+    for(int d=0; d<dim; d++) vel_in[d] = cons_in[1+d]/cons_in[0];
+    double normal_vel = scalar_product(vel_in, normal); // vel_in dot normal
+    for(int d=0; d<dim; d++) vel_pr[d] = vel_in[d] - normal_vel*normal[d];
+    
+    double p_in = ns_ptr_->get_p(cons_in);
+    ns_ptr_->prim_to_cons(cons_in[0], vel_pr, p_in, cons_pr); // sets cons_pr
+    
+    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons_in[var];
+    
+    Avars& av_gh;
+    get_avars(ldd, av_gh);
 }
 
