@@ -42,12 +42,14 @@ namespace BCs
  * Because stage 1 requires calculating density from pressure and temperature, this class requires
  * a NavierStokes object pointer.
  *
- * @note Note the following comments from the class documentation from pens2D.
+ * @note Note the following comments from the class documentation from pens2D:
  * For this BC, Mengaldo et al. (2014) and Bassi & Rebay (1997) disagree only on the way inviscid
- * boundary flux is set. The former uses Weak-Riemann approach while the latter Weak-Prescribed
+ * boundary flux is set. The former uses Weak-Riemann approach while the latter uses Weak-Prescribed
  * approach.
  *
  * Temporal and spatial variation of prescribed temperature and wall velocity is not supported.
+ *
+ * @warning This class uses a raw pointer to a NavierStokes instance.
  */
 class UniformTempWall: public BC
 {
