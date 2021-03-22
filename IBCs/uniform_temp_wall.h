@@ -29,7 +29,7 @@ namespace BCs
  *
  * The algorithm for the 3 stages is as follows.
  * 1. The ghost conservative state is calculated such that the BR1 auxiliary flux of ghost and inner
- * conservative states gives
+ * conservative states gives a conservative state where
  *    - Interface velocity equals wall velocity
  *    - Interface temperature equals prescribed temperature
  *    - Interface density is calculated using prescribed temperature and inner pressure
