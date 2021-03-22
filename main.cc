@@ -11,6 +11,7 @@
 #include "IBCs/outflow.h"
 #include "IBCs/uniform_inflow.h"
 #include "IBCs/uniform_temp_wall.h"
+#include "IBCs/symmetry.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -28,6 +29,7 @@ int main(int argc, char** argv){
     BCs::Outflow::test();
     BCs::UniformInflow::test();
     BCs::UniformTempWall::test();
+    BCs::Symmetry::test();
     #endif
     return 0;
 }
