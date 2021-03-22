@@ -262,6 +262,24 @@ class NavierStokes
      */
     inline double get_R() const {return R0/M_;}
     
+    /**
+     * Gives the conservative state using density, velocity and pressure
+     */
+    inline void prim_to_cons(
+        const double rho,
+        const dealii::Tensor<1,dim> &vel,
+        const double p,
+        State &cons
+    ) const
+    {
+        cons[0] = rho;
+        cons[4] = p/(get_gma()-1); // initialise
+        for(int d=0; d<dim; d++){
+            cons[1+d] = rho*vel[d];
+            cons[4] += 0.5*rho*vel[d]*vel[d];
+        }
+    }
+    
     #ifdef DEBUG
     static void test();
     void print_modelling_params() const;
