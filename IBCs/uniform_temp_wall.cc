@@ -32,12 +32,20 @@ void UniformTempWall::get_ghost_stage1(
 
 
 /**
+ * Ghost state has reversed velocity with all other variables unchanged.
  *
+ * @note @p normal is unused
  */
 void UniformTempWall::get_ghost_stage2(
     const LocalDoFData &ldd,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
-{}
+{
+    State cons_in;
+    get_state(ldd, cons_in);
+    cons_gh[0] = cons_in[0];
+    cons_gh[4] = cons_in[4];
+    for(int d=0; d<dim; d++) cons_gh[1+d] = -cons_in[1+d]; // reverse velocity
+}
 
