@@ -71,7 +71,7 @@ void Symmetry::get_ghost_stage3(
 ) const
 {
     State cons_in, cons_pr; // cons_pr will be set in this fn
-    State& cons_gh = cav.get_state();
+    State& cons_gh = cav_gh.get_state();
     get_state(ldd, cons_in);
     
     Tensor<1,dim> vel_in, vel_pr;
@@ -84,7 +84,7 @@ void Symmetry::get_ghost_stage3(
     
     for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons_in[var];
     
-    Avars& av_gh;
+    Avars& av_gh = cav_gh.get_avars();
     get_avars(ldd, av_gh);
 }
 
