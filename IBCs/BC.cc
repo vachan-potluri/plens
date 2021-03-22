@@ -8,7 +8,7 @@
 using namespace BCs;
 
 /**
- * @brief Constructor. Takes and sets the relevant references.
+ * @brief Constructor. Sets the relevant references and protected objects.
  */
 BC::BC(
     const DoFHandler<dim>& dh,
@@ -149,11 +149,11 @@ void BC::set_wrappers()
 void BC::test()
 {
     utilities::Testing t("BC", "class");
-    utilities::BCTestData bctd(2,2); // refinement and degree
+    utilities::BCTestData bctd(5,2); // refinement and degree
     
     BC bc(bctd.dof_handler, bctd.g_cvars, bctd.g_avars);
     
-    {
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0){
         t.new_block("testing cavars getter");
         State cons;
         Avars av;

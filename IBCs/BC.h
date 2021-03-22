@@ -22,6 +22,7 @@
 #include <functional>
 
 #ifdef DEBUG
+#include <deal.II/base/mpi.h>
 #include <iostream>
 #include <vector>
 #include <utilities/testing.h>
@@ -53,9 +54,9 @@ using namespace dealii;
  * get the inviscid surface flux.
  *
  * 3. For calculation of viscous (diffusive) flux on boundary surface. Here, the BC objects give
- * ghost values of auxiliary variables, along with ghost values of velocity (in conservative state,
- * the remaining variables are not relevant). NavierStokes::surf_flux_wrappers[2] can then be used
- * to obtain the diffusive surface flux.
+ * ghost values of auxiliary variables, along with ghost values of velocity (encaptured within
+ * conservative state, the remaining variables are not relevant).
+ * NavierStokes::surf_flux_wrappers[2] can then be used to obtain the diffusive surface flux.
  *
  * Note that in all cases, the ghost values are given by the BC object and hence the approach is
  * weak-Riemann type. Getter functions are provided for all three stages which are overwridden in
@@ -65,22 +66,25 @@ using namespace dealii;
  * details on the usage of wrappers.
  *
  * Keeping in mind periodic BC and spatially varying BC, this base class takes const references to
- * dof handler object, conservative and auxiliary variables. The periodic BC class will additionally
- * have some more entities to be set which will be done by that specific class implementation. In
- * each stage getter, the local information about dof will be taken through LocalDoFData. This
- * will be inevitable for periodic BCs and for spatially varying BCs. Additionally, the local unit
- * normal will also be required. Although the normal could in principle be calculated using dof
- * handler and the local data provided, it would be expensive. Imagine initialising an fe values
- * object for each function call.
+ * dof handler object, and vectors holding global conservative and auxiliary variables. The periodic
+ * BC class will additionally have some more entities to be set which will be done by that specific
+ * class implementation. In each stage getter, the local information about dof will be taken through
+ * LocalDoFData. This will be inevitable for periodic BCs and for spatially varying BCs.
+ * Additionally, the local unit normal will also be required. Although the normal could in principle
+ * be calculated using dof handler and the local data provided, it would be expensive. Imagine
+ * reinitialising an fe values object for each function call.
  *
- * These BC objects will work for boundaries involving curved manifolds also provided the normal
+ * These BC objects will work for boundaries involving curved manifolds too, provided the normal
  * used in the getters is correct.
  *
  * @note For auxiliary variable and viscous fluxes, weak-Riemann and weak-Prescribed approaches are
  * equivalent, it is possible to establish a simple algebraic relation between the weak-Prescribed
  * fluxes and weak-Riemann ghost variables. However, underlying this relation, the algorithms used
  * for auxiliary and viscous flux evaluation are sort of assumed. Currently, all derived classes
- * assume BR1 algorithm (simple avg, see NavierStokes) for these two fluxes.
+ * assume BR1 algorithm (simple avg, see NavierStokes) for these two fluxes. As a result, most
+ * derived classes first calculate the face value/flux that would occur and then proceed to
+ * calculate the ghost state that ensures this face value. This is the approach taken for steps 1 &
+ * 3. For step 2, theories generally provide the ghost values directly.
  */
 class BC
 {
@@ -92,7 +96,10 @@ class BC
     
     // Refs to cvars and avars. These are assumed to hold the values of cvars and avars at the time
     // of calling getter functions and thus used in the same to finally give the ghost values. One
-    // way to set these correectly is to assign current RK step solutions
+    // way to set these correectly is to assign ghosted version of current RK step solutions.
+    // Ghosted version is not required for all types but specifically for periodic BCs. Thus it is
+    // ok if the ghosted version of vectors is passed for periodic BC and the normal version is
+    // passed for other types.
     const std::array<LA::MPI::Vector, 5>& g_cvars;
     const std::array<LA::MPI::Vector, 9>& g_avars;
     
