@@ -39,7 +39,7 @@ class Free: public BC
 {
     public:
     /**
-     * @brief Constructor. Nothing special, just calls the base constructor and exits.
+     * @brief Constructor. Just calls the base constructor and exits.
      */
     Free(
         const DoFHandler<dim>& dh,
