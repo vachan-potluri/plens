@@ -104,7 +104,7 @@ void Symmetry::test()
     
     {
         t.new_block("testing ghost getters");
-        Tensor<1,dim> normal({0,0,1});
+        Tensor<1,dim> normal({0,1,0});
         LocalDoFData ldd(1, 1, 3); // cell id, face id, face dof id
         
         // modify bctd.g_cvars to get subsonic/supersonic state
@@ -113,9 +113,8 @@ void Symmetry::test()
         psize gdof_id = bc_p->get_global_dof_id(ldd);
         for(cvar var: cvar_list) bctd.g_cvars[var][gdof_id] = cons[var];
         
-        Avars avv;
-        CAvars cav(&cons, &avv);
-        utilities::print_avars(cav.get_avars());
+        Avars av;
+        CAvars cav(&cons, &av);
         
         for(int i=0; i<3; i++){
             std::cout << "Stage " << i << "\n";
