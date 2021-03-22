@@ -34,7 +34,7 @@ namespace BCs
  * that used in stage 1. In this way, the BR1 viscous flux gives the theoretical viscous flux
  * obtained using inner auxiliary variables and prescribed velocity.
  *
- * @note Note the following documentation for this class from pens2D project
+ * @note Note the following documentation for this class from pens2D project:
  * For this BC, neither of Mengaldo et al. (2014) or Bassi & Rebay (1997) fully describe the
  * implementation. For step 2, it is clear from the former reference that ghost state is to be set
  * to prescribed state. The former doesn't describe for steps 1 and 3, while the latter does.
