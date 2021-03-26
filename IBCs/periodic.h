@@ -21,6 +21,7 @@
 
 #include <array>
 #include <vector>
+#include <map>
 
 #ifdef DEBUG
 #include <iostream>
@@ -61,6 +62,10 @@ class Periodic: public BC
      * 'O'ther 'f'ace id. As name suggests, ofid = 1 if fid = 0 and vice-versa.
      */
     usi ofid_;
+    /**
+     * Maps cell id to pair id. See the class documentation.
+     */
+    std::map<psize, psize> cellid_to_pairid_;
 
     public:
     /**
@@ -80,6 +85,10 @@ class Periodic: public BC
         const std::vector<GridTools::PeriodicFacePair<DoFHandler<dim>::cell_iterator>>& pairs,
         const usi id
     );
+
+    #ifdef DEBUG
+    static void test();
+    #endif
 };
 
 } // namespace BCs

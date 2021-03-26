@@ -9,7 +9,7 @@ using namespace BCs;
 
 /**
  * Constructor. Calls the base constructor and sets Periodic::per_paris and Periodic::fid. If fid
- * is not 0 or 1, exception is raised.
+ * is not 0 or 1, exception is raised. Also populates Periodic::cellid_to_pairid_
  */
 Periodic::Periodic(
     const DoFHandler<dim>& dh,
@@ -27,4 +27,18 @@ Periodic::Periodic(
     );
     if(fid == 0) ofid_ = 1;
     else ofid_ = 0;
+
+    psize pair_id(0);
+    // form the map between cell and pair ids
+    for(const auto& pair: per_pairs){
+        cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
+        pair_id++;
+    }
 }
+
+
+
+#ifdef DEBUG
+void Periodic::test()
+{}
+#endif
