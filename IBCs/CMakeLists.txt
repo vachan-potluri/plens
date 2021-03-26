@@ -5,6 +5,7 @@ ADD_LIBRARY(IBCs SHARED
     uniform_inflow.cc
     uniform_temp_wall.cc
     symmetry.cc
+    periodic.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(IBCs PUBLIC "..")
