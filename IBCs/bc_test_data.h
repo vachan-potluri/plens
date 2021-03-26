@@ -6,13 +6,15 @@
 #ifndef BCTEST_H
 #define BCTEST_H
 
+#include <deal.II/base/index_set.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/tria.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/base/index_set.h>
 
 #include <array>
 
@@ -27,7 +29,10 @@
  * @brief Contains for variables useful for testing BCs
  *
  * A triangulation, dof handler and sample conservative and auxiliary variable vectors are stored
- * in this namespace. These can be used in testing BC classes by including this header
+ * in this namespace. These can be used in testing BC classes by including this header.
+ *
+ * Ghosted version of the vectors are also constructed. Further, periodicity is applied in
+ * x-direction.
  */
 using namespace dealii;
 
@@ -44,6 +49,10 @@ struct BCTestData
     
     std::array<LA::MPI::Vector, 5> g_cvars, gh_g_cvars;
     std::array<LA::MPI::Vector, 9> g_avars, gh_g_avars;
+
+    std::vector<GridTools::PeriodicFacePair<
+        parallel::distributed::Triangulation<dim>::cell_iterator>
+    > matched_pairs;
     
     /**
      * @brief Constructor
@@ -57,6 +66,15 @@ struct BCTestData
     {
         GridGenerator::hyper_cube(triang);
         triang.refine_global(refinement); // 2**refinement cells in each direction
+
+        // be default, hyper cube generates all boundaries with id 0
+        GridTools::collect_periodic_faces(
+            triang,
+            0, // boundary id
+            0, // direction,
+            matched_pairs
+        );
+        triang.add_periodicity(matched_pairs);
         
         dof_handler.distribute_dofs(fe);
         IndexSet locally_owned_dofs = dof_handler.locally_owned_dofs();

@@ -40,5 +40,8 @@ Periodic::Periodic(
 
 #ifdef DEBUG
 void Periodic::test()
-{}
+{
+    utilities::Testing t("Periodic", "class");
+    utilities::BCTestData bctd(2,2); // refinement and degree
+}
 #endif
