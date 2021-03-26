@@ -36,7 +36,15 @@ namespace BCs
  * See the note 'pens2D to plens'. The class additionally takes a vector
  * of PeriodicFacePair for construction. This can be generated using
  * GridTools::collect_periodic_faces(). Further, an integer argument is taken for construction
- * which defines which face in the face pair is the face in consideration for this BC object.
+ * which defines which face in the face pair is the face in consideration for this BC object. This
+ * class asumes the dof handler to be in
+ * [standard orientation](https://www.dealii.org/current/doxygen/deal.II/DEALGlossary.html#GlossFaceOrientation).
+ * Otherwise, the face dofs would require additional operations to figure out matching dofs.
+ *
+ * Based on Periodic::fid and Periodic::per_paris, the constructor constructs a map
+ * Periodic::cellid_to_pairid such that
+ * `per_pairs[cellid_to_pairid[cell_id]].cell[fid]->index() = cell_id`.
+ * This map can then be used along with Periodic::ofid_ in all the getters.
  *
  * For all the 3 stages, the ghost values are set to corresponding values on the periodic face
  * pair.
@@ -48,16 +56,22 @@ namespace BCs
  */
 class Periodic: public BC
 {
+    private:
+    /**
+     * 'O'ther 'f'ace id. As name suggests, ofid = 1 if fid = 0 and vice-versa.
+     */
+    usi ofid_;
+
     public:
     /**
      * The vector containing periodic face pairs. See the class documentation.
      */
     const std::vector<GridTools::PeriodicFacePair<DoFHandler<dim>::cell_iterator>>& per_pairs;
     /**
-     * The 'p'air id. Must be 0 or 1. This indicates which set of Periodic::per_pairs is in
+     * The 'f'ace id. Must be 0 or 1. This indicates which set of Periodic::per_pairs is in
      * consideration for this BC. See the class documentation.
      */
-    const usi pid;
+    const usi fid;
 
     Periodic(
         const DoFHandler<dim>& dh,
