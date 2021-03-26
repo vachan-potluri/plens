@@ -42,8 +42,8 @@ struct BCTestData
     DoFHandler<dim> dof_handler;
     FE_DGQ<dim> fe;
     
-    std::array<LA::MPI::Vector, 5> g_cvars;
-    std::array<LA::MPI::Vector, 9> g_avars;
+    std::array<LA::MPI::Vector, 5> g_cvars, gh_g_cvars;
+    std::array<LA::MPI::Vector, 9> g_avars, gh_g_avars;
     
     /**
      * @brief Constructor
@@ -60,13 +60,17 @@ struct BCTestData
         
         dof_handler.distribute_dofs(fe);
         IndexSet locally_owned_dofs = dof_handler.locally_owned_dofs();
+        IndexSet locally_relevant_dofs;
+        DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
         
         // initialise petsc vectors
         for(cvar var: cvar_list){
             g_cvars[var].reinit(locally_owned_dofs, MPI_COMM_WORLD);
+            gh_g_cvars[var].reinit(locally_owned_dofs, locally_relevant_dofs, MPI_COMM_WORLD);
         }
         for(avar var: avar_list){
             g_avars[var].reinit(locally_owned_dofs, MPI_COMM_WORLD);
+            gh_g_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, MPI_COMM_WORLD);
         }
         
         // give some arbitrary values to cvars and avars
@@ -75,6 +79,16 @@ struct BCTestData
         for(psize i: locally_owned_dofs){
             for(cvar var: cvar_list) g_cvars[var][i] = cons[var]*(i+1);
             for(avar var: avar_list) g_avars[var][i] = av[var]*(i+1);
+        }
+
+        // set ghosted vectors
+        for(cvar var: cvar_list){
+            g_cvars[var].compress(VectorOperation::insert);
+            gh_g_cvars[var] = g_cvars[var];
+        }
+        for(avar var: avar_list){
+            g_avars[var].compress(VectorOperation::insert);
+            gh_g_avars[var] = g_avars[var];
         }
     }
 };
