@@ -15,7 +15,8 @@ Periodic::Periodic(
     const DoFHandler<dim>& dh,
     const std::array<LA::MPI::Vector, 5>& gcv,
     const std::array<LA::MPI::Vector, 9>& gav,
-    const std::vector<GridTools::PeriodicFacePair<DoFHandler<dim>::cell_iterator>>& pairs,
+    const std::vector<GridTools::PeriodicFacePair<
+        parallel::distributed::Triangulation<dim>::cell_iterator>>& pairs,
     const usi id
 ): BC(dh, gcv, gav), per_pairs(pairs), fid(id)
 {

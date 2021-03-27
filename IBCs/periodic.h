@@ -6,10 +6,11 @@
 #ifndef PERIODIC_H
 #define PERIODIC_H
 
+#include <deal.II/base/exceptions.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/grid/grid_tools.h>
-#include <deal.II/base/exceptions.h>
+#include <deal.II/grid/tria.h>
 
 #include <modelling/state.h>
 #include <modelling/avars.h>
@@ -71,7 +72,10 @@ class Periodic: public BC
     /**
      * The vector containing periodic face pairs. See the class documentation.
      */
-    const std::vector<GridTools::PeriodicFacePair<DoFHandler<dim>::cell_iterator>>& per_pairs;
+    const std::vector<
+        GridTools::PeriodicFacePair<
+            parallel::distributed::Triangulation<dim>::cell_iterator>
+        >& per_pairs;
     /**
      * The 'f'ace id. Must be 0 or 1. This indicates which set of Periodic::per_pairs is in
      * consideration for this BC. See the class documentation.
@@ -82,7 +86,8 @@ class Periodic: public BC
         const DoFHandler<dim>& dh,
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav,
-        const std::vector<GridTools::PeriodicFacePair<DoFHandler<dim>::cell_iterator>>& pairs,
+        const std::vector<GridTools::PeriodicFacePair<
+            parallel::distributed::Triangulation<dim>::cell_iterator>>& pairs,
         const usi id
     );
 
