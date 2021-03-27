@@ -8,7 +8,7 @@
 using namespace BCs;
 
 /**
- * Constructor. Calls the base constructor and sets Periodic::per_paris and Periodic::fid. If fid
+ * Constructor. Calls the base constructor and sets Periodic::per_pairs and Periodic::fid. If fid
  * is not 0 or 1, exception is raised. Populates Periodic::cellid_to_pairid_. Checks is the faces
  * linked through @p pairs have standard orientation. The orientation is a `std::bitset` object.
  * See https://en.cppreference.com/w/cpp/utility/bitset for details. Also see
@@ -49,6 +49,48 @@ Periodic::Periodic(
         cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
         pair_id++;
     }
+}
+
+
+
+/**
+ * Given a LocalDoFData object (@p ldd), this function first checks if the data is valid. I.e.;
+ * whether the cell id and face id given in @p ldd actually occur in one of Periodic::per_pairs.
+ * Then, @p pldd is set such that it gives the dof linked to @p ldd through periodicity.
+ *
+ * In future, the assertions will probably be made only in debug mode.
+ */
+void Periodic::get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) const
+{
+    psize pair_id;
+    // check if cell with given id is present in periodic face pairs
+    try{
+        pair_id = cellid_to_pairid_.at(ldd.cell_id);
+    }
+    catch(std::exception &e){
+        std::string msg = "Exception caught: " + *(e.what());
+        msg += ("\nThis was probably raised when trying to use a periodic face pair with invalid "
+            "cell");
+        AssertThrow(
+            false,
+            StandardExceptions::ExcMessage(msg)
+        );
+    }
+    // check if the face id of current pair matches with that given in ldd
+    AssertThrow(
+        ldd.face_id == per_pairs[pair_id].face_idx[fid],
+        StandardExceptions::ExcMessage(
+            "Face id given in LocalDofData doesn't match with the one stored in periodic face "
+            "pair vector."
+        )
+    );
+
+    // Both checks done, now set pldd
+    pldd.cell_id = per_pairs[pair_id].cell[ofid_]->index();
+    pldd.face_id = per_pairs[pair_id].face_idx[ofid_];
+    // since both faces have exactly same orientation (asserted in ctor), the face-local dof ids
+    // will be same
+    pldd.face_dof_id = ldd.face_dof_id;
 }
 
 

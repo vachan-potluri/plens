@@ -23,6 +23,8 @@
 #include <array>
 #include <vector>
 #include <map>
+#include <exception>
+#include <string>
 
 #ifdef DEBUG
 #include <iostream>
@@ -91,6 +93,11 @@ class Periodic: public BC
             parallel::distributed::Triangulation<dim>::cell_iterator>>& pairs,
         const usi id
     );
+
+    private:
+    void get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) const;
+
+    public:
 
     #ifdef DEBUG
     static void test();
