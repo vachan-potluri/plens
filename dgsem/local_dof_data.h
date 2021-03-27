@@ -31,13 +31,20 @@ struct LocalDoFData
     usi face_id, face_dof_id;
     
     /**
-     * @brief Constructor
+     * @brief Constructor taking all values
      *
      * @pre @p f @f$\in [0,6)@f$, @p dof_id @f$\in [0,(N+1)^2)@f$
      */
     LocalDoFData(const psize &c, const usi f, const usi d):
         cell_id(c), face_id(f), face_dof_id(d)
     {}
+
+
+
+    /**
+     * @brief Default constructor
+     */
+    LocalDoFData() = default;
     
     
     
@@ -47,8 +54,14 @@ struct LocalDoFData
         utilities::Testing t("LocalDoFData", "struct");
         
         {
-            t.new_block("testing construction");
+            t.new_block("testing complete construction");
             LocalDoFData ldd(1000, 5, 3);
+            std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.face_dof_id << "\n";
+        }
+
+        {
+            t.new_block("testing default construction");
+            LocalDoFData ldd;
             std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.face_dof_id << "\n";
         }
         
