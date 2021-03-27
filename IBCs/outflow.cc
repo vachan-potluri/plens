@@ -78,7 +78,7 @@ void Outflow::get_ghost_stage3(
 void Outflow::test()
 {
     utilities::Testing t("Outflow", "class");
-    utilities::BCTestData bctd(2,2); // refinement and degree
+    utilities::BCTestData bctd(2,2); // divisions and degree
     NavierStokes ns("air");
     
     std::unique_ptr<BC> bc_p =

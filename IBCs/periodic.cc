@@ -42,6 +42,6 @@ Periodic::Periodic(
 void Periodic::test()
 {
     utilities::Testing t("Periodic", "class");
-    utilities::BCTestData bctd(2,2); // refinement and degree
+    utilities::BCTestData bctd(2,2); // divisions and degree
 }
 #endif

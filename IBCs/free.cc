@@ -69,7 +69,7 @@ void Free::get_ghost_stage3(
 void Free::test()
 {
     utilities::Testing t("Free", "class");
-    utilities::BCTestData bctd(2,2); // refinement and degree
+    utilities::BCTestData bctd(2,2); // divisions and degree
     
     // Free fbc(bctd.dof_handler, bctd.g_cvars, bctd.g_avars);
     std::unique_ptr<BC> fbc_p =

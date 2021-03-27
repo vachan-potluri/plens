@@ -57,15 +57,16 @@ struct BCTestData
     /**
      * @brief Constructor
      *
-     * Takes the hyper cube refinement and fe degree as parameters
+     * Takes the divisions and fe degree as parameters for generating subdivided hyper cube.
+     * Generating a hyper cube and then refining doesn't work if periodicity is to be added. See
+     * WJ-(26-27)-Mar-2021.
      */
-    BCTestData(const usi refinement, const usi degree):
+    BCTestData(const usi divisions, const usi degree):
     triang(MPI_COMM_WORLD),
     fe(degree),
     dof_handler(triang)
     {
-        GridGenerator::hyper_cube(triang);
-        triang.refine_global(refinement); // 2**refinement cells in each direction
+        GridGenerator::subdivided_hyper_cube(triang, divisions); // divisions cells in each dim
 
         // be default, hyper cube generates all boundaries with id 0
         GridTools::collect_periodic_faces(

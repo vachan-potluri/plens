@@ -77,7 +77,7 @@ void UniformInflow::get_ghost_stage3(
 void UniformInflow::test()
 {
     utilities::Testing t("UniformInflow", "class");
-    utilities::BCTestData bctd(2,2); // refinement and degree
+    utilities::BCTestData bctd(2,2); // divisions and degree
     
     State cons_pr({2,1,4,2,20});
     

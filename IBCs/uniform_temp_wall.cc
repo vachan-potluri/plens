@@ -82,7 +82,7 @@ void UniformTempWall::get_ghost_stage3(
 void UniformTempWall::test()
 {
     utilities::Testing t("UniformTempWall", "class");
-    utilities::BCTestData bctd(2,2); // refinement and degree
+    utilities::BCTestData bctd(2,2); // divisions and degree
     
     NavierStokes ns("air");
     Tensor<1,dim> vel({0.5,0.5,0.5});

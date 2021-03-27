@@ -95,7 +95,7 @@ void Symmetry::get_ghost_stage3(
 void Symmetry::test()
 {
     utilities::Testing t("Symmetry", "class");
-    utilities::BCTestData bctd(2,2); // refinement and degree
+    utilities::BCTestData bctd(2,2); // divisions and degree
     
     NavierStokes ns("air");
     
