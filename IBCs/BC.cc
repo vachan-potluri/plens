@@ -153,6 +153,8 @@ void BC::test()
     
     BC bc(bctd.dof_handler, bctd.g_cvars, bctd.g_avars);
     
+    // Parallel testing
+    // preferably run this solo
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0){
         t.new_block("testing cavars getter");
         State cons;

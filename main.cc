@@ -21,16 +21,16 @@ int main(int argc, char** argv){
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
     #ifdef DEBUG
-    CAvars::test();
-    NavierStokes::test();
-    LocalDoFData::test();
-    FaceDoFInfo::test();
-    BCs::BC::test();
-    BCs::Free::test();
-    BCs::Outflow::test();
-    BCs::UniformInflow::test();
-    BCs::UniformTempWall::test();
-    BCs::Symmetry::test();
+    // CAvars::test();
+    // NavierStokes::test();
+    // LocalDoFData::test();
+    // FaceDoFInfo::test();
+    // BCs::BC::test();
+    // BCs::Free::test();
+    // BCs::Outflow::test();
+    // BCs::UniformInflow::test();
+    // BCs::UniformTempWall::test();
+    // BCs::Symmetry::test();
     BCs::Periodic::test();
     #endif
     return 0;

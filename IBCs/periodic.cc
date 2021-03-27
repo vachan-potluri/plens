@@ -147,7 +147,10 @@ void Periodic::get_ghost_stage3(
 void Periodic::test()
 {
     utilities::Testing t("Periodic", "class");
-    utilities::BCTestData bctd(2,2); // divisions and degree
+    // for serial testing
+    // utilities::BCTestData bctd(2,2); // divisions and degree
+    // for parallel testing (too much time consuming)
+    utilities::BCTestData bctd(10,2); // divisions and degree
 
     std::unique_ptr<BC> bc_p = std::make_unique<Periodic>(
         bctd.dof_handler,
@@ -156,5 +159,38 @@ void Periodic::test()
         bctd.matched_pairs,
         0
     );
+
+    {
+        t.new_block("testing ghost getters");
+        Tensor<1,dim> normal; // immaterial
+
+        // Serial code testing
+        // Now I am assuming subdivided hyper cube produces cells with ids ordered axis-wise
+        // LocalDoFData ldd(2, 0, 3); // cell id, face id, face dof id
+        // pldd should be LocalDoFData(3,1,3)
+        // gdof of pldd is 3*27 + 11 = 92
+
+        // Parallel testing
+        // Run this test solo
+        // Along with above assumptions, assuming cell id 0 is with 0-th process and 9 is with
+        // other process. If false, the code will crash with access related error. If 9 is not
+        // with other process, then the code is same as serial code
+        LocalDoFData ldd(0, 0, 3); // cell id, face id, face dof id
+        // pldd should be LocalDoFData(9,1,3)
+        // gdof of pldd is 27*9 + 11
+        
+        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
+            State cons;
+            Avars av;
+            CAvars cav(&cons, &av);
+            
+            for(int i=0; i<3; i++){
+                std::cout << "Stage " << i << "\n";
+                bc_p->get_ghost_wrappers[i](ldd, normal, cav);
+                utilities::print_state(cav.get_state());
+                utilities::print_avars(cav.get_avars());
+            }
+        }
+    }
 }
 #endif
