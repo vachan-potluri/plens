@@ -98,6 +98,23 @@ class Periodic: public BC
     void get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) const;
 
     public:
+    virtual void get_ghost_stage1(
+        const LocalDoFData &ldd,
+        const Tensor<1,dim> &normal,
+        State &cons_gh
+    ) const override;
+    
+    virtual void get_ghost_stage2(
+        const LocalDoFData &ldd,
+        const Tensor<1,dim> &normal,
+        State &cons_gh
+    ) const override;
+    
+    virtual void get_ghost_stage3(
+        const LocalDoFData &ldd,
+        const Tensor<1,dim> &normal,
+        CAvars &ca_gh
+    ) const override;
 
     #ifdef DEBUG
     static void test();

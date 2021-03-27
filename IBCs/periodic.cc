@@ -95,6 +95,54 @@ void Periodic::get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) con
 
 
 
+/**
+ * Gets ghost conservative state using Periodic::get_periodic_ldd().
+ */
+void Periodic::get_ghost_stage1(
+    const LocalDoFData &ldd,
+    const Tensor<1,dim> &normal,
+    State &cons_gh
+) const
+{
+    LocalDoFData pldd;
+    get_periodic_ldd(ldd, pldd);
+    get_state(pldd, cons_gh);
+}
+
+
+
+/**
+ * Gets ghost conservative state using Periodic::get_periodic_ldd().
+ */
+void Periodic::get_ghost_stage2(
+    const LocalDoFData &ldd,
+    const Tensor<1,dim> &normal,
+    State &cons_gh
+) const
+{
+    LocalDoFData pldd;
+    get_periodic_ldd(ldd, pldd);
+    get_state(pldd, cons_gh);
+}
+
+
+
+/**
+ * Gets ghost conservative state and auxiliary variables using Periodic::get_periodic_ldd().
+ */
+void Periodic::get_ghost_stage3(
+    const LocalDoFData &ldd,
+    const Tensor<1,dim> &normal,
+    CAvars &cav_gh
+) const
+{
+    LocalDoFData pldd;
+    get_periodic_ldd(ldd, pldd);
+    get_cavars(pldd, cav_gh);
+}
+
+
+
 #ifdef DEBUG
 void Periodic::test()
 {
