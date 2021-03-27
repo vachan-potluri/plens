@@ -12,6 +12,7 @@
 #include "IBCs/uniform_inflow.h"
 #include "IBCs/uniform_temp_wall.h"
 #include "IBCs/symmetry.h"
+#include "IBCs/periodic.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -30,6 +31,7 @@ int main(int argc, char** argv){
     BCs::UniformInflow::test();
     BCs::UniformTempWall::test();
     BCs::Symmetry::test();
+    BCs::Periodic::test():
     #endif
     return 0;
 }

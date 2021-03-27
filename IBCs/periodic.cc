@@ -43,5 +43,13 @@ void Periodic::test()
 {
     utilities::Testing t("Periodic", "class");
     utilities::BCTestData bctd(2,2); // divisions and degree
+
+    std::unique_ptr<BC> bc_p = std::make_unique<Periodic>(
+        bctd.dof_handler,
+        bctd.gh_g_cvars,
+        bctd.gh_g_avars,
+        bctd.matched_pairs,
+        0
+    );
 }
 #endif
