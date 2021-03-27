@@ -39,9 +39,10 @@ namespace BCs
  * of PeriodicFacePair for construction. This can be generated using
  * GridTools::collect_periodic_faces(). Further, an integer argument is taken for construction
  * which defines which face in the face pair is the face in consideration for this BC object. This
- * class asumes the dof handler to be in
+ * class assumes the dof handler to be in
  * [standard orientation](https://www.dealii.org/current/doxygen/deal.II/DEALGlossary.html#GlossFaceOrientation).
- * Otherwise, the face dofs would require additional operations to figure out matching dofs.
+ * Otherwise, the face dofs would require additional operations to figure out matching dofs. This
+ * check is done in the constructor.
  *
  * Based on Periodic::fid and Periodic::per_paris, the constructor constructs a map
  * Periodic::cellid_to_pairid such that
