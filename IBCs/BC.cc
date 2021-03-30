@@ -38,12 +38,15 @@ BC::~BC() = default;
 /**
  * @brief Populates BC::cell_map_
  *
- * The function loops over active cell iterators and adds the cell index to the map if it is owned.
+ * The function loops over active cell iterators and adds the cell index to the map if it is
+ * relevant (owned + ghost). The ghost cells are required for BCs::Periodic class.
  */
 void BC::form_cell_map()
 {
     for(auto cell: dof_handler.active_cell_iterators()){
-        if(cell->is_locally_owned()) cell_map_[cell->index()] = cell;
+        if(cell->is_locally_owned() || cell->is_ghost()){
+            cell_map_[cell->index()] = cell;
+        }
     }
 }
 
