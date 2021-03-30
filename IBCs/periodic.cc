@@ -76,6 +76,14 @@ void Periodic::get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) con
             StandardExceptions::ExcMessage(msg)
         );
     }
+    catch(...){
+        std::string msg = ("\nThis was probably raised when trying to use a periodic face pair "
+            "with invalid cell");
+        AssertThrow(
+            false,
+            StandardExceptions::ExcMessage(msg)
+        );
+    }
     // check if the face id of current pair matches with that given in ldd
     AssertThrow(
         ldd.face_id == per_pairs[pair_id].face_idx[fid],
