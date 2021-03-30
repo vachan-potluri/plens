@@ -46,6 +46,10 @@ Periodic::Periodic(
                 "flip. This BC is designed to work mostly for cartesian meshes."
             )
         );
+        // if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
+        //     std::cout << "Pair " << pair_id << ": "
+        //         << pair.cell[0]->index() << " " << pair.cell[1]->index() << "\n";
+        // }
         cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
         pair_id++;
     }
@@ -99,6 +103,12 @@ void Periodic::get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) con
     // since both faces have exactly same orientation (asserted in ctor), the face-local dof ids
     // will be same
     pldd.face_dof_id = ldd.face_dof_id;
+    // if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
+    //     std::cout << "ldd data: " << ldd.cell_id << " " << ldd.face_id << " "
+    //         << ldd.face_dof_id << "\n";
+    //     std::cout << "pldd data: " << pldd.cell_id << " " << pldd.face_id << " "
+    //         << pldd.face_dof_id << "\n";
+    // }
 }
 
 
@@ -184,8 +194,9 @@ void Periodic::test()
         // other process. If false, the code will crash with access related error. If 9 is not
         // with other process, then the code is same as serial code
         LocalDoFData ldd(0, 0, 3); // cell id, face id, face dof id
-        // pldd should be LocalDoFData(9,1,3)
-        // gdof of pldd is 27*9 + 11
+        // ideally, pldd should be LocalDoFData(9,1,3)
+        // and gdof of pldd is 27*9 + 11
+        // but things are not so, see WJ-30-Mar-2021
         
         if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
             State cons;
