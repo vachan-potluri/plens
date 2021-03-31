@@ -71,6 +71,7 @@ psize BC::get_global_dof_id(const LocalDoFData &ldd) const
     }
     catch(...){
         AssertThrow(
+            false,
             StandardExceptions::ExcMessage(
                 "The cell described through LocalDoFData is not a relevant (owned/ghost) cell "
                 "of the dof handler used for construction."
