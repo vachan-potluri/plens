@@ -8,7 +8,8 @@
 using namespace BCs;
 
 /**
- * @brief Constructor. Sets the relevant references and protected objects.
+ * @brief Constructor. Sets the relevant references and protected objects. Internally calls
+ * BC::form_cell_map() and BC::set_wrappers().
  */
 BC::BC(
     const DoFHandler<dim>& dh,
@@ -56,15 +57,26 @@ void BC::form_cell_map()
  * @brief Returns global dof index based on LocalDoFData object @p ldd
  *
  * Algorithm:
- * - Use cell_map_ to get the cell iterator for cell index `ldd.cell_id`
+ * - Use cell_map_ to get the cell iterator for cell index `ldd.cell_id`. Raise exception if the
+ * cell id given doesn't exist in cell_map_
  * - Get (global) dof indices of this cell
  * - Use FaceDoFInfo @p fdi to get cell-local dof id from `ldd.face_id` and `ldd.face_dof_id`
  * - Use cell dof indices to get global dof from cell-local dof
  */
 psize BC::get_global_dof_id(const LocalDoFData &ldd) const
 {
-    // operator[] of std::map doesn't have a const version, hence use at()
-    const DoFHandler<dim>::active_cell_iterator cell = cell_map_.at(ldd.cell_id);
+    try{
+        // operator[] of std::map doesn't have a const version, hence use at()
+        const DoFHandler<dim>::active_cell_iterator cell = cell_map_.at(ldd.cell_id);
+    }
+    catch(...){
+        AssertThrow(
+            StandardExceptions::ExcMessage(
+                "The cell described through LocalDoFData is not a relevant (owned/ghost) cell "
+                "of the dof handler used for construction."
+            )
+        );
+    }
     
     // global dof ids held by this cell
     std::vector<unsigned int> dof_ids(dof_handler.get_fe().dofs_per_cell);

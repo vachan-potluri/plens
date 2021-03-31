@@ -6,6 +6,7 @@
 #ifndef BC_H
 #define BC_H
 
+#include <deal.II/base/exceptions.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 
@@ -117,7 +118,7 @@ class BC
     
     protected:
     /**
-     * A map between cell id and cell iterator for owned cells.
+     * A map between cell id and cell iterator for owned and ghost cells.
      *
      * This will work only for unrefined grids. The relation satisfied by a pair @p p in this map
      * is: `p.second->index() = p.first`. For hp grids, a cell index cannot uniquely determine a
