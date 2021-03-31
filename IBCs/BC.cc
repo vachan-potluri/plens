@@ -65,10 +65,10 @@ void BC::form_cell_map()
  */
 psize BC::get_global_dof_id(const LocalDoFData &ldd) const
 {
-    const DoFHandler<dim>::active_cell_iterator cell;
+    DoFHandler<dim>::active_cell_iterator cell;
     try{
         // operator[] of std::map doesn't have a const version, hence use at()
-        cell; = cell_map_.at(ldd.cell_id);
+        cell = cell_map_.at(ldd.cell_id);
     }
     catch(...){
         AssertThrow(
