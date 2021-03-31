@@ -211,5 +211,37 @@ void Periodic::test()
             }
         }
     }
+
+    {
+        t.new_block("testing exception handling");
+        Tensor<1,dim> normal; // immaterial
+
+        // run this in parallel with 2 processes
+        LocalDoFData ldd(5,0,0);
+        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
+            State cons;
+            Avars av;
+            CAvars cav(&cons, &av);
+            
+            for(int i=0; i<3; i++){
+                std::cout << "Stage " << i << "\n";
+                // crash: cell not owned by process
+                // bc_p->get_ghost_wrappers[i](ldd, normal, cav);
+            }
+        }
+
+        LocalDoFData ldd2(0,1,0); // run this in serial/parallel
+        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
+            State cons;
+            Avars av;
+            CAvars cav(&cons, &av);
+            
+            for(int i=0; i<3; i++){
+                std::cout << "Stage " << i << "\n";
+                // crash: face not periodic
+                // bc_p->get_ghost_wrappers[i](ldd2, normal, cav);
+            }
+        }
+    }
 }
 #endif
