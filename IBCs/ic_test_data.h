@@ -72,7 +72,7 @@ struct ICTestData
     {
         std::cout << "Printing cvars at owned dofs\n\n";
         for(auto i: locally_owned_dofs){
-            std::cout << "DoF global id: " << i << "\t Conservative state:\n";
+            std::cout << "DoF global id: " << i << "\n\t Conservative state:\n";
             for(cvar var: cvar_list) std::cout << "\t" << g_cvars[var][i] << "\n";
         }
     }
