@@ -128,12 +128,17 @@ PiecewiseFunction::PiecewiseFunction(
 #ifdef DEBUG
 void PiecewiseFunction::test()
 {
-    Testing t("PiecewiseFunction", "class");
+    utilities::Testing t("PiecewiseFunction", "class");
     utilities::ICTestData ictd(5,2); // divisions, degree
 
-    // run this test in a folder where there is an IC file
+    // run this test in serial in a folder where there is an IC file named ic_fns.txt
     {
         t.new_block("testing construction");
+        std::unique_ptr<IC> icp = std::make_unique<PiecewiseFunction>(
+            ictd.dof_handler,
+            ictd.g_cvars,
+            "ic_fns.txt"
+        );
     }
 }
 #endif
