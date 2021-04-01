@@ -8,7 +8,7 @@
 
 #ifdef DEBUG
 #include <iostream>
-#include <testing.h>
+#include "testing.h"
 #endif
 
 #ifndef SPLIT_STRING_H
