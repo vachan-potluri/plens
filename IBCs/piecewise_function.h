@@ -126,7 +126,7 @@ class PiecewiseFunction: public IC
      */
     bool prim_fns_;
 
-    usi get_piece_id(const Point<dim> &p) {};
+    usi get_piece_id(const Point<dim> &p);
 
     public:
     static constexpr int dim = 3;

@@ -8,6 +8,79 @@
 using namespace ICs;
 
 /**
+ * Returns the piece id based on the point @p p provided. The function is extended directly from
+ * pens2D.
+ * 
+ * The algorithm used here uses the concept of unidirectional piece id. As the name suggests, it
+ * is calculated independently for all directions. Its value is equal to the id of the right
+ * interface in a direction of the cell identified. The resulting piece id is then obtained using
+ * these unidirectional ids.
+ * 
+ * Further, to get this unidirectional id, the distance (with sign) between interface and point
+ * coordinate is calculated for all interfaces. The unidirectional piece id is then determined
+ * using the location where sign change occurs in this distance.
+ *
+ * Terms like left and right here will be used synonymously for all directions.
+ *
+ * There are no bounds for @p p. The interfaces (processed in constructor) alone are used to
+ * determine piece id, there are no other bounds for @p p.
+ *
+ * It is expected that @p p is a cell center. This is because the way this class is designed to
+ * operate.
+ */
+usi PiecewiseFunction::get_piece_id(const Point<dim> &p)
+{
+    // calculate the distances from interfaces
+    std::array<std::vector<double>, dim> distances; // distances from interfaces
+    int dir;
+    for(dir=0; dir<dim; dir++){
+        for(double loc: ilocs_[dir]) distances[dir].emplace_back(p[dir]-loc);
+    }
+
+    // determine unidirectional piece ids
+    std::array<usi, 3> upid;
+    for(dir=0; dir<dim; dir++){
+        if(np_[dir] == 1){
+            // single piece, no interfaces
+            upid[dir] = 0;
+        }
+        else{
+            // at least 2 pieces (1 interface)
+            if(distances[dir][0] < 0){
+                // lies left to the left most interface
+                upid[dir] = 0;
+            }
+            else if(distances[dir][np_[dir]-2] > 0){
+                // lies right to the right most interface
+                upid[dir] = np_[dir] - 1;
+            }
+            else{
+                // lies between left most and right most interfaces
+                // loop 1: check if the point lies on any interface
+                for(int iid=0; iid<np_[dir]-1; iid++){
+                    AssertThrow(
+                        distances[dir][iid] != 0,
+                        StandardExceptions::ExcMessage(
+                            "The provided point lies exactly on an interface."
+                        )
+                    );
+                } // loop over all interfaces
+                // loop 2: loop over interfaces to get unidirectional piece id
+                for(int iid=1; iid<np_[dir]-1; iid++){
+                    if(distances[dir][iid-1] > 0 && distances[dir][iid] < 0){
+                        upid[dir] = iid;
+                        break;
+                    }
+                } // loop over all except left most interface
+            }
+        }
+    } // loop over dirs
+    return upid[0] + upid[1]*np_[0] + upid[2]*np_[0]*np_[1];
+}
+
+
+
+/**
  * Constructor. Calls the base constructor and parses all the functions in the file @p filename.
  */
 PiecewiseFunction::PiecewiseFunction(
