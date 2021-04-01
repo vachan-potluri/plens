@@ -10,7 +10,7 @@ using namespace ICs;
 /**
  * Constructor. Calls the base constructor and parses all the functions in the file @p filename.
  */
-PiecewiseFunction::PiecewiseFunction
+PiecewiseFunction::PiecewiseFunction(
     const DoFHandler<dim> &dh,
     std::array<LA::MPI::Vector, 5> &gcv,
     const std::string &filename
@@ -27,7 +27,7 @@ PiecewiseFunction::PiecewiseFunction
 
     // Note the choice: primitive or conservative functions
     std::string line;
-    std::get_line(fn_file, line);
+    std::getline(fn_file, line);
     if(line == "c"){
         prim_fns_ = false;
     } else if(line == "p"){
@@ -44,7 +44,7 @@ PiecewiseFunction::PiecewiseFunction
 
     // get the number of pieces
     for(int dir=0; dir<dim; dir++){
-        std::get_line(fn_file, line);
+        std::getline(fn_file, line);
         np_[dir] = stod(line); // assuming line contains a number
         AssertThrow(
             np_[dir] >= 1,
@@ -55,9 +55,9 @@ PiecewiseFunction::PiecewiseFunction
     }
 
     // get the interface locations
-    std::string splits;
+    std::vector<std::string> splits;
     for(int dir=0; dir<dim; dir++){
-        std::get_line(fn_file, line);
+        std::getline(fn_file, line);
         utilities::split_string(line, " ", splits); // split at spaces
         AssertThrow(
             splits.size() == np_[dir]-1,
@@ -79,9 +79,9 @@ PiecewiseFunction::PiecewiseFunction
 
     for(usi pid=0; pid<fpps_.size(); pid++){
         for(cvar var: cvar_list){
-            std::get_line(fn_file, line);
+            std::getline(fn_file, line);
             fpps_[pid][var].reset(new FunctionParser<dim>());
-            fpps_[pid][var]->initialise(variables, line, constants);
+            fpps_[pid][var]->initialize(variables, line, constants);
         }
     }
 }

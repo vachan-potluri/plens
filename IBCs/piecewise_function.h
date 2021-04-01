@@ -110,7 +110,7 @@ class PiecewiseFunction: public IC
      * https://groups.google.com/g/dealii/c/gznY81h1Jmw for details. Access:
      * `fpps_[piece id][variable id]`
      */
-    std::vector< std::array< std::unique_ptr<FunctionParser<dim>>, 5 > > fpps_
+    std::vector< std::array< std::unique_ptr<FunctionParser<dim>>, 5 > > fpps_;
 
     /**
      * A boolen variable to indicate whether the functions provided in file are primitive
@@ -120,16 +120,20 @@ class PiecewiseFunction: public IC
      */
     bool prim_fns_;
 
-    usi get_piece_id(const Point<dim> &p);
+    usi get_piece_id(const Point<dim> &p) {};
 
     public:
-    static constexpr int dim;
+    static constexpr int dim = 3;
     PiecewiseFunction(
         const DoFHandler<dim> &dh,
         std::array<LA::MPI::Vector, 5> &gcv,
         const std::string &filename
     );
-    virtual void set() override;
+    virtual void set() override {};
+
+    #ifdef DEBUG
+    static void test();
+    #endif
 };
 
 } // namespace ICs
