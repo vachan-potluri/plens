@@ -27,7 +27,16 @@ PiecewiseFunction::PiecewiseFunction(
 
     // Note the choice: primitive or conservative functions
     std::string line;
-    std::getline(fn_file, line);
+    try{
+        std::getline(fn_file, line);
+    } catch(...){
+        AssertThrow(
+            false,
+            StandardExceptions::ExcMessage(
+                "Unable to read first line of the IC file."
+            )
+        );
+    }
     if(line == "c"){
         prim_fns_ = false;
     } else if(line == "p"){
@@ -44,7 +53,16 @@ PiecewiseFunction::PiecewiseFunction(
 
     // get the number of pieces
     for(int dir=0; dir<dim; dir++){
-        std::getline(fn_file, line);
+        try{
+            std::getline(fn_file, line);
+        } catch(...){
+            AssertThrow(
+                false,
+                StandardExceptions::ExcMessage(
+                    "Unable to read number of pieces in each direction from IC file."
+                )
+            );
+        }
         np_[dir] = stod(line); // assuming line contains a number
         AssertThrow(
             np_[dir] >= 1,
@@ -57,7 +75,16 @@ PiecewiseFunction::PiecewiseFunction(
     // get the interface locations
     std::vector<std::string> splits;
     for(int dir=0; dir<dim; dir++){
-        std::getline(fn_file, line);
+        try{
+            std::getline(fn_file, line);
+        } catch(...){
+            AssertThrow(
+                false,
+                StandardExceptions::ExcMessage(
+                    "Unable to read the interface locations in each direction from IC file."
+                )
+            );
+        }
         utilities::split_string(line, " ", splits); // split at spaces
         AssertThrow(
             splits.size() == np_[dir]-1,
@@ -79,7 +106,17 @@ PiecewiseFunction::PiecewiseFunction(
 
     for(usi pid=0; pid<fpps_.size(); pid++){
         for(cvar var: cvar_list){
-            std::getline(fn_file, line);
+            try{
+                std::getline(fn_file, line);
+            } catch(...){
+                AssertThrow(
+                    false,
+                    StandardExceptions::ExcMessage(
+                        "Unable to read functions from IC file. Probably insufficient number of "
+                        "functions were provided in the file."
+                    )
+                );
+            }
             fpps_[pid][var].reset(new FunctionParser<dim>());
             fpps_[pid][var]->initialize(variables, line, constants);
         }
@@ -93,7 +130,7 @@ void PiecewiseFunction::test()
 {
     Testing t("PiecewiseFunction", "class");
     utilities::ICTestData ictd(5,2); // divisions, degree
-    
+
     // run this test in a folder where there is an IC file
     {
         t.new_block("testing construction");
