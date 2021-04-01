@@ -16,6 +16,7 @@
 #include <dgsem/LA.h>
 #include <utilities/split_string.h>
 #include <modelling/var_enums.h>
+#include <modelling/navier_stokes.h>
 
 #include <array>
 #include <vector>
@@ -67,7 +68,8 @@ namespace ICs
  * The variables 1-5 will be treated as primitive/conservative variables accoring to this
  * character. The number of pieces must be at least 1 and the number of interfaces provided
  * subsequently must be 1 less than the number of pieces. For instance, if nx=1, then the list of
- * x-interfaces will be blank line.
+ * x-interfaces will be blank line. Because primitive to conservative conversion is required, this
+ * class takes a raw NavierStokes pointer for construction.
  *
  * The ordering of pieces follows dealii's convention: index increments fastest in x-direction,
  * followed by y and z directions. An example is shown here for nx=3, ny=2, nz=1.
@@ -126,6 +128,12 @@ class PiecewiseFunction: public IC
      */
     bool prim_fns_;
 
+    /**
+     * A raw pointer to a NavierStokes instance. Required in case the IC file demands setting IC
+     * using primitive variable functions. See the class documentation for details.
+     */
+    const NavierStokes *ns_ptr_;
+
     usi get_piece_id(const Point<dim> &p);
 
     public:
@@ -133,9 +141,10 @@ class PiecewiseFunction: public IC
     PiecewiseFunction(
         const DoFHandler<dim> &dh,
         std::array<LA::MPI::Vector, 5> &gcv,
-        const std::string &filename
+        const std::string &filename,
+        const NavierStokes *ns_ptr
     );
-    virtual void set() override {};
+    virtual void set() override;
 
     #ifdef DEBUG
     static void test();

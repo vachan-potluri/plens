@@ -86,9 +86,10 @@ usi PiecewiseFunction::get_piece_id(const Point<dim> &p)
 PiecewiseFunction::PiecewiseFunction(
     const DoFHandler<dim> &dh,
     std::array<LA::MPI::Vector, 5> &gcv,
-    const std::string &filename
+    const std::string &filename,
+    const NavierStokes *ns_ptr
 )
-: IC(dh, gcv)
+: IC(dh, gcv), ns_ptr_(ns_ptr)
 {
     std::ifstream fn_file(filename);
     AssertThrow(
@@ -198,11 +199,26 @@ PiecewiseFunction::PiecewiseFunction(
 
 
 
+/**
+ * Sets the IC. Algo:
+ * - Loop over owned cells
+ *   - Determine piece id for all dofs of that cell using cell center
+ *   - If prim_fns_ is false
+ *     - Directly evaluate the functions and set them in g_cvars
+ *   - Else
+ *     - Use NavierStokes::prim_to_cons to get the conservative state
+ */
+void PiecewiseFunction::set()
+{}
+
+
+
 #ifdef DEBUG
 void PiecewiseFunction::test()
 {
     utilities::Testing t("PiecewiseFunction", "class");
     utilities::ICTestData ictd(5,2); // divisions, degree
+    NavierStokes ns("air");
 
     // run this test in serial in a folder where there is an IC file named ic_fns.txt
     {
@@ -210,7 +226,8 @@ void PiecewiseFunction::test()
         std::unique_ptr<IC> icp = std::make_unique<PiecewiseFunction>(
             ictd.dof_handler,
             ictd.g_cvars,
-            "ic_fns.txt"
+            "ic_fns.txt",
+            &ns
         );
     }
 }
