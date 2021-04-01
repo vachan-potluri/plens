@@ -17,6 +17,7 @@
 
 #include <array>
 #include <map>
+#include <iostream>
 
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
@@ -40,19 +41,39 @@ struct ICTestData
     
     DoFHandler<dim> dof_handler;
     std::map<unsigned int, Point<dim>> dof_locations;
+    IndexSet locally_owned_dofs;
     FE_DGQ<dim> fe;
     
     std::array<LA::MPI::Vector, 5> g_cvars;
 
+
+
+    /**
+     * Constructor. Sets up dof_handler, dof_locations, locally_owned_dofs and g_cvars.
+     */
     ICTestData(const usi divisions, const usi degree)
     : triang(MPI_COMM_WORLD), fe(degree), dof_handler(triang)
     {
         GridGenerator::subdivided_hyper_cube(triang, divisions); // divisions cells in each dim
         dof_handler.distribute_dofs(fe);
         DoFTools::map_dofs_to_support_points(MappingQ1<dim>(), dof_handler, dof_locations);
-        IndexSet locally_owned_dofs = dof_handler.locally_owned_dofs();
+        locally_owned_dofs = dof_handler.locally_owned_dofs();
         for(cvar var: cvar_list){
             g_cvars[var].reinit(locally_owned_dofs, MPI_COMM_WORLD);
+        }
+    }
+
+
+
+    /**
+     * Prints g_cvars. Useful for seeing whether ICs have actually set the values correctly.
+     */
+    void print_gcvars() const
+    {
+        std::cout << "Printing cvars at owned dofs\n\n";
+        for(auto i: locally_owned_dofs){
+            std::cout << "DoF global id: " << i << "\t Conservative state:\n";
+            for(cvar var: cvar_list) std::cout << "\t" << g_cvars[var][i] << "\n";
         }
     }
 };
