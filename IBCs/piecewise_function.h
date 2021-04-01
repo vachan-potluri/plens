@@ -8,6 +8,7 @@
 
 #include <deal.II/base/function_parser.h>
 #include <deal.II/base/point.h>
+#include <deal.II/base/exceptions.h>
 #include <deal.II/dofs/dof_handler.h>
 
 #include "IC.h"
@@ -17,6 +18,7 @@
 #include <array>
 #include <vector>
 #include <string>
+#include <fstream>
 
 using namespace dealii;
 namespace ICs
@@ -70,8 +72,8 @@ namespace ICs
                 |       |___|___|___|
                 --> x
 @endverbatim
- * For the above example, if nz>1, then the index of piece will continue on the next z level in the
- * same manner.
+ * For the above example, if nz>1, then the index of pieces will continue on the next z level in
+ * the same manner.
  *
  * This class sets the IC cell-wise (equivalent to taking `cell_based=true` in piecewise_function
  * class of pens2D project). Meaning, all dofs within a cell are assumed to be in a single piece.
