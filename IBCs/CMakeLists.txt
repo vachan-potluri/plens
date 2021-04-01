@@ -7,6 +7,7 @@ ADD_LIBRARY(IBCs SHARED
     symmetry.cc
     periodic.cc
     IC.cc
+    piecewise_function.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(IBCs PUBLIC "..")
