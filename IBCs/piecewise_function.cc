@@ -256,15 +256,17 @@ void PiecewiseFunction::test()
     NavierStokes ns("air");
 
     // run these tests in serial in a folder where there is an IC file named ic_fns.txt
-    {
-        t.new_block("testing construction");
-        std::unique_ptr<IC> icp = std::make_unique<PiecewiseFunction>(
-            ictd.dof_handler,
-            ictd.dof_locations,
-            ictd.g_cvars,
-            "ic_fns.txt",
-            &ns
-        );
-    }
+    t.new_block("testing construction");
+    std::unique_ptr<IC> icp = std::make_unique<PiecewiseFunction>(
+        ictd.dof_handler,
+        ictd.dof_locations,
+        ictd.g_cvars,
+        "ic_fns.txt",
+        &ns
+    );
+
+    t.new_block("testing set method");
+    icp->set();
+    ictd.print_gcvars();
 }
 #endif
