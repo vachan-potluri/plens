@@ -7,14 +7,18 @@
 #define ICTESTDATA_H
 
 #include <deal.II/base/index_set.h>
+#include <deal.II/base/point.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/mapping_q1.h>
 
 #include <array>
 
 #include <dgsem/LA.h>
+#include <dgsem/dtype_aliases.h>
 
 using namespace dealii;
 
@@ -34,6 +38,7 @@ struct ICTestData
     parallel::distributed::Triangulation<dim> triang;
     
     DoFHandler<dim> dof_handler;
+    std::map<psize, Point<dim>> dof_locations;
     FE_DGQ<dim> fe;
     
     std::array<LA::MPI::Vector, 5> g_cvars;
@@ -43,6 +48,7 @@ struct ICTestData
     {
         GridGenerator::subdivided_hyper_cube(triang, divisions); // divisions cells in each dim
         dof_handler.distribute_dofs(fe);
+        DoFTools::map_dofs_to_support_points(MappingQ1<2>(), dof_handler, dof_locations);
         IndexSet locally_owned_dofs = dof_handler.locally_owned_dofs();
         for(cvar var: cvar_list){
             g_cvars[var].reinit(locally_owned_dofs, MPI_COMM_WORLD);
