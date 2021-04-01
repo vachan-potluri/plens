@@ -85,3 +85,18 @@ PiecewiseFunction::PiecewiseFunction(
         }
     }
 }
+
+
+
+#ifdef DEBUG
+void PiecewiseFunction::test()
+{
+    Testing t("PiecewiseFunction", "class");
+    utilities::ICTestData ictd(5,2); // divisions, degree
+    
+    // run this test in a folder where there is an IC file
+    {
+        t.new_block("testing construction");
+    }
+}
+#endif

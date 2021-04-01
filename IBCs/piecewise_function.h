@@ -23,6 +23,12 @@
 #include <fstream>
 #include <map>
 
+#ifdef DEBUG
+#include <utilities/testing.h>
+#include <iostream>
+#include "ic_test_data.h"
+#endif
+
 using namespace dealii;
 namespace ICs
 {
