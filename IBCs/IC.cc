@@ -13,7 +13,7 @@ using namespace ICs;
  */
 IC::IC(
     const DoFHandler<dim> &dh,
-    const std::map<psize, Point<dim>> &dl,
+    const std::map<unsigned int, Point<dim>> &dl,
     std::array<LA::MPI::Vector, 5> &gcv
 )
 : dof_handler(dh), dof_locations(dl), g_cvars(gcv)
