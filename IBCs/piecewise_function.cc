@@ -210,7 +210,41 @@ PiecewiseFunction::PiecewiseFunction(
  *     - Use NavierStokes::prim_to_cons to get the conservative state
  */
 void PiecewiseFunction::set()
-{}
+{
+    Point<dim> center; // cell center
+    usi pid; // piece id
+    std::vector<unsigned int> dof_ids(dof_handler.get_fe().dofs_per_cell); // dof ids of cell
+    State cons;
+    double rho, p;
+    Tensor<1,dim> vel;
+    for(const auto &cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        center = cell->center();
+        pid = get_piece_id(center);
+        cell->get_dof_indices(dof_ids);
+
+        for(psize i: dof_ids){
+            if(!prim_fns_){
+                // functions parsed in fpps_ are conservative functions
+                for(cvar var: cvar_list){
+                    g_cvars[var][i] = fpps_[pid][var]->value(dof_locations[i]);
+                }
+            }
+            else{
+                // functions parsed in fpps_ are primitive functions
+                rho = fpps_[pid][0]->value(dof_locations[i]);
+                for(int dir=0; dir<dim; dir++){
+                    vel[dir] = fpps_[pid][dir+1]->value(dof_locations[i]);
+                }
+                p = fpps_[pid][4]->value(dof_locations[i]);
+                ns_ptr_->prim_to_cons(rho, vel, p, cons);
+                for(cvar var: cvar_list) g_cvars[var][i] = cons[var];
+            }
+        } // loop over cell (global) dofs
+    } // loop over owned cells
+    assert_positivity(); // calls IC::assert_positivity()
+}
 
 
 
@@ -221,7 +255,7 @@ void PiecewiseFunction::test()
     utilities::ICTestData ictd(5,2); // divisions, degree
     NavierStokes ns("air");
 
-    // run this test in serial in a folder where there is an IC file named ic_fns.txt
+    // run these tests in serial in a folder where there is an IC file named ic_fns.txt
     {
         t.new_block("testing construction");
         std::unique_ptr<IC> icp = std::make_unique<PiecewiseFunction>(
