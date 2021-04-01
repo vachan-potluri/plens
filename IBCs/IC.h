@@ -6,9 +6,11 @@
 #ifndef IC_H
 #define IC_H
 
+#include <deal.II/base/index_set.h>
 #include <deal.II/dofs/dof_handler.h>
 
 #include <dgsem/LA.h>
+#include <dgsem/dtype_aliases.h>
 #include <modelling/state.h>
 #include <modelling/navier_stokes.h>
 
@@ -30,6 +32,13 @@ namespace ICs
  */
 class IC
 {
+    protected:
+    /**
+     * A list of locally owned dofs. Will be used here in IC::assert_positivity(). Will be useful
+     * for other implementations too. This will be set in constructor.
+     */
+    IndexSet locally_owned_dofs_;
+
     public:
     static constexpr int dim = 3;
 
@@ -41,7 +50,7 @@ class IC
 
     /**
      * The conservative variable vectors. The prefix `g_` is to indicate that the ordering of dofs
-     * in these vectors is the global ordering.
+     * in these vectors is the global ordering. These vectors have to be unghosted.
      */
     std::array<LA::MPI::Vector, 5> &g_cvars;
 
