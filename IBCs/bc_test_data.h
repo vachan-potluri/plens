@@ -3,8 +3,8 @@
  * @brief Defines a struct with some variables useful for testing BCs
  */
 
-#ifndef BCTEST_H
-#define BCTEST_H
+#ifndef BCTESTDATA_H
+#define BCTESTDATA_H
 
 #include <deal.II/base/index_set.h>
 #include <deal.II/grid/grid_generator.h>
