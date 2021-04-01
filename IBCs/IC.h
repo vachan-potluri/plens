@@ -54,7 +54,18 @@ class IC
      */
     std::array<LA::MPI::Vector, 5> &g_cvars;
 
-    IC(const DoFHandler<dim> &dh, std::array<LA::MPI::Vector, 5> &gcv);
+    /**
+     * A map containing dof locations of owned dofs. This is being taken as constructor argument
+     * instead of obtaining from IC::dof_handler because for curved meshes, mappings and manifolds
+     * are unknown in this scope.
+     */
+    std::map<psize, Point<dim>> dof_locations;
+
+    IC(
+        const DoFHandler<dim> &dh,
+        const std::map<psize, Point<dim>> &dl,
+        std::array<LA::MPI::Vector, 5> &gcv
+    );
     virtual ~IC();
     virtual void set();
     void assert_positivity() const;
