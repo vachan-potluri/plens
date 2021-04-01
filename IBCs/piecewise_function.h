@@ -14,11 +14,14 @@
 #include "IC.h"
 #include <dgsem/dtype_aliases.h>
 #include <dgsem/LA.h>
+#include <utilities/split_string.h>
+#include <modelling/var_enums.h>
 
 #include <array>
 #include <vector>
 #include <string>
 #include <fstream>
+#include <map>
 
 using namespace dealii;
 namespace ICs
@@ -108,6 +111,14 @@ class PiecewiseFunction: public IC
      * `fpps_[piece id][variable id]`
      */
     std::vector< std::array< std::unique_ptr<FunctionParser<dim>>, 5 > > fpps_
+
+    /**
+     * A boolen variable to indicate whether the functions provided in file are primitive
+     * variable functions. If @p false, then the functions are conservative variable functions.
+     * This value is set based on the character in the first line of provided file. See class
+     * documentation for more details.
+     */
+    bool prim_fns_;
 
     usi get_piece_id(const Point<dim> &p);
 
