@@ -85,11 +85,12 @@ usi PiecewiseFunction::get_piece_id(const Point<dim> &p)
  */
 PiecewiseFunction::PiecewiseFunction(
     const DoFHandler<dim> &dh,
+    const std::map<psize, Point<dim>> &dl,
     std::array<LA::MPI::Vector, 5> &gcv,
     const std::string &filename,
     const NavierStokes *ns_ptr
 )
-: IC(dh, gcv), ns_ptr_(ns_ptr)
+: IC(dh, dl, gcv), ns_ptr_(ns_ptr)
 {
     std::ifstream fn_file(filename);
     AssertThrow(
@@ -225,6 +226,7 @@ void PiecewiseFunction::test()
         t.new_block("testing construction");
         std::unique_ptr<IC> icp = std::make_unique<PiecewiseFunction>(
             ictd.dof_handler,
+            ictd.dof_locations,
             ictd.g_cvars,
             "ic_fns.txt",
             &ns
