@@ -8,12 +8,14 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
+#include <deal.II/grid/grid_in.h>
 
 #include "dgsem/dtype_aliases.h"
 
