@@ -6,6 +6,7 @@
 #ifndef PLENS_H
 #define PLENS_H
 
+#include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
 
 #include "dgsem/dtype_aliases.h"
@@ -24,7 +25,8 @@ using namespace dealii;
  *
  * The documentation for this class is being written on-the-fly as the code is being built module
  * by module. Many settings required will be done through dealii::ParameterHandler. Explicit
- * documentation for this will not be provided here, but in the comments of sample prm file.
+ * documentation for this will not be provided here, but in the comments of sample prm file. The
+ * prm file should be named `input.prm`.
  *
  *
  *
@@ -51,6 +53,12 @@ class PLENS
     MPI_Comm mpi_comm;
 
     /**
+     * The ParameterHandler object. The parameters are declared in declare_parameters(). They will
+     * be parsed in the constructor.
+     */
+    ParameterHandler prm;
+
+    /**
      * The triangulation object. Completely set in read_mesh()
      */
     parallel::distributed::Triangulation<dim> triang;
@@ -58,6 +66,7 @@ class PLENS
     public:
     PLENS();
     ~PLENS();
+    void declare_parameters();
     void read_mesh();
 };
 

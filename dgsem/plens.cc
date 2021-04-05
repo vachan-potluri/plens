@@ -6,20 +6,30 @@
 #include "plens.h"
 
 /**
- * @brief Constructor.
+ * Constructor.
  */
 PLENS::PLENS()
 :
 mpi_comm(MPI_COMM_WORLD),
 triang(mpi_comm)
+{
+    declare_parameters();
+}
+
+
+
+/**
+ * Destructor.
+ */
+PLENS::~PLENS()
 {}
 
 
 
 /**
- * @brief Destructor.
+ * Declares all parameters.
  */
-PLENS::~PLENS()
+void PLENS::declare_parameters()
 {}
 
 
