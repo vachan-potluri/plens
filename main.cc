@@ -15,6 +15,7 @@
 #include "IBCs/periodic.h"
 #include "utilities/split_string.h"
 #include "IBCs/piecewise_function.h"
+#include "dgsem/plens.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -35,7 +36,8 @@ int main(int argc, char** argv){
     // BCs::Symmetry::test();
     // BCs::Periodic::test();
     // utilities::split_string_test();
-    ICs::PiecewiseFunction::test();
+    // ICs::PiecewiseFunction::test();
+    PLENS::test();
     #endif
     return 0;
 }
