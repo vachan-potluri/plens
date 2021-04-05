@@ -7,13 +7,19 @@
 #define PLENS_H
 
 #include <iostream>
+#include <fstream>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/utilities.h>
+#include <deal.II/base/exceptions.h>
 
 #include "dgsem/dtype_aliases.h"
+
+#ifdef DEBUG
+#include "utilities/testing.h"
+#endif
 
 using namespace dealii;
 
@@ -77,6 +83,12 @@ class PLENS
     ~PLENS();
     void declare_parameters();
     void read_mesh();
+
+
+
+    #ifdef DEBUG
+    static void test();
+    #endif
 };
 
 #endif

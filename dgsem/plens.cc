@@ -59,6 +59,17 @@ void PLENS::declare_parameters()
         );
     } // subsection mesh
     prm.leave_subsection();
+
+    std::ofstream sample_file("sample_input_file.prm");
+    AssertThrow(
+        sample_file.good(),
+        StandardExceptions::ExcMessage(
+            "Unable to open file for writing sample input parameters settings."
+        )
+    );
+    prm.print_parameters(sample_file, ParameterHandler::Text);
+    sample_file.close();
+    pcout << "Sample input file named 'sample_input_file.prm' written\n";
 }
 
 
@@ -70,3 +81,14 @@ void PLENS::declare_parameters()
  */
 void PLENS::read_mesh()
 {}
+
+
+
+#ifdef DEBUG
+void PLENS::test()
+{
+    utilities::Testing t("PLENS", "class");
+
+    PLENS problem;
+}
+#endif
