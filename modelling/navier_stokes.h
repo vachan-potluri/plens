@@ -1,5 +1,5 @@
 /**
- * @file NavierStokes.h
+ * @file navier_stokes.h
  * @brief Class for navier stokes solver
  */
 
@@ -138,6 +138,11 @@ class NavierStokes
     public:
     static constexpr int dim = 3; // dimension
     
+    /**
+     * Universal gas constant in SI units. Accurate upto 10 significant digits. Source: Wikipedia
+     */
+    static constexpr double R0 = 8.314462618;
+    
     // Choices for auxiliary variable surface and volume flux scheme
     enum class aux_surf_flux_scheme{
         BR1
@@ -166,59 +171,59 @@ class NavierStokes
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
     
-    std::function< void (const state&, const state&, state&) > inv_surf_xflux;
+    std::function< void (const State&, const State&, State&) > inv_surf_xflux;
     
     // inv surf fluxes
-    void hllc_xflux(const state &lcs, const state &rcs, state &f) const;
-    void rusanov_xflux(const state &lcs, const state &rcs, state &f) const;
+    void hllc_xflux(const State &lcs, const State &rcs, State &f) const;
+    void rusanov_xflux(const State &lcs, const State &rcs, State &f) const;
     
     void chandrashekhar_flux(
-        const state &cs1, const state &cs2, const dealii::Tensor<1,dim> &dir, state &f
+        const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
     ) const; // inv vol flux
     
-    static void br1_flux(const state &cs1, const state &cs2, state &f); // aux surf & vol flux
+    static void br1_flux(const State &cs1, const State &cs2, State &f); // aux surf & vol flux
     
     static void br1_flux(
-        const cavars &cav1, const cavars &cav2, const dealii::Tensor<1,dim> &dir, state &f
+        const CAvars &cav1, const CAvars &cav2, const dealii::Tensor<1,dim> &dir, State &f
     ); // dif surf & vol flux
     
     public:
     std::function< void (
-        const state&, const state&, const dealii::Tensor<1,dim>&, state&
+        const State&, const State&, const dealii::Tensor<1,dim>&, State&
     ) >
         get_aux_surf_flux,
         get_aux_vol_flux,
         get_inv_vol_flux;
     
     std::function< void (
-        const cavars&, const cavars&, const dealii::Tensor<1,dim>&, state&
+        const CAvars&, const CAvars&, const dealii::Tensor<1,dim>&, State&
     ) >
         get_dif_surf_flux,
         get_dif_vol_flux;
     
     std::array<
-        std::function< void (const cavars&, const cavars&, const dealii::Tensor<1,dim>&, state&) >,
+        std::function< void (const CAvars&, const CAvars&, const dealii::Tensor<1,dim>&, State&) >,
         3
     > surf_flux_wrappers;
     
     NavierStokes(
         const double gma, const double M, const double Pr,
         const double mu0, const double T0, const double S,
-        const aux_surf_flux_scheme asfs,
-        const aux_vol_flux_scheme avfs,
-        const inv_surf_flux_scheme isfs,
-        const inv_vol_flux_scheme ivfs,
-        const dif_surf_flux_scheme dsfs,
-        const dif_vol_flux_scheme dvfs
+        const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
+        const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
+        const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
+        const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar,
+        const dif_surf_flux_scheme dsfs = dif_surf_flux_scheme::BR1,
+        const dif_vol_flux_scheme dvfs = dif_vol_flux_scheme::BR1
     );
     NavierStokes(
         const std::string gas_name,
-        const aux_surf_flux_scheme asfs,
-        const aux_vol_flux_scheme avfs,
-        const inv_surf_flux_scheme isfs,
-        const inv_vol_flux_scheme ivfs,
-        const dif_surf_flux_scheme dsfs,
-        const dif_vol_flux_scheme dvfs
+        const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
+        const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
+        const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
+        const inv_vol_flux_scheme ivfs = inv_vol_flux_scheme::chandrashekhar,
+        const dif_surf_flux_scheme dsfs = dif_surf_flux_scheme::BR1,
+        const dif_vol_flux_scheme dvfs = dif_vol_flux_scheme::BR1
     );
     void set_modelling_params(
         const double gma, const double M, const double Pr,
@@ -233,18 +238,47 @@ class NavierStokes
     
     void set_wrappers();
     
-    static void assert_positivity(const state &cons);
-    static double get_e(const state &cons);
-    double get_p(const state &cons) const;
-    double get_a(const state &cons) const;
+    static void assert_positivity(const State &cons);
+    static double get_e(const State &cons);
+    double get_p(const State &cons) const;
+    double get_a(const State &cons) const;
+    double get_M(const State &cons) const;
     
-    void get_inv_flux(const state &cons, const dealii::Tensor<1,dim> &dir, state &f) const;
+    void get_inv_flux(const State &cons, const dealii::Tensor<1,dim> &dir, State &f) const;
     void get_inv_surf_flux(
-        const state &ocs, const state &ncs, const dealii::Tensor<1,dim> &normal, state &f
+        const State &ocs, const State &ncs, const dealii::Tensor<1,dim> &normal, State &f
     ) const;
     
-    static void get_stress_tensor(const avars &av, dealii::SymmetricTensor<2,dim> &st);
-    static void get_dif_flux(const cavars &cav, const dealii::Tensor<1,dim> &dir, state &f);
+    static void get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st);
+    static void get_dif_flux(const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f);
+    
+    /**
+     * Gives @f$\gamma@f$ value held by this instance
+     */
+    inline double get_gma() const {return gma_;}
+    
+    /**
+     * Gives @f$R=R_0/M@f$ value
+     */
+    inline double get_R() const {return R0/M_;}
+    
+    /**
+     * Gives the conservative state using density, velocity and pressure
+     */
+    inline void prim_to_cons(
+        const double rho,
+        const dealii::Tensor<1,dim> &vel,
+        const double p,
+        State &cons
+    ) const
+    {
+        cons[0] = rho;
+        cons[4] = p/(get_gma()-1); // initialise
+        for(int d=0; d<dim; d++){
+            cons[1+d] = rho*vel[d];
+            cons[4] += 0.5*rho*vel[d]*vel[d];
+        }
+    }
     
     #ifdef DEBUG
     static void test();

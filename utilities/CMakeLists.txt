@@ -1,6 +1,6 @@
 ADD_LIBRARY(utilities SHARED
-        printing.cc
-        testing.cc
+    printing.cc
+    testing.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(utilities PUBLIC "..")
@@ -8,3 +8,4 @@ TARGET_INCLUDE_DIRECTORIES(utilities PUBLIC "..")
 DEAL_II_SETUP_TARGET(utilities)
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+

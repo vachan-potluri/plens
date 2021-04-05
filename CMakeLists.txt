@@ -24,6 +24,8 @@ ENDIF(BUILD_SPACETIME)
 
 ADD_SUBDIRECTORY(utilities)
 ADD_SUBDIRECTORY(modelling)
+ADD_SUBDIRECTORY(IBCs)
+ADD_SUBDIRECTORY(dgsem)
 
 ADD_EXECUTABLE(plens.out
     main.cc
@@ -31,7 +33,7 @@ ADD_EXECUTABLE(plens.out
 
 DEAL_II_SETUP_TARGET(plens.out)
 
-TARGET_LINK_LIBRARIES(plens.out utilities modelling)
+TARGET_LINK_LIBRARIES(plens.out utilities modelling IBCs dgsem)
 
 # for make debug
 ADD_CUSTOM_TARGET(debug
