@@ -11,6 +11,7 @@
 PLENS::PLENS()
 :
 mpi_comm(MPI_COMM_WORLD),
+pcout(std::cout, (Utilities::MPI::this_mpi_process(mpi_comm)==0)),
 triang(mpi_comm)
 {
     declare_parameters();

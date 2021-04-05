@@ -6,8 +6,12 @@
 #ifndef PLENS_H
 #define PLENS_H
 
+#include <iostream>
+
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/utilities.h>
 
 #include "dgsem/dtype_aliases.h"
 
@@ -53,8 +57,13 @@ class PLENS
     MPI_Comm mpi_comm;
 
     /**
+     * Output stream for parallel processes
+     */
+    ConditionalOStream pcout;
+
+    /**
      * The ParameterHandler object. The parameters are declared in declare_parameters(). They will
-     * be parsed in the constructor.
+     * be parsed in the constructor
      */
     ParameterHandler prm;
 
