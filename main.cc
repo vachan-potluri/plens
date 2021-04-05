@@ -4,7 +4,7 @@
 #include "modelling/var_enums.h"
 #include "modelling/cavars.h"
 #include "modelling/navier_stokes.h"
-#include "dgsem/local_dof_data.h"
+#include "dgsem/face_local_dof_data.h"
 #include "dgsem/face_dof_info.h"
 #include "IBCs/BC.h"
 #include "IBCs/free.h"
@@ -25,7 +25,7 @@ int main(int argc, char** argv){
     #ifdef DEBUG
     // CAvars::test();
     // NavierStokes::test();
-    // LocalDoFData::test();
+    // FaceLocalDoFData::test();
     // FaceDoFInfo::test();
     // BCs::BC::test();
     // BCs::Free::test();

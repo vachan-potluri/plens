@@ -15,7 +15,7 @@
 #include <modelling/cavars.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
-#include <dgsem/local_dof_data.h>
+#include <dgsem/face_local_dof_data.h>
 #include <dgsem/face_dof_info.h>
 
 #include <array>
@@ -70,7 +70,7 @@ using namespace dealii;
  * dof handler object, and vectors holding global conservative and auxiliary variables. The periodic
  * BC class will additionally have some more entities to be set which will be done by that specific
  * class implementation. In each stage getter, the local information about dof will be taken through
- * LocalDoFData. This will be inevitable for periodic BCs and for spatially varying BCs.
+ * FaceLocalDoFData. This will be inevitable for periodic BCs and for spatially varying BCs.
  * Additionally, the local unit normal will also be required. Although the normal could in principle
  * be calculated using dof handler and the local data provided, it would be expensive. Imagine
  * reinitialising an fe values object for each function call.
@@ -113,7 +113,7 @@ class BC
      * inheritance of `this` works as expected, see the small code snippet in WJ-17-Mar-2021.
      */
     std::array< std::function<
-        void(const LocalDoFData&, const Tensor<1,dim>&, CAvars&)
+        void(const FaceLocalDoFData&, const Tensor<1,dim>&, CAvars&)
     >, 3 > get_ghost_wrappers;
     
     protected:
@@ -140,7 +140,7 @@ class BC
      * See the class documentation for more details. This needs to be overridden in derived classes.
      */
     virtual void get_ghost_stage1(
-        const LocalDoFData &ldd,
+        const FaceLocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const {}
@@ -151,7 +151,7 @@ class BC
      * See the class documentation for more details. This needs to be overridden in derived classes.
      */
     virtual void get_ghost_stage2(
-        const LocalDoFData &ldd,
+        const FaceLocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const {}
@@ -163,15 +163,15 @@ class BC
      * See the class documentation for more details. This needs to be overridden in derived classes.
      */
     virtual void get_ghost_stage3(
-        const LocalDoFData &ldd,
+        const FaceLocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         CAvars &cav_gh
     ) const {}
     
-    psize get_global_dof_id(const LocalDoFData &ldd) const;
-    void get_state(const LocalDoFData &ldd, State &s) const;
-    void get_avars(const LocalDoFData &ldd, Avars &a) const;
-    void get_cavars(const LocalDoFData &ldd, CAvars &ca) const;
+    psize get_global_dof_id(const FaceLocalDoFData &ldd) const;
+    void get_state(const FaceLocalDoFData &ldd, State &s) const;
+    void get_avars(const FaceLocalDoFData &ldd, Avars &a) const;
+    void get_cavars(const FaceLocalDoFData &ldd, CAvars &ca) const;
     
     protected:
     void form_cell_map();

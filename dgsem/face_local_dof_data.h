@@ -1,5 +1,5 @@
 /**
- * @file local_dof_data.h
+ * @file face_local_dof_data.h
  * @brief A data structure to contain all the info required to describe a dof locally
  */
 
@@ -13,8 +13,8 @@
 #include <utilities/testing.h>
 #endif
 /**
- * @struct LocalDoFData
- * @brief This struct is like a container to hold a face's 'l'ocal dof data
+ * @struct FaceLocalDoFData
+ * @brief This struct is like a container to hold a face's local dof data
  *
  * The struct contains
  * 1. Cell id
@@ -25,7 +25,7 @@
  * Often, this is used in conjunction with FaceDoFInfo and DoFHandler<dim>::cell_iterator to get
  * the global dof from the stored local data.
  */
-struct LocalDoFData
+struct FaceLocalDoFData
 {
     psize cell_id;
     usi face_id, face_dof_id;
@@ -35,7 +35,7 @@ struct LocalDoFData
      *
      * @pre @p f @f$\in [0,6)@f$, @p dof_id @f$\in [0,(N+1)^2)@f$
      */
-    LocalDoFData(const psize &c, const usi f, const usi d):
+    FaceLocalDoFData(const psize &c, const usi f, const usi d):
         cell_id(c), face_id(f), face_dof_id(d)
     {}
 
@@ -44,30 +44,30 @@ struct LocalDoFData
     /**
      * @brief Default constructor
      */
-    LocalDoFData() = default;
+    FaceLocalDoFData() = default;
     
     
     
     #ifdef DEBUG
     static void test()
     {
-        utilities::Testing t("LocalDoFData", "struct");
+        utilities::Testing t("FaceLocalDoFData", "struct");
         
         {
             t.new_block("testing complete construction");
-            LocalDoFData ldd(1000, 5, 3);
+            FaceLocalDoFData ldd(1000, 5, 3);
             std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.face_dof_id << "\n";
         }
 
         {
             t.new_block("testing default construction");
-            LocalDoFData ldd;
+            FaceLocalDoFData ldd;
             std::cout << ldd.cell_id << " " << ldd.face_id << " " << ldd.face_dof_id << "\n";
         }
         
         {
             t.new_block("testing access");
-            const LocalDoFData ldd(1000, 5, 3);
+            const FaceLocalDoFData ldd(1000, 5, 3);
             // ldd.cell_id = 100; // error
         }
     }

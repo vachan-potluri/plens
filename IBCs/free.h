@@ -14,7 +14,7 @@
 #include <modelling/cavars.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
-#include <dgsem/local_dof_data.h>
+#include <dgsem/face_local_dof_data.h>
 #include "BC.h"
 
 #include <array>
@@ -48,19 +48,19 @@ class Free: public BC
     ): BC(dh, gcv, gav) {}
     
     virtual void get_ghost_stage1(
-        const LocalDoFData &ldd,
+        const FaceLocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const override;
     
     virtual void get_ghost_stage2(
-        const LocalDoFData &ldd,
+        const FaceLocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const override;
     
     virtual void get_ghost_stage3(
-        const LocalDoFData &ldd,
+        const FaceLocalDoFData &ldd,
         const Tensor<1,dim> &normal,
         CAvars &ca_gh
     ) const override;

@@ -58,13 +58,13 @@ Periodic::Periodic(
 
 
 /**
- * Given a LocalDoFData object (@p ldd), this function first checks if the data is valid. I.e.;
+ * Given a FaceLocalDoFData object (@p ldd), this function first checks if the data is valid. I.e.;
  * whether the cell id and face id given in @p ldd actually occur in one of Periodic::per_pairs.
  * Then, @p pldd is set such that it gives the dof linked to @p ldd through periodicity.
  *
  * In future, the assertions will probably be made only in debug mode.
  */
-void Periodic::get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) const
+void Periodic::get_periodic_ldd(const FaceLocalDoFData& ldd, FaceLocalDoFData& pldd) const
 {
     psize pair_id;
     // check if cell with given id is present in periodic face pairs
@@ -92,7 +92,7 @@ void Periodic::get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) con
     AssertThrow(
         ldd.face_id == per_pairs[pair_id].face_idx[fid],
         StandardExceptions::ExcMessage(
-            "Face id given in LocalDofData doesn't match with the one stored in periodic face "
+            "Face id given in FaceLocalDoFData doesn't match with the one stored in periodic face "
             "pair vector."
         )
     );
@@ -117,12 +117,12 @@ void Periodic::get_periodic_ldd(const LocalDoFData& ldd, LocalDoFData& pldd) con
  * Gets ghost conservative state using Periodic::get_periodic_ldd().
  */
 void Periodic::get_ghost_stage1(
-    const LocalDoFData &ldd,
+    const FaceLocalDoFData &ldd,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
 {
-    LocalDoFData pldd;
+    FaceLocalDoFData pldd;
     get_periodic_ldd(ldd, pldd);
     get_state(pldd, cons_gh);
 }
@@ -133,12 +133,12 @@ void Periodic::get_ghost_stage1(
  * Gets ghost conservative state using Periodic::get_periodic_ldd().
  */
 void Periodic::get_ghost_stage2(
-    const LocalDoFData &ldd,
+    const FaceLocalDoFData &ldd,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
 {
-    LocalDoFData pldd;
+    FaceLocalDoFData pldd;
     get_periodic_ldd(ldd, pldd);
     get_state(pldd, cons_gh);
 }
@@ -149,12 +149,12 @@ void Periodic::get_ghost_stage2(
  * Gets ghost conservative state and auxiliary variables using Periodic::get_periodic_ldd().
  */
 void Periodic::get_ghost_stage3(
-    const LocalDoFData &ldd,
+    const FaceLocalDoFData &ldd,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
 ) const
 {
-    LocalDoFData pldd;
+    FaceLocalDoFData pldd;
     get_periodic_ldd(ldd, pldd);
     get_cavars(pldd, cav_gh);
 }
@@ -184,8 +184,8 @@ void Periodic::test()
 
         // Serial code testing
         // Now I am assuming subdivided hyper cube produces cells with ids ordered axis-wise
-        // LocalDoFData ldd(2, 0, 3); // cell id, face id, face dof id
-        // pldd should be LocalDoFData(3,1,3)
+        // FaceLocalDoFData ldd(2, 0, 3); // cell id, face id, face dof id
+        // pldd should be FaceLocalDoFData(3,1,3)
         // gdof of pldd is 3*27 + 11 = 92
 
         // Parallel testing
@@ -193,8 +193,8 @@ void Periodic::test()
         // Along with above assumptions, assuming cell id 0 is with 0-th process and 9 is with
         // other process. If false, the code will crash with access related error. If 9 is not
         // with other process, then the code is same as serial code
-        LocalDoFData ldd(0, 0, 3); // cell id, face id, face dof id
-        // ideally, pldd should be LocalDoFData(9,1,3)
+        FaceLocalDoFData ldd(0, 0, 3); // cell id, face id, face dof id
+        // ideally, pldd should be FaceLocalDoFData(9,1,3)
         // and gdof of pldd is 27*9 + 11
         // but things are not so, see WJ-30-Mar-2021
         
@@ -217,7 +217,7 @@ void Periodic::test()
         Tensor<1,dim> normal; // immaterial
 
         // run this in parallel with 2 processes
-        LocalDoFData ldd(5,0,0);
+        FaceLocalDoFData ldd(5,0,0);
         if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
             State cons;
             Avars av;
@@ -230,7 +230,7 @@ void Periodic::test()
             }
         }
 
-        LocalDoFData ldd2(0,1,0); // run this in serial/parallel
+        FaceLocalDoFData ldd2(0,1,0); // run this in serial/parallel
         if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
             State cons;
             Avars av;

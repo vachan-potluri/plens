@@ -54,7 +54,7 @@ void BC::form_cell_map()
 
 
 /**
- * @brief Returns global dof index based on LocalDoFData object @p ldd
+ * @brief Returns global dof index based on FaceLocalDoFData object @p ldd
  *
  * Algorithm:
  * - Use cell_map_ to get the cell iterator for cell index `ldd.cell_id`. Raise exception if the
@@ -63,7 +63,7 @@ void BC::form_cell_map()
  * - Use FaceDoFInfo @p fdi to get cell-local dof id from `ldd.face_id` and `ldd.face_dof_id`
  * - Use cell dof indices to get global dof from cell-local dof
  */
-psize BC::get_global_dof_id(const LocalDoFData &ldd) const
+psize BC::get_global_dof_id(const FaceLocalDoFData &ldd) const
 {
     DoFHandler<dim>::active_cell_iterator cell;
     try{
@@ -74,7 +74,7 @@ psize BC::get_global_dof_id(const LocalDoFData &ldd) const
         AssertThrow(
             false,
             StandardExceptions::ExcMessage(
-                "The cell described through LocalDoFData is not a relevant (owned/ghost) cell "
+                "The cell described through FaceLocalDoFData is not a relevant (owned/ghost) cell "
                 "of the dof handler used for construction."
             )
         );
@@ -99,7 +99,7 @@ psize BC::get_global_dof_id(const LocalDoFData &ldd) const
  *
  * Internally uses BC::get_global_dof_id()
  */
-void BC::get_state(const LocalDoFData &ldd, State &s) const
+void BC::get_state(const FaceLocalDoFData &ldd, State &s) const
 {
     const psize gdof_id = get_global_dof_id(ldd);
     for(cvar var: cvar_list) s[var] = g_cvars[var][gdof_id];
@@ -112,7 +112,7 @@ void BC::get_state(const LocalDoFData &ldd, State &s) const
  *
  * Internally uses BC::get_global_dof_id()
  */
-void BC::get_avars(const LocalDoFData &ldd, Avars &a) const
+void BC::get_avars(const FaceLocalDoFData &ldd, Avars &a) const
 {
     const psize gdof_id = get_global_dof_id(ldd);
     for(avar var: avar_list) a[var] = g_avars[var][gdof_id];
@@ -125,7 +125,7 @@ void BC::get_avars(const LocalDoFData &ldd, Avars &a) const
  *
  * Internally uses BC::get_global_dof_id()
  */
-void BC::get_cavars(const LocalDoFData &ldd, CAvars &ca) const
+void BC::get_cavars(const FaceLocalDoFData &ldd, CAvars &ca) const
 {
     const psize gdof_id = get_global_dof_id(ldd);
     
@@ -147,15 +147,15 @@ void BC::get_cavars(const LocalDoFData &ldd, CAvars &ca) const
  */
 void BC::set_wrappers()
 {
-    get_ghost_wrappers[0] = [=](const LocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
+    get_ghost_wrappers[0] = [=](const FaceLocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
         this->get_ghost_stage1(ldd, normal, ca.get_state());
     };
     
-    get_ghost_wrappers[1] = [=](const LocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
+    get_ghost_wrappers[1] = [=](const FaceLocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
         this->get_ghost_stage2(ldd, normal, ca.get_state());
     };
     
-    get_ghost_wrappers[2] = [=](const LocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
+    get_ghost_wrappers[2] = [=](const FaceLocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
         this->get_ghost_stage3(ldd, normal, ca);
     };
 }
@@ -181,7 +181,7 @@ void BC::test()
             bctd.dof_handler.active_cell_iterators().begin();
             // assuming "begin" is owned by this process
         ++cell; // assuming the next iterator is also owned by this process
-        LocalDoFData ldd(cell->index(), 1, 3);
+        FaceLocalDoFData ldd(cell->index(), 1, 3);
         
         psize gdof_id = bc.get_global_dof_id(ldd);
         bc.get_cavars(ldd, ca);

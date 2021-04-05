@@ -21,7 +21,7 @@ using namespace BCs;
  * @note @p normal is unused
  */
 void UniformInflow::get_ghost_stage1(
-    const LocalDoFData &ldd,
+    const FaceLocalDoFData &ldd,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
@@ -39,7 +39,7 @@ void UniformInflow::get_ghost_stage1(
  * @note @p normal and @p ldd are unused
  */
 void UniformInflow::get_ghost_stage2(
-    const LocalDoFData &ldd,
+    const FaceLocalDoFData &ldd,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
@@ -56,7 +56,7 @@ void UniformInflow::get_ghost_stage2(
  * calculated using inner avars and prescribed conservative state.
  */
 void UniformInflow::get_ghost_stage3(
-    const LocalDoFData &ldd,
+    const FaceLocalDoFData &ldd,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
 ) const
@@ -87,7 +87,7 @@ void UniformInflow::test()
     {
         t.new_block("testing ghost getters");
         Tensor<1,dim> normal; // immaterial
-        LocalDoFData ldd(1, 1, 3); // cell id, face id, face dof id
+        FaceLocalDoFData ldd(1, 1, 3); // cell id, face id, face dof id
         
         // modify bctd.g_cvars to get subsonic/supersonic state
         // State cons({1,1,1,2,53}); // p=20, subsonic
