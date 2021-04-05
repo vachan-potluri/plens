@@ -31,7 +31,35 @@ PLENS::~PLENS()
  * Declares all parameters.
  */
 void PLENS::declare_parameters()
-{}
+{
+    pcout << "\nDeclaring parameters\n";
+
+    prm.enter_subsection("mesh");
+    {
+        prm.declare_entry(
+            "type",
+            "straight",
+            Patterns::Selection("curved|straight"),
+            "Type of mesh. Options: curved|straight"
+        );
+
+        prm.declare_entry(
+            "mesh file format",
+            "msh",
+            Patterns::Selection("msh|vtk"),
+            "Format of mesh file. Only those that permit setting boundary id are of use. "
+            "Options: msh|vtk"
+        );
+
+        prm.declare_entry(
+            "mesh file name",
+            "",
+            Patterns::Anything(),
+            "Mesh file name. No checks are done on the format"
+        );
+    } // subsection mesh
+    prm.leave_subsection();
+}
 
 
 
