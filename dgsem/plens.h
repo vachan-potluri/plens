@@ -25,6 +25,9 @@
 
 using namespace dealii;
 
+// see https://stackoverflow.com/questions/4757565/what-are-forward-declarations-in-c
+class plens_test; // forward declaration
+
 /**
  * @class PLENS
  * @brief A class for perfect-gas laminar explicit Navier-Stokes computations.
@@ -56,6 +59,8 @@ using namespace dealii;
  */
 class PLENS
 {
+    friend plens_test; // for testing
+
     private:
     /**
      * The dimension
