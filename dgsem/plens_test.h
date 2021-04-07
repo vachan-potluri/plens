@@ -7,6 +7,7 @@
 #define PLENS_TEST_H
 
 #include "plens.h"
+#include <utilities/testing.h>
 
 using namespace dealii;
 /**
@@ -16,6 +17,8 @@ using namespace dealii;
 class plens_test
 {
     public:
+    plens_test();
+    ~plens_test();
     void read_mesh_test() const;
 };
 
