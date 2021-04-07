@@ -192,7 +192,29 @@ void PLENS::read_mesh()
     else{
         // curved type
         std::string curved_type = prm.get("curved subtype");
-        if(curved_type == "cylinder flare"){} // cylinder flare
+        if(curved_type == "cylinder flare"){
+            std::string temp;
+            std::vector<std::string> splits;
+
+            Tensor<1,dim> axis;
+            Point<dim> axis_p;
+            prm.enter_subsection("cylinder flare");
+            {
+                // get axis and axis point
+                temp = prm.get("axis direction"); // prm file guarantees this has exactly 3 doubles
+                utilities::split_string(temp, " ", splits);
+                for(usi d=0; d<dim; d++) axis[d] = stod(splits[d]);
+
+                temp = prm.get("axis point"); // prm file guarantees this has exactly 3 doubles
+                utilities::split_string(temp, " ", splits);
+                for(usi d=0; d<dim; d++) axis_p[d] = stod(splits[d]);
+            }
+            prm.leave_subsection(); // cylinder flare
+
+            CylindricalManifold<dim> manifold(axis, axis_p);
+            triang.set_all_manifold_ids(0);
+            triang.set_manifold(0, manifold);
+        } // if cylinder flare
         else{
             // blunted double cone
             AssertThrow(

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
@@ -16,8 +17,12 @@
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/grid/grid_in.h>
+#include <deal.II/base/tensor.h>
+#include <deal.II/base/point.h>
+#include <deal.II/grid/manifold_lib.h>
 
 #include "dgsem/dtype_aliases.h"
+#include "utilities/split_string.h"
 
 #ifdef DEBUG
 #include "utilities/testing.h"
