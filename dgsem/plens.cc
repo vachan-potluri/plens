@@ -41,7 +41,9 @@ void PLENS::declare_parameters()
             "type",
             "straight",
             Patterns::Selection("curved|straight"),
-            "Type of mesh. Options: curved|straight"
+            "Type of mesh. Options: curved|straight. If the mesh is curved, then it has to either "
+            "be cylinder flare geometry or blunted double cone geometry. See the note "
+            "'pens2D to plens' and entries around WJ-05-Apr-2021."
         );
 
         prm.declare_entry(
@@ -58,6 +60,52 @@ void PLENS::declare_parameters()
             Patterns::Anything(),
             "Mesh file name. No checks are done on the format"
         );
+
+        // Entries for curved mesh. See entries around WJ-05-Apr-2021 and the note
+        // 'pens2D to plens'
+        prm.enter_subsection("cylinder flare");
+        {
+            prm.declare_entry(
+                "axis direction",
+                "1 0 0",
+                Patterns::List(Patterns::Double(), dim, dim, " "),
+                "Space-separated elements of a vector indicating axis direction. The vector may "
+                "be scaled arbitrarily"
+            );
+
+            prm.declare_entry(
+                "axis point",
+                "0 0 0",
+                Patterns::List(Patterns::Double(), dim, dim, " "),
+                "Space-separated elements of a coordinate indicating any point on the axis"
+            );
+        } // subsection cylinder flare
+
+        prm.enter_subsection("blunted double cone");
+        {
+            prm.declare_entry(
+                "axis direction",
+                "1 0 0",
+                Patterns::List(Patterns::Double(), dim, dim, " "),
+                "Space-separated elements of a vector indicating axis direction. The vector may "
+                "be scaled arbitrarily"
+            );
+
+            prm.declare_entry(
+                "nose center",
+                "0 0 0",
+                Patterns::List(Patterns::Double(), dim, dim, " "),
+                "Space-separated elements of a coordinate indicating the center of blunted nose"
+            );
+
+            prm.declare_entry(
+                "blunt angle",
+                "0",
+                Patterns::Double(),
+                "Angle from axis upto which blunting is done. This angle generally matches with "
+                "the tangent angle to the cone that follows blunted section"
+            );
+        } // subsection blunted double cone
     } // subsection mesh
     prm.leave_subsection();
 
