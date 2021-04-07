@@ -16,6 +16,9 @@ using namespace dealii;
  */
 class plens_test
 {
+    private:
+    utilities::Testing t;
+    
     public:
     plens_test();
     ~plens_test();

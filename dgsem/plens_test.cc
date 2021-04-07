@@ -9,9 +9,9 @@
  * Constructor. Sets the testing object
  */
 plens_test::plens_test()
-{
-    utilities::Testing t("PLENS", "class");
-}
+:
+t("PLENS", "class")
+{}
 
 
 
