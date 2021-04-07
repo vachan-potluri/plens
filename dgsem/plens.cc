@@ -80,6 +80,7 @@ void PLENS::declare_parameters()
                 "Space-separated elements of a coordinate indicating any point on the axis"
             );
         } // subsection cylinder flare
+        prm.leave_subsection();
 
         prm.enter_subsection("blunted double cone");
         {
@@ -106,6 +107,7 @@ void PLENS::declare_parameters()
                 "the tangent angle to the cone that follows blunted section"
             );
         } // subsection blunted double cone
+        prm.leave_subsection();
     } // subsection mesh
     prm.leave_subsection();
 
