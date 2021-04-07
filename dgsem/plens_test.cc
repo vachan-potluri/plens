@@ -5,5 +5,5 @@
 
 #include "plens_test.h"
 
-void plens_test::read_mesh_test()
+void plens_test::read_mesh_test() const
 {}
