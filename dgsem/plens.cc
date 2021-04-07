@@ -84,6 +84,26 @@ void PLENS::declare_parameters()
  *
  * For straight edged meshes, the procedure is simple.
  *
+ * For curved meshes, only "cylinder flare" and "blunted double cone" geometries are supported. For
+ * cylinder flare, the entire mesh is assigned CylindricalManifold. For blunted double cone, the
+ * nose part is assigned SphericalManifold and the rest is assigned CylindricalManifold. See note
+ * __pens2D to plens__ and entries around WJ-05-Apr-2021. The algorithm for setting manifold on
+ * blunted double cone is
+ *
+ * - Loop over all cells
+ *  - If the angle between line joining cell center to nose center and axis is less than blunt
+ *    angle
+ *    - Set manifold id 0 (for spherical manifold)
+ *  - Else
+ *    - Set manifold id 1 (for cylindrical manifold)
+ *
+ * Where blunt angle is the angle from axis upto which blunting is done. This angle generally
+ * matches with the tangent angle to the cone that follows blunted section. Note that it is
+ * implicitly assumed that the cone originating from nose center with cone angle equalling blunt
+ * angle (this cone divides the mesh into two manifolds) doesn't pass through any cell. Meaning,
+ * only cell interfaces lie on this dividing cone. This can be ensured by meshing the two regions
+ * independently.
+ *
  * If there are any periodic BCs to be set, then `triang` object must be modified. This will be
  * done when BCs are set.
  */

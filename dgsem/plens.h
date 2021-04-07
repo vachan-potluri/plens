@@ -48,8 +48,11 @@ using namespace dealii;
  * to read and construct using dealii's built-in functions.
  *
  * Curved meshes are significantly complicated because dealii doesn't provide a support to directly
- * read higher order meshes. See the note __pens2D to plens__ for more details. These are not yet
- * supported.
+ * read higher order meshes. See the note __pens2D to plens__ for more details. Also see entries
+ * around WJ-05-Apr-2021. To truly have curved meshes, i.e.; curvature even in the internal cell
+ * edges, manifold must be set to all the internal features too. Because specifying region wise
+ * manifold through prm file is difficult, currently only "cylinder flare" and
+ * "blunted double cone" geometries are supported. See read_mesh() for more details.
  */
 class PLENS
 {
