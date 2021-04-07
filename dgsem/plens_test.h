@@ -11,6 +11,7 @@
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/fe/mapping_q_generic.h>
 
 #include "plens.h"
 #include <utilities/testing.h>
