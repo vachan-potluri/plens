@@ -6,6 +6,8 @@
 #ifndef PLENS_TEST_H
 #define PLENS_TEST_H
 
+#include <iostream>
+
 #include "plens.h"
 #include <utilities/testing.h>
 
@@ -18,7 +20,7 @@ class plens_test
 {
     private:
     utilities::Testing t;
-    
+
     public:
     plens_test();
     ~plens_test();

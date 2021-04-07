@@ -11,7 +11,9 @@
 plens_test::plens_test()
 :
 t("PLENS", "class")
-{}
+{
+    read_mesh_test();
+}
 
 
 
