@@ -7,6 +7,10 @@
 #define PLENS_TEST_H
 
 #include <iostream>
+#include <fstream>
+
+#include <deal.II/base/exceptions.h>
+#include <deal.II/grid/grid_out.h>
 
 #include "plens.h"
 #include <utilities/testing.h>
