@@ -177,17 +177,20 @@ void PLENS::read_mesh()
     if(format == "msh") fmt = GridIn<dim>::Format::msh;
     else fmt = GridIn<dim>::Format::vtk;
 
+    // common code for straight/curved meshes
+    std::ifstream file(filename);
+    AssertThrow(
+        file.good(),
+        StandardExceptions::ExcMessage(
+            "Unable to open mesh file"
+        )
+    );
+    grid_in.read(file, fmt);
+    file.close();
+
     // straight edge meshes
     if(type == "straight"){
-        std::ifstream file(filename);
-        AssertThrow(
-            file.good(),
-            StandardExceptions::ExcMessage(
-                "Unable to open mesh file"
-            )
-        );
-        grid_in.read(file, fmt);
-        file.close();
+        // additional settings for straight meshes
     }
     else{
         // curved type
