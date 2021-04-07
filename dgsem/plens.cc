@@ -61,6 +61,15 @@ void PLENS::declare_parameters()
             "Mesh file name. No checks are done on the format"
         );
 
+        prm.declare_entry(
+            "curved subtype",
+            "cylinder flare",
+            Patterns::Selection("cylinder flare|blunted double cone"),
+            "If 'type' was set to 'curved', then this entry indicates which type of curved mesh "
+            "is in question. Accordingly, the entries of that subsection are considered. Options "
+            "'cylinder flare|blunted double cone'"
+        );
+
         // Entries for curved mesh. See entries around WJ-05-Apr-2021 and the note
         // 'pens2D to plens'
         prm.enter_subsection("cylinder flare");
@@ -89,22 +98,15 @@ void PLENS::declare_parameters()
                 "1 0 0",
                 Patterns::List(Patterns::Double(), dim, dim, " "),
                 "Space-separated elements of a vector indicating axis direction. The vector may "
-                "be scaled arbitrarily"
+                "be scaled arbitrarily. Here, it is assumed that axis points away from the nose"
             );
 
             prm.declare_entry(
-                "nose center",
+                "separation point",
                 "0 0 0",
                 Patterns::List(Patterns::Double(), dim, dim, " "),
-                "Space-separated elements of a coordinate indicating the center of blunted nose"
-            );
-
-            prm.declare_entry(
-                "blunt angle",
-                "0",
-                Patterns::Double(),
-                "Angle from axis upto which blunting is done. This angle generally matches with "
-                "the tangent angle to the cone that follows blunted section"
+                "Space-separated elements of a coordinate indicating the bifurcation between nose "
+                "section and cone section. This point must also lie on the axis"
             );
         } // subsection blunted double cone
         prm.leave_subsection();
@@ -141,18 +143,16 @@ void PLENS::declare_parameters()
  * blunted double cone is
  *
  * - Loop over all cells
- *  - If the angle between line joining cell center to nose center and axis is less than blunt
- *    angle
+ *  - If the dot product of line joining separation point to cell center and axis is negative
  *    - Set manifold id 0 (for spherical manifold)
  *  - Else
  *    - Set manifold id 1 (for cylindrical manifold)
  *
- * Where blunt angle is the angle from axis upto which blunting is done. This angle generally
- * matches with the tangent angle to the cone that follows blunted section. Note that it is
- * implicitly assumed that the cone originating from nose center with cone angle equalling blunt
- * angle (this cone divides the mesh into two manifolds) doesn't pass through any cell. Meaning,
- * only cell interfaces lie on this dividing cone. This can be ensured by meshing the two regions
- * independently.
+ * Where separation point is a point on the axis which bifurcates the cone section from sphere
+ * section. The plane normal to axis and passing through the separation point is the bifurcator.
+ *
+ * @note It is assumed that the cells are also strictly bifurcated: no cells have bifurcator plane
+ * passing through them in the middle. This can be ensured by meshing the two regions separately.
  *
  * If there are any periodic BCs to be set, then `triang` object must be modified. This will be
  * done when BCs are set.
@@ -190,14 +190,18 @@ void PLENS::read_mesh()
         file.close();
     }
     else{
-        AssertThrow(
-            false,
-            StandardExceptions::ExcMessage(
-                "Curved meshes currently unsupported"
-            )
-        );
+        // curved type
+        std::string curved_type = prm.get("curved subtype");
+        if(curved_type == "cylinder flare"){} // cylinder flare
+        else{
+            // blunted double cone
+            AssertThrow(
+                false,
+                StandardExceptions::ExcMessage("Currently double cone unimplemented")
+            );
+        } // blunted double cone
     }
-    prm.leave_subsection();
+    prm.leave_subsection(); // subsection mesh
 }
 
 
