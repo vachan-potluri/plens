@@ -43,7 +43,7 @@ void plens_test::read_mesh_test() const
     );
     MappingQGeneric<PLENS::dim> mapping(2);
     GridOut grid_out;
-    grid_out.write_gnu_plot(problem.triang, file, &mapping);
+    grid_out.write_gnuplot(problem.triang, file, &mapping);
     file.close();
     std::cout << "Written the triangulation into 'read_mesh_test.gpl'. Go ahead and check!\n";
 }
