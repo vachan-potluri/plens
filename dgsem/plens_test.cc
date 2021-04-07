@@ -34,16 +34,16 @@ void plens_test::read_mesh_test() const
     PLENS problem;
     problem.read_mesh();
 
-    std::ofstream file("read_mesh_test.eps");
+    std::ofstream file("read_mesh_test.gpl");
     AssertThrow(
         file.good(),
         StandardExceptions::ExcMessage(
-            "Unable to open file 'read_mesh_test.eps' for outputting the triangulation"
+            "Unable to open file 'read_mesh_test.gpl' for outputting the triangulation"
         )
     );
     MappingQGeneric<PLENS::dim> mapping(2);
     GridOut grid_out;
-    grid_out.write_eps(problem.triang, file, &mapping);
+    grid_out.write_gnu_plot(problem.triang, file, &mapping);
     file.close();
-    std::cout << "Written the triangulation into 'read_mesh_test.eps'. Go ahead and check!\n";
+    std::cout << "Written the triangulation into 'read_mesh_test.gpl'. Go ahead and check!\n";
 }
