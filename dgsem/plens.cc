@@ -227,6 +227,7 @@ void PLENS::read_mesh()
             triang.set_manifold(0, manifold);
         } // if cylinder flare
         else{
+            // guaranteed to be blunted double cone
             std::string temp;
             std::vector<std::string> splits;
 
@@ -256,7 +257,7 @@ void PLENS::read_mesh()
             double dotp; // dot product
             for(auto cell: triang.active_cell_iterators()){
                 if(!(cell->is_locally_owned())) continue;
-                dotp = scalar_product(axis, cell->center() - nose_center);
+                dotp = scalar_product(axis, cell->center() - separation_p);
                 if(dotp < 0) cell->set_all_manifold_ids(0); // sphere
                 else cell->set_all_manifold_ids(1); // cylinder
             } // loop over owned active cells
