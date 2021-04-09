@@ -108,6 +108,14 @@ void PLENS::declare_parameters()
                 "Space-separated elements of a coordinate indicating the bifurcation between nose "
                 "section and cone section. This point must also lie on the axis"
             );
+
+            prm.declare_entry(
+                "nose center",
+                "0 0 0",
+                Patterns::List(Patterns::Double(), dim, dim, " "),
+                "Space-separated elements of a coordinate indicating the nose center. This point, "
+                "naturally, lies on the axis."
+            );
         } // subsection blunted double cone
         prm.leave_subsection();
     } // subsection mesh
@@ -144,9 +152,9 @@ void PLENS::declare_parameters()
  *
  * - Loop over all cells
  *  - If the dot product of line joining separation point to cell center and axis is negative
- *    - Set manifold id 0 (for spherical manifold)
+ *    - Set manifold id for spherical manifold
  *  - Else
- *    - Set manifold id 1 (for cylindrical manifold)
+ *    - Set manifold id for cylindrical manifold
  *
  * Where separation point is a point on the axis which bifurcates the cone section from sphere
  * section. The plane normal to axis and passing through the separation point is the bifurcator.
@@ -219,12 +227,35 @@ void PLENS::read_mesh()
             triang.set_manifold(0, manifold);
         } // if cylinder flare
         else{
-            // blunted double cone
-            AssertThrow(
-                false,
-                StandardExceptions::ExcMessage("Currently double cone unimplemented")
-            );
-        } // blunted double cone
+            std::string temp;
+            std::vector<std::string> splits;
+
+            Tensor<1,dim> axis;
+            Point<dim> separation_p, nose_center;
+
+            prm.enter_subsection("blunted double cone");
+            {
+                // get axis and axis point
+                temp = prm.get("axis direction"); // prm file guarantees this has exactly 3 doubles
+                utilities::split_string(temp, " ", splits);
+                for(usi d=0; d<dim; d++) axis[d] = stod(splits[d]);
+
+                temp = prm.get("separation point"); // prm file guarantees this has exactly 3 doubles
+                utilities::split_string(temp, " ", splits);
+                for(usi d=0; d<dim; d++) separation_p[d] = stod(splits[d]);
+
+                temp = prm.get("nose center"); // prm file guarantees this has exactly 3 doubles
+                utilities::split_string(temp, " ", splits);
+                for(usi d=0; d<dim; d++) nose_center[d] = stod(splits[d]);
+            }
+            prm.leave_subsection(); // blunted double cone
+
+            CylindricalManifold<dim> manifold0(axis, separation_p);
+            SphericalManifold<dim> manifold1(nose_center);
+            for(auto cell: triang.active_cell_iterators()){
+                if(!(cell->is_locally_owned())) continue;
+            } // loop over owned active cells
+        } // if blunted double cone
     }
     prm.leave_subsection(); // subsection mesh
 }
