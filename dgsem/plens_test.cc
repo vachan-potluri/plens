@@ -25,8 +25,13 @@ plens_test::~plens_test() = default;
 
 
 /**
- * Tests PLENS::read_mesh(). Also outputs the read mesh in the file "read_mesh_test.eps". Eps is
- * used instead of vtk because it supports Q2 mapping.
+ * Tests PLENS::read_mesh(). Also outputs the read mesh in the file "read_mesh_test.vtk". Although
+ * only triangulation is to be printed, by default grid out functions don't add additional points
+ * (based on manifold) for internal cells. See
+ * https://groups.google.com/g/dealii/c/UOIvkNV5va4.
+ * So to really see if manifold is applied on internal cells, DataOut has to be used. For this
+ * purpose a temporary dof handler is constructed here. VtkFlags are not required to be set here
+ * because any solution data is not being written.
  */
 void plens_test::read_mesh_test() const
 {
@@ -34,16 +39,23 @@ void plens_test::read_mesh_test() const
     PLENS problem;
     problem.read_mesh();
 
-    std::ofstream file("read_mesh_test.gpl");
+    // construct temporary dof handler
+    DoFHandler<PLENS::dim> dof_handler(problem.triang);
+
+    MappingQGeneric<PLENS::dim> mapping(4);
+    DataOut<PLENS::dim> data_out;
+    data_out.attach_dof_handler(dof_handler);
+    data_out.build_patches(
+        mapping, mapping.get_degree(), DataOut<PLENS::dim>::CurvedCellRegion::curved_inner_cells
+    );
+    std::ofstream file("read_mesh_test.vtk");
     AssertThrow(
         file.good(),
         StandardExceptions::ExcMessage(
-            "Unable to open file 'read_mesh_test.gpl' for outputting the triangulation"
+            "Unable to open file 'read_mesh_test.vtk' for outputting the triangulation"
         )
     );
-    MappingQGeneric<PLENS::dim> mapping(2);
-    GridOut grid_out;
-    grid_out.write_gnuplot(problem.triang, file, &mapping);
+    data_out.write_vtk(file);
     file.close();
-    std::cout << "Written the triangulation into 'read_mesh_test.gpl'. Go ahead and check!\n";
+    std::cout << "Written the triangulation into 'read_mesh_test.vtk'. Go ahead and check!\n";
 }
