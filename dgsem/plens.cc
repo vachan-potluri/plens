@@ -250,11 +250,19 @@ void PLENS::read_mesh()
             }
             prm.leave_subsection(); // blunted double cone
 
-            CylindricalManifold<dim> manifold0(axis, separation_p);
-            SphericalManifold<dim> manifold1(nose_center);
+            CylindricalManifold<dim> cyl_man(axis, separation_p);
+            SphericalManifold<dim> sph_man(nose_center);
+
+            double dotp; // dot product
             for(auto cell: triang.active_cell_iterators()){
                 if(!(cell->is_locally_owned())) continue;
+                dotp = scalar_product(axis, cell->center() - nose_center);
+                if(dotp < 0) cell->set_all_manifold_ids(0); // sphere
+                else cell->set_all_manifold_ids(1); // cylinder
             } // loop over owned active cells
+
+            triang.set_manifold(0, sph_man);
+            triang.set_manifold(1, cyl_man);
         } // if blunted double cone
     }
     prm.leave_subsection(); // subsection mesh
