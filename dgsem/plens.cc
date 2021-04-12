@@ -57,8 +57,8 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "file name",
             "",
-            Patterns::Anything(),
-            "Mesh file name. No checks are done on the format"
+            Patterns::FileName(),
+            "Mesh file name. No checks are done on the format and existance of the file"
         );
 
         prm.declare_entry(
@@ -135,38 +135,41 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "gamma",
             "1.4",
-            Patterns::Double(),
-            "Specific heat ratio"
+            Patterns::Double(1,3),
+            "Specific heat ratio. Has to lie in [1,3]"
         );
         prm.declare_entry(
             "molecular weight",
             "0.028",
-            Patterns::Double(),
-            "Molecular weight in kg/mol"
+            Patterns::Double(1e-3),
+            "Molecular weight in kg/mol. Has to lie in [1e-3, infty)"
         );
         prm.declare_entry(
             "Prandtl number",
             "0.71",
-            Patterns::Double(),
-            ""
+            Patterns::Double(1e-8),
+            "Has to lie in [1e-8, infty)"
         );
         prm.declare_entry(
             "mu0",
             "1e-5",
-            Patterns::Double(),
-            "Value of mu0 in SI units to be used in Sutherland's viscosity model"
+            Patterns::Double(0),
+            "Value of mu0 in SI units to be used in Sutherland's viscosity model. Has to lie in "
+            "[0, infty). Zero value implies inviscid and non-conducting gas"
         );
         prm.declare_entry(
             "T0",
             "300",
-            Patterns::Double(),
-            "Value of T0 in K to be used in Sutherland's viscosity model"
+            Patterns::Double(1e-4),
+            "Value of T0 in K to be used in Sutherland's viscosity model. Has to lie in "
+            "[1e-4, infty)"
         );
         prm.declare_entry(
             "S",
             "100",
-            Patterns::Double(),
-            "Value of S in K to be used in Sutherland's viscosity model"
+            Patterns::Double(1e-4),
+            "Value of S in K to be used in Sutherland's viscosity model. Has to lie in "
+            "[1e-4, infty)"
         );
     }
     prm.leave_subsection(); // subsection Navier-Stokes
