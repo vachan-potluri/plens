@@ -118,8 +118,58 @@ void PLENS::declare_parameters()
             );
         } // subsection blunted double cone
         prm.leave_subsection();
-    } // subsection mesh
-    prm.leave_subsection();
+    }
+    prm.leave_subsection(); // subsection mesh
+
+    prm.enter_subsection("Navier-Stokes");
+    {
+        prm.declare_entry(
+            "gas name",
+            "air",
+            Patterns::Selection("air|nitrogen|custom"),
+            "Gas to be used in simulation. Options: 'air|nitrogen|custom'. For a 'custom' gas "
+            "gamma, molecular weight, Prandtl number, mu0, T0 and S must be provided. For air and "
+            "nitrogen, these entries are ignored."
+        );
+
+        prm.declare_entry(
+            "gamma",
+            "1.4",
+            Patterns::Double(),
+            "Specific heat ratio"
+        );
+        prm.declare_entry(
+            "molecular weight",
+            "0.028",
+            Patterns::Double(),
+            "Molecular weight in kg/mol"
+        );
+        prm.declare_entry(
+            "Prandtl number",
+            "0.71",
+            Patterns::Double(),
+            ""
+        );
+        prm.declare_entry(
+            "mu0",
+            "1e-5",
+            Patterns::Double(),
+            "Value of mu0 in SI units to be used in Sutherland's viscosity model"
+        );
+        prm.declare_entry(
+            "T0",
+            "300",
+            Patterns::Double(),
+            "Value of T0 in K to be used in Sutherland's viscosity model"
+        );
+        prm.declare_entry(
+            "S",
+            "100",
+            Patterns::Double(),
+            "Value of S in K to be used in Sutherland's viscosity model"
+        );
+    }
+    prm.leave_subsection(); // subsection Navier-Stokes
 
     std::ofstream sample_file("sample_input_file.prm");
     AssertThrow(
