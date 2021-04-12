@@ -171,6 +171,43 @@ void PLENS::declare_parameters()
             "Value of S in K to be used in Sutherland's viscosity model. Has to lie in "
             "[1e-4, infty)"
         );
+
+        prm.declare_entry(
+            "auxiliary surface flux scheme",
+            "BR1",
+            Patterns::Selection("BR1"),
+            "Options: 'BR1'"
+        );
+        prm.declare_entry(
+            "auxiliary volume flux scheme",
+            "BR1",
+            Patterns::Selection("BR1"),
+            "Options: 'BR1'"
+        );
+        prm.declare_entry(
+            "inviscid surface flux scheme",
+            "HLLC",
+            Patterns::Selection("HLLC|Rusanov"),
+            "Options: 'HLLC|Rusanov'"
+        );
+        prm.declare_entry(
+            "inviscid volume flux scheme",
+            "Chandrashekhar",
+            Patterns::Selection("Chandrashekhar"),
+            "Options: 'Chandrashekhar'"
+        );
+        prm.declare_entry(
+            "viscous surface flux scheme",
+            "BR1",
+            Patterns::Selection("BR1"),
+            "Options: 'BR1'"
+        );
+        prm.declare_entry(
+            "viscous volume flux scheme",
+            "BR1",
+            Patterns::Selection("BR1"),
+            "Options: 'BR1'"
+        );
     }
     prm.leave_subsection(); // subsection Navier-Stokes
 
