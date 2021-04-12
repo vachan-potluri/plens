@@ -133,6 +133,15 @@ void PLENS::declare_parameters()
         );
 
         prm.declare_entry(
+            "inviscid",
+            "true",
+            Patterns::Bool(),
+            "If gas name is either 'air' or 'nitrogen', then this value is passed to NavierStokes "
+            "constructor. For a 'custom' gas, this setting has no effect and inviscid nature of "
+            "such a gas can be set by assigning 0 value to mu0"
+        );
+
+        prm.declare_entry(
             "gamma",
             "1.4",
             Patterns::Double(1,3),
@@ -358,6 +367,13 @@ void PLENS::read_mesh()
     }
     prm.leave_subsection(); // subsection mesh
 }
+
+
+
+/**
+ * Forms the NavierStokes object based on settings in prm file. See declare_parameters() for the
+ * settings.
+ */
 
 
 
