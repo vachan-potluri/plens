@@ -22,12 +22,12 @@
 #include <deal.II/base/point.h>
 #include <deal.II/grid/manifold_lib.h>
 
-#include "dgsem/dtype_aliases.h"
-#include "utilities/split_string.h"
-#include "modelling/navier_stokes.h"
+#include <dgsem/dtype_aliases.h>
+#include <utilities/split_string.h>
+#include <modelling/navier_stokes.h>
 
 #ifdef DEBUG
-#include "utilities/testing.h"
+#include <utilities/testing.h>
 #endif
 
 using namespace dealii;
