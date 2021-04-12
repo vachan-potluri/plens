@@ -218,6 +218,7 @@ class NavierStokes
     );
     NavierStokes(
         const std::string gas_name,
+        const bool inviscid = false,
         const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
         const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
         const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,

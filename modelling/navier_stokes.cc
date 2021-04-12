@@ -43,6 +43,7 @@ NavierStokes::NavierStokes(
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
+    const bool inviscid,
     const aux_surf_flux_scheme asfs,
     const aux_vol_flux_scheme avfs,
     const inv_surf_flux_scheme isfs,
@@ -59,16 +60,16 @@ NavierStokes::NavierStokes(
         )
     );
     
-    double gma=1.4, M, Pr=0.69, mu0, T0=273, S;
+    double gma=1.4, M, Pr=0.69, mu0(0), T0=273, S;
     if(gas_name == "air"){
         M = 0.029;
-        mu0 = 1.716e-5;
+        if(!inviscid) mu0 = 1.716e-5;
         S = 111;
     }
     else{
         // guaranteed to be nitrogen
         M = 0.028;
-        mu0 = 1.663e-5;
+        if(!inviscid) mu0 = 1.663e-5;
         S = 107;
     }
     
