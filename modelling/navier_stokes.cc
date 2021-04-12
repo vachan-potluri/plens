@@ -696,6 +696,12 @@ void NavierStokes::test()
         NavierStokes ns("N2");
         ns.print_modelling_params();
     }
+
+    {
+        t.new_block("testing inviscid argument");
+        NavierStokes ns("N2", true); // inviscid
+        ns.print_modelling_params();
+    }
     
     {
         t.new_block();
