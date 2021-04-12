@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
@@ -23,6 +24,7 @@
 
 #include "dgsem/dtype_aliases.h"
 #include "utilities/split_string.h"
+#include "modelling/navier_stokes.h"
 
 #ifdef DEBUG
 #include "utilities/testing.h"
@@ -93,11 +95,18 @@ class PLENS
      */
     parallel::distributed::Triangulation<dim> triang;
 
+    /**
+     * The NavierStokes object. Set in set_NS(). A unique pointer is used. When raw pointer is
+     * required, use get(). Until set_NS() is called, it remains a nullptr as set in constructor
+     */
+    std::unique_ptr<NavierStokes> ns_ptr;
+
     public:
     PLENS();
     ~PLENS();
     void declare_parameters();
     void read_mesh();
+    void set_NS();
 
 
 

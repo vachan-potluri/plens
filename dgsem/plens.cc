@@ -12,7 +12,8 @@ PLENS::PLENS()
 :
 mpi_comm(MPI_COMM_WORLD),
 pcout(std::cout, (Utilities::MPI::this_mpi_process(mpi_comm)==0)),
-triang(mpi_comm)
+triang(mpi_comm),
+ns_ptr(nullptr)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -206,13 +207,13 @@ void PLENS::declare_parameters()
             "Options: 'Chandrashekhar'"
         );
         prm.declare_entry(
-            "viscous surface flux scheme",
+            "diffusive surface flux scheme",
             "BR1",
             Patterns::Selection("BR1"),
             "Options: 'BR1'"
         );
         prm.declare_entry(
-            "viscous volume flux scheme",
+            "diffusive volume flux scheme",
             "BR1",
             Patterns::Selection("BR1"),
             "Options: 'BR1'"
@@ -374,6 +375,51 @@ void PLENS::read_mesh()
  * Forms the NavierStokes object based on settings in prm file. See declare_parameters() for the
  * settings.
  */
+void PLENS::set_NS()
+{
+    prm.enter_subsection("Navier-Stokes");
+    {
+        // first read flux scheme settings since they are common
+        std::string temp;
+        NavierStokes::aux_surf_flux_scheme asfs;
+        NavierStokes::aux_vol_flux_scheme avfs;
+        NavierStokes::inv_surf_flux_scheme isfs;
+        NavierStokes::inv_vol_flux_scheme ivfs;
+        NavierStokes::dif_surf_flux_scheme dsfs;
+        NavierStokes::dif_vol_flux_scheme dvfs;
+
+        temp = prm.get("auxiliary surface flux scheme");
+        if(temp == "BR1") asfs = NavierStokes::aux_surf_flux_scheme::BR1;
+
+        temp = prm.get("auxiliary volume flux scheme");
+        if(temp == "BR1") avfs = NavierStokes::aux_vol_flux_scheme::BR1;
+
+        temp = prm.get("inviscid surface flux scheme");
+        if(temp == "HLLC") isfs = NavierStokes::inv_surf_flux_scheme::hllc;
+        else isfs = NavierStokes::inv_surf_flux_scheme::rusanov;
+
+        temp = prm.get("inviscid volume flux scheme");
+        if(temp == "Chandrashekhar") ivfs = NavierStokes::inv_vol_flux_scheme::chandrashekhar;
+
+        temp = prm.get("diffusive surface flux scheme");
+        if(temp == "BR1") dsfs = NavierStokes::dif_surf_flux_scheme::BR1;
+
+        temp = prm.get("diffusive volume flux scheme");
+        if(temp == "BR1") dvfs = NavierStokes::dif_vol_flux_scheme::BR1;
+
+        std::string gas_name;
+        bool inviscid;
+        gas_name = prm.get("gas name");
+        if(gas_name != "custom"){
+            // 'air' or 'nitrogen'
+            inviscid = prm.get_bool("inviscid");
+            ns_ptr = std::make_unique<NavierStokes>(
+                gas_name, inviscid, asfs, avfs, isfs, ivfs, dsfs, dvfs
+            );
+        }
+    }
+    prm.leave_subsection(); // subsection Navier-Stokes
+}
 
 
 
