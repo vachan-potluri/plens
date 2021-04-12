@@ -22,7 +22,7 @@
 #include <deal.II/base/point.h>
 #include <deal.II/grid/manifold_lib.h>
 
-#include <dgsem/dtype_aliases.h>
+#include "dtype_aliases.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
 

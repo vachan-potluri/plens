@@ -32,6 +32,12 @@ PLENS::~PLENS()
 
 /**
  * Declares all parameters.
+ *
+ * A total of 12 BCs with ids 0 to 11 are declared in subsection BCs. If any of them are left unset
+ * in 'input.prm', then the default type "none" is assumed. Data required for BCs is specified in
+ * subsections BCs.bid<x> where x takes values 0 to 11. In the function set_BC(), the value of x
+ * is set to all physical boundary ids and corresponding sections are read from prm file. Thus, any
+ * physical boundary id cannot have "none" as its type.
  */
 void PLENS::declare_parameters()
 {
@@ -221,6 +227,74 @@ void PLENS::declare_parameters()
         );
     }
     prm.leave_subsection(); // subsection Navier-Stokes
+
+    prm.enter_subsection("BCs");
+    {
+        std::string base_name("bid"), cur_name;
+        usi n_bc_max(12);
+        for(usi i=0; i<n_bc_max; i++){
+            cur_name = base_name + std::to_string(i);
+            prm.enter_subsection(cur_name);
+            {
+                prm.declare_entry(
+                    "type",
+                    "none",
+                    Patterns::Selection(
+                        "none|free|outflow|uniform inflow|uniform temp wall|symmetry|periodic"
+                    ),
+                    "Type of BC. Options: 'none|free|outflow|uniform inflow|uniform temp wall"
+                    "|symmetry|periodic'. 'none' type cannot be specified for a physical boundary"
+                );
+
+                prm.declare_entry(
+                    "prescribed p",
+                    "1e5",
+                    Patterns::Double(1e-16),
+                    "Presribed pressure. Must lie in [1e-16, infty). Relevant for: outflow, "
+                    "uniform inflow"
+                );
+
+                prm.declare_entry(
+                    "prescribed T",
+                    "1",
+                    Patterns::Double(1e-16),
+                    "Prescribed temperature. Must lie in [1e-16, infty). Relevant for: "
+                    "uniform inflow, uniform temp wall"
+                );
+
+                prm.declare_entry(
+                    "prescribed velocity",
+                    "0 0 0",
+                    Patterns::List(Patterns::Double(), dim, dim, " "),
+                    "Space-separated values for prescribed velocity. Relevant for: "
+                    "uniform inflow, uniform temp wall. For uniform temp wall, this describes "
+                    "the wall velocity."
+                );
+
+                prm.declare_entry(
+                    "periodic direction",
+                    "0",
+                    Patterns::Integer(0,dim-1),
+                    "Cartesian direction for periodic BC. See "
+                    "https://www.dealii.org/current/doxygen/deal.II/namespaceGridTools.html#ab22eef800535f9e85a1723a6a36fd0f6. "
+                    "Relevant for: periodic"
+                );
+
+                prm.declare_entry(
+                    "right periodic boundary id",
+                    "1",
+                    Patterns::Integer(0,n_bc_max-1),
+                    "The 'right' boundary id of the other periodic boundary of the mesh; the "
+                    "boundary id of present section is treated as 'left'. See "
+                    "https://www.dealii.org/current/doxygen/deal.II/namespaceGridTools.html#ab22eef800535f9e85a1723a6a36fd0f6. "
+                    "Relevant for: periodic. It is important that ONLY ONE entry per periodic "
+                    "boundary pair be present in the prm file."
+                );
+            }
+            prm.leave_subsection(); // bid<x> subsection
+        } // loop over boundary ids
+    }
+    prm.leave_subsection(); // subsection BCs
 
     std::ofstream sample_file("sample_input_file.prm");
     AssertThrow(
