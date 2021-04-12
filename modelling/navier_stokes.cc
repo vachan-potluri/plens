@@ -52,11 +52,11 @@ NavierStokes::NavierStokes(
     const dif_vol_flux_scheme dvfs
 )
 {
-    bool gas_supported = (gas_name=="air" || gas_name=="N2");
+    bool gas_supported = (gas_name=="air" || gas_name=="N2" || gas_name=="nitrogen");
     AssertThrow(
         gas_supported,
         dealii::StandardExceptions::ExcMessage(
-            "Unsupported gas name. Only 'air' and 'N2' are currently supported"
+            "Unsupported gas name. Only 'air' and 'N2' (or 'nitrogen') are currently supported"
         )
     );
     
