@@ -17,6 +17,7 @@
 
 #include "plens.h"
 #include <utilities/testing.h>
+#include <modelling/navier_stokes.h>
 
 using namespace dealii;
 /**
@@ -32,6 +33,7 @@ class plens_test
     plens_test();
     ~plens_test();
     void read_mesh_test() const;
+    void set_NS_test() const;
 };
 
 #endif

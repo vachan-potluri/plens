@@ -6,7 +6,8 @@
 #include "plens.h"
 
 /**
- * Constructor.
+ * Constructor. Calls declare_parameters() and parses parameter file. The parameter file should be
+ * named 'input.prm'.
  */
 PLENS::PLENS()
 :

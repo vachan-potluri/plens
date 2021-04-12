@@ -13,6 +13,7 @@ plens_test::plens_test()
 t("PLENS", "class")
 {
     read_mesh_test();
+    set_NS_test();
 }
 
 
@@ -58,4 +59,18 @@ void plens_test::read_mesh_test() const
     data_out.write_vtk(file);
     file.close();
     std::cout << "Written the triangulation into 'read_mesh_test.vtk'. Go ahead and check!\n";
+}
+
+
+
+/**
+ * Tests the construction of NS object
+ */
+void plens_test::set_NS_test() const
+{
+    t.new_block("testing construction of NS object");
+    PLENS problem;
+    problem.set_NS();
+
+    problem.ns_ptr->print_modelling_params();
 }
