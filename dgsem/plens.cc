@@ -417,6 +417,18 @@ void PLENS::set_NS()
                 gas_name, inviscid, asfs, avfs, isfs, ivfs, dsfs, dvfs
             );
         }
+        else{
+            // custom gas, read modelling parameters
+            double gma = prm.get_double("gamma");
+            double MW = prm.get_double("molecular weight");
+            double Pr = prm.get_double("Prandtl number");
+            double mu0 = prm.get_double("mu0");
+            double T0 = prm.get_double("T0");
+            double S = prm.get_double("S");
+            ns_ptr = std::make_unique<NavierStokes>(
+                gma, MW, Pr, mu0, T0, S, asfs, avfs, isfs, ivfs, dsfs, dvfs
+            );
+        }
     }
     prm.leave_subsection(); // subsection Navier-Stokes
 }
