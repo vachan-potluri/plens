@@ -25,6 +25,7 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_face.h>
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/grid/grid_tools.h>
 
 #include "dtype_aliases.h"
 #include <utilities/split_string.h>
@@ -67,6 +68,9 @@ class plens_test; // forward declaration
  * edges, manifold must be set to all the internal features too. Because specifying region wise
  * manifold through prm file is difficult, currently only "cylinder flare" and
  * "blunted double cone" geometries are supported. See read_mesh() for more details.
+ *
+ * If there are any periodic boundary conditions, then the mesh has to be in 'standard orientation'
+ * as described in dealii documentation. The best example of such meshes is a cartesian mesh.
  */
 class PLENS
 {

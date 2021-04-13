@@ -539,6 +539,36 @@ void PLENS::set_NS()
  */
 void PLENS::set_dof_handler()
 {
+    prm.enter_subsection("BCs");
+    {
+        std::string base_name("bid"), cur_name, type;
+        for(usi i=0; i<n_bc_max; i++){
+            cur_name = base_name + std::to_string(i);
+            prm.enter_subsection(cur_name);
+            {
+                type = prm.get("type");
+                if(type == "periodic"){
+                    const usi periodic_direction = prm.get_integer("periodic direction");
+
+                    std::vector<GridTools::PeriodicFacePair<
+                        parallel::distributed::Triangulation<dim>::cell_iterator>
+                    > matched_pairs;
+
+                    GridTools::collect_periodic_faces(
+                        triang,
+                        i, // 'left' boundary id
+                        periodic_direction, // direction,
+                        matched_pairs
+                    );
+
+                    triang.add_periodicity(matched_pairs);
+                }
+            }
+            prm.leave_subsection(); // bid<x>
+        }
+    }
+    prm.leave_subsection(); // subsection BCs
+
     dof_handler.distribute_dofs(fe);
 }
 
