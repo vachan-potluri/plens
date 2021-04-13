@@ -24,6 +24,7 @@
 #include <deal.II/fe/mapping_q_generic.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_face.h>
+#include <deal.II/dofs/dof_handler.h>
 
 #include "dtype_aliases.h"
 #include <utilities/split_string.h>
@@ -129,6 +130,11 @@ class PLENS
      * Finite element object for face. Will be used in assembly. Set in constructor.
      */
     FE_FaceQ<dim> fe_face;
+
+    /**
+     * Dof handler object.
+     */
+    DoFHandler<dim> dof_handler;
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);

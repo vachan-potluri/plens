@@ -21,7 +21,8 @@ ns_ptr(nullptr),
 mapping_ho_degree(mhod),
 mapping_ptr(nullptr),
 fe(fe_degree),
-fe_face(fe_degree)
+fe_face(fe_degree),
+dof_handler(triang)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -537,7 +538,9 @@ void PLENS::set_NS()
  * @pre read_mesh() has to be called before this.
  */
 void PLENS::set_dof_handler()
-{}
+{
+    dof_handler.distribute_dofs(fe);
+}
 
 
 
