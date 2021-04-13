@@ -21,6 +21,7 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/point.h>
 #include <deal.II/grid/manifold_lib.h>
+#include <deal.II/fe/mapping_q_generic.h>
 
 #include "dtype_aliases.h"
 #include <utilities/split_string.h>
@@ -73,6 +74,7 @@ class PLENS
      * The dimension
      */
     static constexpr int dim = 3;
+    static constexpr usi n_bc_max = 12;
 
     /**
      * The MPI communicator. Set to MPI_COMM_WORLD in the constructor
@@ -100,6 +102,12 @@ class PLENS
      * required, use get(). Until set_NS() is called, it remains a nullptr as set in constructor
      */
     std::unique_ptr<NavierStokes> ns_ptr;
+
+    /**
+     * Pointer to the mapping object. This will be set in read_mesh() where the mesh type
+     * (straight/curved) is used to set the degree of mapping. For 'curved' mesh, the mapping
+     * degree is set equal to the value taken through constructor.
+     */
 
     public:
     PLENS();

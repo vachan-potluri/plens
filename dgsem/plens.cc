@@ -231,7 +231,6 @@ void PLENS::declare_parameters()
     prm.enter_subsection("BCs");
     {
         std::string base_name("bid"), cur_name;
-        usi n_bc_max(12);
         for(usi i=0; i<n_bc_max; i++){
             cur_name = base_name + std::to_string(i);
             prm.enter_subsection(cur_name);
