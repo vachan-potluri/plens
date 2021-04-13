@@ -104,13 +104,22 @@ class PLENS
     std::unique_ptr<NavierStokes> ns_ptr;
 
     /**
+     * Degree used to set maping_ptr in case read_mesh() detects a curved mesh. 'HO' abbreviates
+     * high order here. Thus this variable makes sense only when >1. If it is equal to 1, then it
+     * means straight edges will be used even if mesh subsection in prm file mentions curved mesh.
+     */
+    const usi mapping_ho_degree;
+
+    /**
      * Pointer to the mapping object. This will be set in read_mesh() where the mesh type
      * (straight/curved) is used to set the degree of mapping. For 'curved' mesh, the mapping
-     * degree is set equal to the value taken through constructor.
+     * degree is set equal to the value taken through constructor. Until read_mesh() is called,
+     * it remains a nullptr as set in constructor
      */
+    std::unique_ptr<MappingQGeneric<dim>> mapping_ptr;
 
     public:
-    PLENS();
+    PLENS(const usi mhod = 2);
     ~PLENS();
     void declare_parameters();
     void read_mesh();

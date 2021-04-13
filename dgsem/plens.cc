@@ -7,17 +7,24 @@
 
 /**
  * Constructor. Calls declare_parameters() and parses parameter file. The parameter file should be
- * named 'input.prm'.
+ * named 'input.prm'. Asserts `mhod>0`. Sets ns_ptr and mapping_ptr to nullptr.
  */
-PLENS::PLENS()
+PLENS::PLENS(const usi mhod)
 :
 mpi_comm(MPI_COMM_WORLD),
 pcout(std::cout, (Utilities::MPI::this_mpi_process(mpi_comm)==0)),
 triang(mpi_comm),
-ns_ptr(nullptr)
+ns_ptr(nullptr),
+mapping_ho_degree(mhod),
+mapping_ptr(nullptr)
 {
     declare_parameters();
     prm.parse_input("input.prm");
+
+    AssertThrow(
+        mhod > 0,
+        StandardExceptions::ExcMessage("High order mapping degree must be >= 1.")
+    );
 }
 
 
