@@ -323,7 +323,8 @@ void PLENS::declare_parameters()
  * boundary ids, see
  * https://dealii.org/developer/doxygen/deal.II/group__simplex.html#ga058cd187cea704428ac1118410cd0fb8
  *
- * For straight edged meshes, the procedure is simple.
+ * For straight edged meshes, the procedure is simple. mapping_ptr is set using
+ * MappingQGeneric<dim>(1).
  *
  * For curved meshes, only "cylinder flare" and "blunted double cone" geometries are supported. For
  * cylinder flare, the entire mesh is assigned CylindricalManifold. For blunted double cone, the
@@ -340,11 +341,13 @@ void PLENS::declare_parameters()
  * Where separation point is a point on the axis which bifurcates the cone section from sphere
  * section. The plane normal to axis and passing through the separation point is the bifurcator.
  *
+ * For curved meshes, mapping_ptr is set using MappingQGeneric<dim>(mapping_ho_degree).
+ *
  * @note It is assumed that the cells are also strictly bifurcated: no cells have bifurcator plane
  * passing through them in the middle. This can be ensured by meshing the two regions separately.
  *
  * If there are any periodic BCs to be set, then `triang` object must be modified. This will be
- * done when BCs are set.
+ * done in set_dof_handler().
  */
 void PLENS::read_mesh()
 {
@@ -380,9 +383,11 @@ void PLENS::read_mesh()
     // straight edge meshes
     if(type == "straight"){
         // additional settings for straight meshes
+        mapping_ptr = std::make_unique<MappingQGeneric<dim>>(1);
     }
     else{
         // curved type
+        mapping_ptr = std::make_unique<MappingQGeneric<dim>>(mapping_ho_degree);
         std::string curved_type = prm.get("curved subtype");
         if(curved_type == "cylinder flare"){
             std::string temp;
