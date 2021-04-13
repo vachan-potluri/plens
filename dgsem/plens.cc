@@ -9,14 +9,19 @@
  * Constructor. Calls declare_parameters() and parses parameter file. The parameter file should be
  * named 'input.prm'. Asserts `mhod>0`. Sets ns_ptr and mapping_ptr to nullptr.
  */
-PLENS::PLENS(const usi mhod)
+PLENS::PLENS(
+    const usi mhod,
+    const usi fe_degree
+)
 :
 mpi_comm(MPI_COMM_WORLD),
 pcout(std::cout, (Utilities::MPI::this_mpi_process(mpi_comm)==0)),
 triang(mpi_comm),
 ns_ptr(nullptr),
 mapping_ho_degree(mhod),
-mapping_ptr(nullptr)
+mapping_ptr(nullptr),
+fe(fe_degree),
+fe_face(fe_degree)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -523,12 +528,13 @@ void PLENS::set_NS()
 
 /**
  * Sets the dof handler object. Here a loop over BC section of prm file is done to check if there
- * are any periodic BCs. If there are, then periodicity is added appropriately.
+ * are any periodic BCs. If there are, then periodicity is added appropriately. Step-45 has detials
+ * about adding periodicity to distributed meshes. See WJ-13-Apr-2021.
  *
  * @note It is assumed that there is only one entry in the prm file for a pair of periodic
  * boundaries.
  *
- * @pre read_mesh() has to be called before this
+ * @pre read_mesh() has to be called before this.
  */
 void PLENS::set_dof_handler()
 {}

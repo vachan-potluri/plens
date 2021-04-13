@@ -22,6 +22,8 @@
 #include <deal.II/base/point.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/fe/mapping_q_generic.h>
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_face.h>
 
 #include "dtype_aliases.h"
 #include <utilities/split_string.h>
@@ -118,8 +120,18 @@ class PLENS
      */
     std::unique_ptr<MappingQGeneric<dim>> mapping_ptr;
 
+    /**
+     * Finite element object (for volume). Set in constructor.
+     */
+    FE_DGQ<dim> fe;
+
+    /**
+     * Finite element object for face. Will be used in assembly. Set in constructor.
+     */
+    FE_FaceQ<dim> fe_face;
+
     public:
-    PLENS(const usi mhod = 2);
+    PLENS(const usi mhod = 2, const usi fe_degree = 1);
     ~PLENS();
     void declare_parameters();
     void read_mesh();
