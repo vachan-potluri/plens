@@ -510,6 +510,20 @@ void PLENS::set_NS()
 
 
 
+/**
+ * Sets the dof handler object. Here a loop over BC section of prm file is done to check if there
+ * are any periodic BCs. If there are, then periodicity is added appropriately.
+ *
+ * @note It is assumed that there is only one entry in the prm file for a pair of periodic
+ * boundaries.
+ *
+ * @pre read_mesh() has to be called before this
+ */
+void PLENS::set_dof_handler()
+{}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {

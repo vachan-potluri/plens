@@ -107,6 +107,7 @@ class PLENS
     void declare_parameters();
     void read_mesh();
     void set_NS();
+    void set_dof_handler();
 
 
 
