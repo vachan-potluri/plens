@@ -599,6 +599,8 @@ void PLENS::set_dof_handler()
  * Initialises the solution vectors. An important difference from pens2D is that currently relevant
  * dofs are set directly to what dealii's functions return. So all dofs of neighboring and periodic
  * cells are added instead of just those lying on common face.
+ *
+ * @pre read_mesh() and set_dof_handler() must be called before this
  */
 void PLENS::set_sol_vecs()
 {
@@ -617,6 +619,8 @@ void PLENS::set_sol_vecs()
 
 /**
  * Sets the IC
+ *
+ * @pre read_mesh(), set_NS(), set_dof_handler() and set_sol_vecs() must be called before this
  */
 void PLENS::set_IC()
 {
@@ -636,6 +640,8 @@ void PLENS::set_IC()
         }
     }
     prm.leave_subsection(); // subsection IC
+
+    ic_ptr->set();
 }
 
 
