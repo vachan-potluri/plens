@@ -574,6 +574,26 @@ void PLENS::set_dof_handler()
 
 
 
+/**
+ * Initialises the solution vectors. An important difference from pens2D is that currently relevant
+ * dofs are set directly to what dealii's functions return. So all dofs of neighboring and periodic
+ * cells are added instead of just those lying on common face.
+ */
+void PLENS::set_sol_vecs()
+{
+    locally_owned_dofs = dof_handler.locally_owned_dofs();
+    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+
+    for(cvar var: cvar_list){
+        g_cvars[var].reinit(locally_owned_dofs, mpi_comm);
+        gold_cvars[var].reinit(locally_owned_dofs, mpi_comm);
+        gcrk_cvars[var].reinit(locally_owned_dofs, mpi_comm);
+        gh_gcrk_cvars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
+    }
+}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {

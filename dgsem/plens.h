@@ -26,11 +26,14 @@
 #include <deal.II/fe/fe_face.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/base/index_set.h>
+#include <deal.II/dofs/dof_tools.h>
 
 #include "dtype_aliases.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
 #include "LA.h"
+#include <modelling/var_enums.h>
 
 #ifdef DEBUG
 #include <utilities/testing.h>
@@ -155,6 +158,16 @@ class PLENS
     DoFHandler<dim> dof_handler;
 
     /**
+     * Locally owned dofs. Set in set_sol_vecs()
+     */
+    IndexSet locally_owned_dofs;
+
+    /**
+     * Locally relevant dofs. Set in set_sol_vecs()
+     */
+    IndexSet locally_relevant_dofs;
+
+    /**
      * Global conservative variable vectors. These are mostly intended to serve as buffer to
      * gcrk_cvars
      */
@@ -184,6 +197,7 @@ class PLENS
     void read_mesh();
     void set_NS();
     void set_dof_handler();
+    void set_sol_vecs();
 
 
 
