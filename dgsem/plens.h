@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
@@ -34,6 +35,7 @@
 #include <modelling/navier_stokes.h>
 #include "LA.h"
 #include <modelling/var_enums.h>
+#include <IBCs/IC.h>
 #include <IBCs/piecewise_function.h>
 
 #ifdef DEBUG
@@ -154,9 +156,14 @@ class PLENS
     FE_FaceQ<dim> fe_face;
 
     /**
-     * Dof handler object.
+     * Dof handler object. Set in set_dof_handler()
      */
     DoFHandler<dim> dof_handler;
+
+    /**
+     * All relevant dof locations. Set in set_dof_handler()
+     */
+    std::map<unsigned int, Point<dim>> dof_locations;
 
     /**
      * Locally owned dofs. Set in set_sol_vecs()
@@ -199,6 +206,7 @@ class PLENS
     void set_NS();
     void set_dof_handler();
     void set_sol_vecs();
+    void set_IC();
 
 
 

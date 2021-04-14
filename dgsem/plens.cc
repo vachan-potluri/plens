@@ -589,6 +589,8 @@ void PLENS::set_dof_handler()
     prm.leave_subsection(); // subsection BCs
 
     dof_handler.distribute_dofs(fe);
+
+    DoFTools::map_dofs_to_support_points(*mapping_ptr, dof_handler, dof_locations);
 }
 
 
@@ -609,6 +611,31 @@ void PLENS::set_sol_vecs()
         gcrk_cvars[var].reinit(locally_owned_dofs, mpi_comm);
         gh_gcrk_cvars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
+}
+
+
+
+/**
+ * Sets the IC
+ */
+void PLENS::set_IC()
+{
+    std::unique_ptr<ICs::IC> ic_ptr;
+    prm.enter_subsection("IC");
+    {
+        std::string type = prm.get("type");
+        if(type == "piecewise function"){
+            std::string filename = prm.get("file name");
+            ic_ptr = std::make_unique<ICs::PiecewiseFunction>(
+                dof_handler,
+                dof_locations,
+                g_cvars,
+                filename,
+                ns_ptr.get()
+            );
+        }
+    }
+    prm.leave_subsection(); // subsection IC
 }
 
 
