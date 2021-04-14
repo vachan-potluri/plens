@@ -308,6 +308,25 @@ void PLENS::declare_parameters()
     }
     prm.leave_subsection(); // subsection BCs
 
+    prm.enter_subsection("IC");
+    {
+        prm.declare_entry(
+            "type",
+            "piecewise function",
+            Patterns::Selection("piecewise function"),
+            "Options: 'piecewise function'"
+        );
+
+        prm.declare_entry(
+            "file name",
+            "ic.dat",
+            Patterns::FileName(),
+            "Relevant for: piecewise function. For piecewise function, this file must contain a "
+            "list of functions of conservative variables in pieces of domain."
+        );
+    }
+    prm.leave_subsection(); // subsection IC
+
     std::ofstream sample_file("sample_input_file.prm");
     AssertThrow(
         sample_file.good(),

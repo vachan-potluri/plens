@@ -34,6 +34,7 @@
 #include <modelling/navier_stokes.h>
 #include "LA.h"
 #include <modelling/var_enums.h>
+#include <IBCs/piecewise_function.h>
 
 #ifdef DEBUG
 #include <utilities/testing.h>
