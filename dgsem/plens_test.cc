@@ -12,8 +12,9 @@ plens_test::plens_test()
 :
 t("PLENS", "class")
 {
-    read_mesh_test();
-    set_NS_test();
+    // read_mesh_test();
+    // set_NS_test();
+    set_IC_test();
 }
 
 
@@ -68,9 +69,72 @@ void plens_test::read_mesh_test() const
  */
 void plens_test::set_NS_test() const
 {
-    t.new_block("testing construction of NS object");
+    t.new_block("testing set_NS()");
     PLENS problem;
     problem.set_NS();
 
     problem.ns_ptr->print_modelling_params();
+}
+
+
+
+/**
+ * Tests setting of IC. Run this preferrably in solo and in parallel.
+ */
+void plens_test::set_IC_test() const
+{
+    t.new_block("testing set_IC()");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+
+    DataOut<PLENS::dim> data_out;
+    data_out.attach_dof_handler(problem.dof_handler);
+    for(cvar var: cvar_list) data_out.add_data_vector(problem.g_cvars[var], cvar_names[var]);
+
+    Vector<float> subdom(problem.triang.n_active_cells());
+    for(float &x: subdom) x = problem.triang.locally_owned_subdomain();
+    data_out.add_data_vector(subdom, "Subdomain");
+
+    data_out.build_patches(
+        *(problem.mapping_ptr),
+        problem.mapping_ho_degree,
+        DataOut<PLENS::dim>::CurvedCellRegion::curved_inner_cells
+    );
+
+    // individual processor files
+    std::ofstream proc_file(
+        "set_IC_test" +
+        Utilities::int_to_string(Utilities::MPI::this_mpi_process(problem.mpi_comm), 2) +
+        ".vtu"
+    );
+    AssertThrow(
+        proc_file.good(),
+        StandardExceptions::ExcMessage(
+            "Unable to open processor file"
+        )
+    );
+
+    // master file
+    if(Utilities::MPI::this_mpi_process(problem.mpi_comm) == 0){
+        std::vector<std::string> filenames;
+        for(psize i=0; i<Utilities::MPI::n_mpi_processes(problem.mpi_comm); i++){
+            filenames.emplace_back(
+                "set_IC_test" +
+                Utilities::int_to_string(i,2) +
+                ".vtu"
+            );
+        }
+        std::ofstream master_file("set_IC_test.pvtu");
+        AssertThrow(
+            master_file.good(),
+            StandardExceptions::ExcMessage(
+                "Unable to open master file"
+            )
+        );
+        data_out.write_pvtu_record(master_file, filenames);
+    }
 }
