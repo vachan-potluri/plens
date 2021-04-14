@@ -30,6 +30,7 @@
 #include "dtype_aliases.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
+#include "LA.h"
 
 #ifdef DEBUG
 #include <utilities/testing.h>
@@ -71,6 +72,19 @@ class plens_test; // forward declaration
  *
  * If there are any periodic boundary conditions, then the mesh has to be in 'standard orientation'
  * as described in dealii documentation. The best example of such meshes is a cartesian mesh.
+ *
+ * @section dof_handler DoFHandler and solution vectors
+ *
+ * Because periodic boundary conditions are supported, the dof handler being constructed must take
+ * this into account. This is done in set_dof_handler(). Note that there will be two loops required
+ * over BCs. Once for setting dof handler and once for setting BCs. These two steps cannot be
+ * combined because BCs require dof handler and solution vectors for construction.
+ *
+ * Once dof handler is constructed, the solution vectors are constructed using the owned and
+ * relevant dofs. Relevant dofs here are combination of owned dofs and dofs in neighboring cells
+ * and the dofs in cells connected by periodicity (if any). Unlike in pens2D, here all the dofs
+ * are taken as relevant rather than just the ones lying on the common face. This may be modified
+ * in the future.
  */
 class PLENS
 {
@@ -139,6 +153,29 @@ class PLENS
      * Dof handler object.
      */
     DoFHandler<dim> dof_handler;
+
+    /**
+     * Global conservative variable vectors. These are mostly intended to serve as buffer to
+     * gcrk_cvars
+     */
+    std::array<LA::MPI::Vector, 5> g_cvars;
+
+    /**
+     * Global conservative variable vectors of previous time step. These are required in RK
+     * updates
+     */
+    std::array<LA::MPI::Vector, 5> gold_cvars;
+
+    /**
+     * Global conservative variable vectors of 'c'urrent 'RK' solution. These are the main vectors
+     * which are updated in every time step
+     */
+    std::array<LA::MPI::Vector, 5> gcrk_cvars;
+
+    /**
+     * Ghosted version of gcrk_cvars
+     */
+    std::array<LA::MPI::Vector, 5> gh_gcrk_cvars;
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);
