@@ -568,6 +568,7 @@ void PLENS::set_dof_handler()
                 type = prm.get("type");
                 if(type == "periodic"){
                     const usi periodic_direction = prm.get_integer("periodic direction");
+                    const usi right_id = prm.get_integer("right periodic boundary id");
 
                     std::vector<GridTools::PeriodicFacePair<
                         parallel::distributed::Triangulation<dim>::cell_iterator>
@@ -575,7 +576,8 @@ void PLENS::set_dof_handler()
 
                     GridTools::collect_periodic_faces(
                         triang,
-                        i, // 'left' boundary id
+                        i, // 'left' boundary id,
+                        right_id, // 'right' boundary id
                         periodic_direction, // direction,
                         matched_pairs
                     );
