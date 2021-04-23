@@ -300,7 +300,9 @@ void PLENS::declare_parameters()
                     "boundary id of present section is treated as 'left'. See "
                     "https://www.dealii.org/current/doxygen/deal.II/namespaceGridTools.html#ab22eef800535f9e85a1723a6a36fd0f6. "
                     "Relevant for: periodic. It is important that ONLY ONE entry per periodic "
-                    "boundary pair be present in the prm file."
+                    "boundary pair be present in the prm file. This id can also equal the 'left' "
+                    "id, in which case a different version of collect_periodic_faces() will be "
+                    "called. See PLENS::set_dof_handler()"
                 );
             }
             prm.leave_subsection(); // bid<x> subsection
@@ -554,6 +556,9 @@ void PLENS::set_NS()
  * @note It is assumed that there is only one entry in the prm file for a pair of periodic
  * boundaries.
  *
+ * If the 'right' id and 'left' id of a pair match (i.e.; both faces have same id), then a more
+ * restricted version of collect_periodic_faces() is called which takes only one boundary id.
+ *
  * @pre read_mesh() has to be called before this.
  */
 void PLENS::set_dof_handler()
@@ -574,13 +579,23 @@ void PLENS::set_dof_handler()
                         parallel::distributed::Triangulation<dim>::cell_iterator>
                     > matched_pairs;
 
-                    GridTools::collect_periodic_faces(
-                        triang,
-                        i, // 'left' boundary id,
-                        right_id, // 'right' boundary id
-                        periodic_direction, // direction,
-                        matched_pairs
-                    );
+                    if(i != right_id){
+                        GridTools::collect_periodic_faces(
+                            triang,
+                            i, // 'left' boundary id,
+                            right_id, // 'right' boundary id
+                            periodic_direction, // direction,
+                            matched_pairs
+                        );
+                    }
+                    else{
+                        GridTools::collect_periodic_faces(
+                            triang,
+                            i, // 'left' and 'right' boundary id,
+                            periodic_direction, // direction,
+                            matched_pairs
+                        );
+                    }
 
                     triang.add_periodicity(matched_pairs);
                 }
