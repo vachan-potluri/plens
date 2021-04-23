@@ -244,7 +244,8 @@ void PLENS::declare_parameters()
     prm.enter_subsection("BCs");
     {
         std::string base_name("bid"), cur_name;
-        for(usi i=0; i<n_bc_max; i++){
+        // for gmsh, physical ids must be strictly positive
+        for(usi i=1; i<=n_bc_max; i++){
             cur_name = base_name + std::to_string(i);
             prm.enter_subsection(cur_name);
             {
@@ -295,7 +296,7 @@ void PLENS::declare_parameters()
                 prm.declare_entry(
                     "right periodic boundary id",
                     "1",
-                    Patterns::Integer(0,n_bc_max-1),
+                    Patterns::Integer(1,n_bc_max),
                     "The 'right' boundary id of the other periodic boundary of the mesh; the "
                     "boundary id of present section is treated as 'left'. See "
                     "https://www.dealii.org/current/doxygen/deal.II/namespaceGridTools.html#ab22eef800535f9e85a1723a6a36fd0f6. "
