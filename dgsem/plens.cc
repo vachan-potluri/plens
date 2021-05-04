@@ -567,7 +567,7 @@ void PLENS::set_dof_handler()
     prm.enter_subsection("BCs");
     {
         std::string base_name("bid"), cur_name, type;
-        for(usi i=0; i<n_bc_max; i++){
+        for(usi i=1; i<=n_bc_max; i++){
             cur_name = base_name + std::to_string(i);
             prm.enter_subsection(cur_name);
             {
