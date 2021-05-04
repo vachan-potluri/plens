@@ -39,6 +39,7 @@ class plens_test
     void read_mesh_test() const;
     void set_NS_test() const;
     void set_IC_test() const;
+    void collect_periodic_faces_test() const;
 };
 
 #endif

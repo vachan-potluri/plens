@@ -14,7 +14,8 @@ t("PLENS", "class")
 {
     // read_mesh_test();
     // set_NS_test();
-    set_IC_test();
+    // set_IC_test();
+    collect_periodic_faces_test();
 }
 
 
@@ -136,5 +137,32 @@ void plens_test::set_IC_test() const
             )
         );
         data_out.write_pvtu_record(master_file, filenames);
+    }
+}
+
+
+
+/**
+ * See WJ-04-May-2021. This function mimics the function at
+ * https://www.dealii.org/current/doxygen/deal.II/grid__tools__dof__handlers_8cc_source.html#l02115
+ * to see what is causing the assertion to fail. Apparently, the faces are not at all getting
+ * detected.
+ */
+void plens_test::collect_periodic_faces_test() const
+{
+    t.new_block("testing collect_periodic_faces() by mimicing");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    for(auto cell: problem.triang.active_cell_iterators()){
+        const auto face_1 = cell->face(4);
+        const auto face_2 = cell->face(5);
+        if(face_1->at_boundary()){
+            std::cout << "Found face1 of local id 4 at boundary with bid " << face_1->boundary_id()
+                << "\n";
+        }
+        if(face_2->at_boundary()){
+            std::cout << "Found face2 of local id 5 at boundary with bid " << face_2->boundary_id()
+                << "\n";
+        }
     }
 }
