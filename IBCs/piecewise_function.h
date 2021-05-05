@@ -10,6 +10,7 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_accessor.h>
 
 #include "IC.h"
 #include <dgsem/dtype_aliases.h>
