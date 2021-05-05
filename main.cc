@@ -39,8 +39,9 @@ int main(int argc, char** argv){
     // utilities::split_string_test();
     // ICs::PiecewiseFunction::test();
     // PLENS::test();
-    plens_test();
     // plens_test pt(); // doesn't work
     #endif
+
+    plens_test();
     return 0;
 }
