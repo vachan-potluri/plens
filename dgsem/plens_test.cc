@@ -74,7 +74,9 @@ void plens_test::set_NS_test() const
     PLENS problem;
     problem.set_NS();
 
+    #ifdef DEBUG
     problem.ns_ptr->print_modelling_params();
+    #endif
 }
 
 
