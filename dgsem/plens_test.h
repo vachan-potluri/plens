@@ -26,7 +26,8 @@
 using namespace dealii;
 /**
  * @class plens_test
- * @brief A class to test PLENS class.
+ * @brief A class to test PLENS class. Unlike all other test functions, this is designed to work
+ * in release mode too. Some additional functionality will be provided when running in debug mode.
  */
 class plens_test
 {

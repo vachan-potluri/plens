@@ -12,10 +12,10 @@ plens_test::plens_test()
 :
 t("PLENS", "class")
 {
-    read_mesh_test();
-    set_NS_test();
+    // read_mesh_test();
+    // set_NS_test();
     set_IC_test();
-    collect_periodic_faces_test();
+    // collect_periodic_faces_test();
 }
 
 
@@ -120,6 +120,7 @@ void plens_test::set_IC_test() const
             "Unable to open processor file"
         )
     );
+    data_out.write_vtu(proc_file);
 
     // master file
     if(Utilities::MPI::this_mpi_process(problem.mpi_comm) == 0){
@@ -139,6 +140,8 @@ void plens_test::set_IC_test() const
             )
         );
         data_out.write_pvtu_record(master_file, filenames);
+
+        std::cout << "Written pvtu and vtu files named 'set_IC_test'.\n";
     }
 }
 
