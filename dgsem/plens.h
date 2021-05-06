@@ -12,6 +12,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <set>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/distributed/tria.h>
@@ -38,6 +39,13 @@
 #include <modelling/var_enums.h>
 #include <IBCs/IC.h>
 #include <IBCs/piecewise_function.h>
+#include <IBCs/BC.h>
+#include <IBCs/free.h>
+#include <IBCs/outflow.h>
+#include <IBCs/uniform_inflow.h>
+#include <IBCs/uniform_temp_wall.h>
+#include <IBCs/symmetry.h>
+#include <IBCs/periodic.h>
 
 #ifdef DEBUG
 #include <utilities/testing.h>
@@ -199,6 +207,20 @@ class PLENS
      */
     std::array<LA::MPI::Vector, 5> gh_gcrk_cvars;
 
+    /**
+     * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
+     * too. This list is populated by looping over all faces held by this process. This is then
+     * used to form the boundary condition objects. This list enables construction of BC object
+     * only for those boundaries held by this mpi process.
+     */
+    std::set<usi> bid_list;
+
+    /**
+     * A map of pointers to BC objects for the boundaries held by this mpi process. The keys to
+     * this map are from PLENS::bid_list
+     */
+    std::map<usi, BCs::BC*> bc_list;
+
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);
     ~PLENS();
@@ -208,6 +230,7 @@ class PLENS
     void set_dof_handler();
     void set_sol_vecs();
     void set_IC();
+    void set_BC();
 
 
 

@@ -674,6 +674,23 @@ void PLENS::set_IC()
 
 
 
+/**
+ * Sets the BC
+ *
+ * Every boundary with a different boundary id is assigned a BC object. For periodic boundary
+ * conditions, each boundary of the periodic pair is assigned a separate BC object.
+ *
+ * First, a loop over all faces owned by this process is used to determing the number of boundaries
+ * this process is exposed to. The list PLENS::bid_list is thus populated. Then, based on this
+ * list, the boundary condition objects are constructed by parsing the prm file. For periodic
+ * boundary conditions, it might well be possible that the pairs are owned by different mpi
+ * processes and hence separate objects are assigned to them.
+ */
+void PLENS::set_BC()
+{}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {
