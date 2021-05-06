@@ -707,10 +707,11 @@ void PLENS::set_IC()
 void PLENS::set_BC()
 {
     // get the boundary ids held by this process
-    for(const auto &cell: dof_accessor.active_cell_iterators()){
+    for(const auto &cell: dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
 
-        for(const auto &face: cell->face_iterators()){
+        for(usi fid=0; fid<n_faces_per_cell; fid++){
+            const auto &face = cell->face(fid);
             if(face->at_boundary()){
                 bid_list.emplace(face->boundary_id());
             }

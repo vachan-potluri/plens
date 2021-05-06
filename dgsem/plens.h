@@ -31,6 +31,7 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/base/geometry_info.h>
 
 #include "dtype_aliases.h"
 #include <utilities/split_string.h>
@@ -110,7 +111,16 @@ class PLENS
      * The dimension
      */
     static constexpr int dim = 3;
+
+    /**
+     * The maximum number of boundary conditions. Use to declare parameters and set BCs
+     */
     static constexpr usi n_bc_max = 12;
+    
+    /**
+     * Number of faces per cell
+     */
+    static const usi n_faces_per_cell = GeometryInfo<dim>::faces_per_cell;
 
     /**
      * The MPI communicator. Set to MPI_COMM_WORLD in the constructor
