@@ -41,6 +41,7 @@ class plens_test
     void set_NS_test() const;
     void set_IC_test() const;
     void collect_periodic_faces_test() const;
+    void set_BC_test() const;
 };
 
 #endif

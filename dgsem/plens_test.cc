@@ -14,8 +14,9 @@ t("PLENS", "class")
 {
     // read_mesh_test();
     // set_NS_test();
-    set_IC_test();
+    // set_IC_test();
     // collect_periodic_faces_test();
+    set_BC_test();
 }
 
 
@@ -170,4 +171,18 @@ void plens_test::collect_periodic_faces_test() const
                 << "\n";
         }
     }
+}
+
+
+
+void plens_test::set_BC_test()
+{
+    t.new_block("testing set_IC()");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
 }
