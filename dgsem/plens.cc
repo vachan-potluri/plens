@@ -564,6 +564,10 @@ void PLENS::set_NS()
  * If the 'right' id and 'left' id of a pair match (i.e.; both faces have same id), then a more
  * restricted version of collect_periodic_faces() is called which takes only one boundary id.
  *
+ * @note It is required for set_BC() that right id and left id be different. But that is not
+ * required for this function. So this function doesn't assert that, set_BC() will. But this
+ * function will print a warning stating so.
+ *
  * @pre read_mesh() has to be called before this.
  */
 void PLENS::set_dof_handler()
@@ -595,6 +599,11 @@ void PLENS::set_dof_handler()
                         );
                     }
                     else{
+                        pcout << "WARNING\n Your prm file entry for boundary id " << i << " which "
+                            << "is of type 'periodic' has 'right periodic boundary id' equal to "
+                            << "the boundary id. This is ok for setting the dof handler, but will "
+                            << "cause an exception to be thrown while setting BCs. "
+                            << "See PLENS::set_BC() for detailed info.";
                         GridTools::collect_periodic_faces(
                             triang,
                             i, // 'left' and 'right' boundary id,
@@ -685,6 +694,10 @@ void PLENS::set_IC()
  * list, the boundary condition objects are constructed by parsing the prm file. For periodic
  * boundary conditions, it might well be possible that the pairs are owned by different mpi
  * processes and hence separate objects are assigned to them.
+ *
+ * @note For the reasons described above, it is mandatory that the 'left' and 'right' boundary ids
+ * for a periodic pair are different. Otherwise, it is impossible to set BCs::Periodic::fid
+ * correctly.
  */
 void PLENS::set_BC()
 {}
