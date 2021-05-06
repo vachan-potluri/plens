@@ -379,6 +379,7 @@ void PLENS::declare_parameters()
  */
 void PLENS::read_mesh()
 {
+    pcout << "Reading mesh ... ";
     std::string type, format, filename;
 
     // read all data
@@ -481,6 +482,7 @@ void PLENS::read_mesh()
         } // if blunted double cone
     }
     prm.leave_subsection(); // subsection mesh
+    pcout << "Completed\n";
 }
 
 
@@ -491,6 +493,7 @@ void PLENS::read_mesh()
  */
 void PLENS::set_NS()
 {
+    pcout << "Forming NavierStokes object ... ";
     prm.enter_subsection("Navier-Stokes");
     {
         // first read flux scheme settings since they are common
@@ -545,6 +548,7 @@ void PLENS::set_NS()
         }
     }
     prm.leave_subsection(); // subsection Navier-Stokes
+    pcout << "Completed\n";
 }
 
 
@@ -564,6 +568,7 @@ void PLENS::set_NS()
  */
 void PLENS::set_dof_handler()
 {
+    pcout << "Setting DoFHandler object ... ";
     prm.enter_subsection("BCs");
     {
         std::string base_name("bid"), cur_name, type;
@@ -609,6 +614,7 @@ void PLENS::set_dof_handler()
     dof_handler.distribute_dofs(fe);
 
     DoFTools::map_dofs_to_support_points(*mapping_ptr, dof_handler, dof_locations);
+    pcout << "Completed\n";
 }
 
 
@@ -622,6 +628,7 @@ void PLENS::set_dof_handler()
  */
 void PLENS::set_sol_vecs()
 {
+    pcout << "Initialising solution vectors ... ";
     locally_owned_dofs = dof_handler.locally_owned_dofs();
     DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
@@ -631,6 +638,7 @@ void PLENS::set_sol_vecs()
         gcrk_cvars[var].reinit(locally_owned_dofs, mpi_comm);
         gh_gcrk_cvars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
+    pcout << "Completed\n";
 }
 
 
@@ -642,6 +650,7 @@ void PLENS::set_sol_vecs()
  */
 void PLENS::set_IC()
 {
+    pcout << "Setting IC ... ";
     std::unique_ptr<ICs::IC> ic_ptr;
     prm.enter_subsection("IC");
     {
@@ -660,6 +669,7 @@ void PLENS::set_IC()
     prm.leave_subsection(); // subsection IC
 
     ic_ptr->set();
+    pcout << "Completed\n";
 }
 
 
