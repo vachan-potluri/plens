@@ -568,8 +568,11 @@ void PLENS::set_NS()
  * are any periodic BCs. If there are, then periodicity is added appropriately. Step-45 has detials
  * about adding periodicity to distributed meshes. See WJ-13-Apr-2021.
  *
- * @note It is assumed that there is only one entry in the prm file for a pair of periodic
- * boundaries.
+ * Since there will be separate entries for each surface/boundary in a periodic BC, the
+ * 'other surface boundary id' is stored in a set and any boundary id which lies in this set is
+ * ignored. Of course, this assumes the two entries of periodic boundaries are consistent with
+ * physical description in terms of their entries. Collecting and setting matched pairs only once
+ * is sufficient.
  *
  * If the 'right' id and 'left' id of a pair match (i.e.; both faces have same id), then a more
  * restricted version of collect_periodic_faces() is called which takes only one boundary id.
@@ -586,23 +589,42 @@ void PLENS::set_dof_handler()
     prm.enter_subsection("BCs");
     {
         std::string base_name("bid"), cur_name, type;
+        // boundary ids of periodic boundary which can be ignored
+        std::set<usi> bid_periodic_ignore;
         for(usi i=1; i<=n_bc_max; i++){
+            if(bid_periodic_ignore.count(i) == 1){
+                // this id has already been accounted for while parsing its partner periodic
+                // surface, hence skip
+                continue;
+            }
+
             cur_name = base_name + std::to_string(i);
             prm.enter_subsection(cur_name);
             {
                 type = prm.get("type");
                 if(type == "periodic"){
                     const usi periodic_direction = prm.get_integer("periodic direction");
-                    const usi right_id = prm.get_integer("right periodic boundary id");
+                    const std::string orientation = prm.get("periodic orientation");
+                    const usi other_id = prm.get_integer("other surface boundary id");
 
                     std::vector<GridTools::PeriodicFacePair<
                         parallel::distributed::Triangulation<dim>::cell_iterator>
                     > matched_pairs;
 
-                    if(i != right_id){
+                    if(i != other_id){
+                        usi left_id, right_id;
+                        if(orientation == "left"){
+                            left_id = i;
+                            right_id = other_id;
+                        }
+                        else{
+                            // prm handler guarantees orientation is either left or right
+                            left_id = other_id;
+                            right_id = i;
+                        }
                         GridTools::collect_periodic_faces(
                             triang,
-                            i, // 'left' boundary id,
+                            left_id, // 'left' boundary id,
                             right_id, // 'right' boundary id
                             periodic_direction, // direction,
                             matched_pairs
@@ -610,7 +632,7 @@ void PLENS::set_dof_handler()
                     }
                     else{
                         pcout << "WARNING\n Your prm file entry for boundary id " << i << " which "
-                            << "is of type 'periodic' has 'right periodic boundary id' equal to "
+                            << "is of type 'periodic' has 'other surface boundary id' equal to "
                             << "the boundary id. This is ok for setting the dof handler, but will "
                             << "cause an exception to be thrown while setting BCs. "
                             << "See PLENS::set_BC() for detailed info.";
