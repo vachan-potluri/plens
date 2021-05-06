@@ -256,7 +256,9 @@ void PLENS::declare_parameters()
                         "none|free|outflow|uniform inflow|uniform temp wall|symmetry|periodic"
                     ),
                     "Type of BC. Options: 'none|free|outflow|uniform inflow|uniform temp wall"
-                    "|symmetry|periodic'. 'none' type cannot be specified for a physical boundary"
+                    "|symmetry|periodic'. 'none' type cannot be specified for a physical "
+                    "boundary. For a periodic boundary, separate entries for both surfaces "
+                    "have to be made"
                 );
 
                 prm.declare_entry(
@@ -294,16 +296,24 @@ void PLENS::declare_parameters()
                 );
 
                 prm.declare_entry(
-                    "right periodic boundary id",
+                    "periodic orientation",
+                    "left",
+                    Patterns::Selection("left|right"),
+                    "Whether this face is the first (left) or second (right) surface of the "
+                    "periodic pair. See "
+                    "https://www.dealii.org/current/doxygen/deal.II/namespaceGridTools.html#aee88c4dce5066a41183b5dd70289b9df."
+                    "Consequently, the orientation of surface with id 'other surface boundary id' "
+                    "will be treated as complementary to this. Basically, left face to right face "
+                    "must go along the periodic direction"
+                );
+
+                prm.declare_entry(
+                    "other surface boundary id",
                     "1",
                     Patterns::Integer(1,n_bc_max),
-                    "The 'right' boundary id of the other periodic boundary of the mesh; the "
-                    "boundary id of present section is treated as 'left'. See "
-                    "https://www.dealii.org/current/doxygen/deal.II/namespaceGridTools.html#ab22eef800535f9e85a1723a6a36fd0f6. "
-                    "Relevant for: periodic. It is important that ONLY ONE entry per periodic "
-                    "boundary pair be present in the prm file. This id can also equal the 'left' "
-                    "id, in which case a different version of collect_periodic_faces() will be "
-                    "called. See PLENS::set_dof_handler()"
+                    "The boundary id of the other periodic surface. A BC entry for this face has "
+                    "to be made separately with appropriate changes in periodic orientation. The "
+                    "periodic direction value will remain same"
                 );
             }
             prm.leave_subsection(); // bid<x> subsection
