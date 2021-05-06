@@ -585,9 +585,10 @@ void PLENS::set_NS()
  */
 void PLENS::set_dof_handler()
 {
-    pcout << "Setting DoFHandler object ... ";
+    pcout << "Setting DoFHandler object ...\n";
     prm.enter_subsection("BCs");
     {
+        pcout << "Looking for periodic BCs\n";
         std::string base_name("bid"), cur_name, type;
         // boundary ids of periodic boundary which can be ignored
         std::set<usi> bid_periodic_ignore;
@@ -607,6 +608,8 @@ void PLENS::set_dof_handler()
                     const std::string orientation = prm.get("periodic orientation");
                     const usi other_id = prm.get_integer("other surface boundary id");
                     bid_periodic_ignore.emplace(other_id);
+
+                    pcout << "Found bid " << i << " and " << other_id << " with periodic type\n";
 
                     std::vector<GridTools::PeriodicFacePair<
                         parallel::distributed::Triangulation<dim>::cell_iterator>
@@ -630,19 +633,22 @@ void PLENS::set_dof_handler()
                             periodic_direction, // direction,
                             matched_pairs
                         );
+                        pcout << "Formed matched pairs for left id " << left_id << " and "
+                            << "right id " << right_id << "\n";
                     }
                     else{
                         pcout << "WARNING\n Your prm file entry for boundary id " << i << " which "
                             << "is of type 'periodic' has 'other surface boundary id' equal to "
                             << "the boundary id. This is ok for setting the dof handler, but will "
                             << "cause an exception to be thrown while setting BCs. "
-                            << "See PLENS::set_BC() for detailed info.";
+                            << "See PLENS::set_BC() for detailed info.\n";
                         GridTools::collect_periodic_faces(
                             triang,
                             i, // 'left' and 'right' boundary id,
                             periodic_direction, // direction,
                             matched_pairs
                         );
+                        pcout << "Formed matched pairs with id " << i << "\n";
                     }
 
                     triang.add_periodicity(matched_pairs);

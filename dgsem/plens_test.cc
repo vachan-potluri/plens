@@ -12,10 +12,10 @@ plens_test::plens_test()
 :
 t("PLENS", "class")
 {
-    // read_mesh_test();
-    // set_NS_test();
-    // set_IC_test();
-    // collect_periodic_faces_test();
+    read_mesh_test();
+    set_NS_test();
+    set_IC_test();
+    collect_periodic_faces_test();
     set_BC_test();
 }
 
