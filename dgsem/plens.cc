@@ -724,19 +724,25 @@ void PLENS::set_BC()
         pcout << "Setting BC for bid " << cur_bid;
 
         subsec_name = "bid" + std::to_string(cur_bid);
-        prm.enter_subsection("BCs."+subsec_name);
+        prm.enter_subsection("BCs");
         {
-            type = prm.get("type");
-            AssertThrow(
-                type != "none",
-                StandardExceptions::ExcMessage(
-                    "'none' type BC is not for ids specified in the mesh. It is to be used only "
-                    "for ids not existing in the mesh, that too optionally. For ids mentioned in "
-                    "mesh, a definite boundary type must be specified."
-                )
-            );
+            prm.enter_subsection(subsec_name);
+            {
+                type = prm.get("type");
+                AssertThrow(
+                    type != "none",
+                    StandardExceptions::ExcMessage(
+                        "'none' type BC is not for ids specified in the mesh. It is to be used "
+                        "only for ids not existing in the mesh, that too optionally. For ids "
+                        "mentioned in mesh, a definite boundary type must be specified."
+                    )
+                );
+
+                pcout << ": type " << type << "\n";
+            }
+            prm.leave_subsection(); // bid<x>
         }
-        prm.leave_subsection();
+        prm.leave_subsection(); // BCs
     } // loop over bid_list
 }
 

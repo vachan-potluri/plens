@@ -177,7 +177,7 @@ void plens_test::collect_periodic_faces_test() const
 
 void plens_test::set_BC_test() const
 {
-    t.new_block("testing set_IC()");
+    t.new_block("testing set_BC()");
     PLENS problem(2,2);
     problem.read_mesh();
     problem.set_NS();
