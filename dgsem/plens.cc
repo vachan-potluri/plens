@@ -606,6 +606,7 @@ void PLENS::set_dof_handler()
                     const usi periodic_direction = prm.get_integer("periodic direction");
                     const std::string orientation = prm.get("periodic orientation");
                     const usi other_id = prm.get_integer("other surface boundary id");
+                    bid_periodic_ignore.emplace(other_id);
 
                     std::vector<GridTools::PeriodicFacePair<
                         parallel::distributed::Triangulation<dim>::cell_iterator>
@@ -718,7 +719,7 @@ void PLENS::set_IC()
 /**
  * Sets the BC
  *
- * Every boundary with a different boundary id is assigned a BC object. For periodic boundary
+ * Every boundary with a unique boundary id is assigned a BC object. For periodic boundary
  * conditions, each boundary of the periodic pair is assigned a separate BC object.
  *
  * First, a loop over all faces owned by this process is used to determing the number of boundaries
@@ -729,12 +730,9 @@ void PLENS::set_IC()
  *
  * @note For the reasons described above, it is mandatory that the 'left' and 'right' boundary ids
  * for a periodic pair are different. Otherwise, it is impossible to set BCs::Periodic::fid
- * correctly.
- *
- * @note Consider a special case: this mpi process contains only the 'right' part of a periodic
- * boundary. In that case, there won't be any separate entry in the prm file for this: we have to
- * search for the 'left' periodic boundary id in the prm file by parsing all boundaries and note
- * the entry for which our boundary id of interest is mentioned in 'right periodic boundary id'.
+ * correctly. Moreover, consider a special case: this mpi process contains only the 'right' part
+ * of a periodic boundary. In that case, it is inevitable that we have two entries for a periodic
+ * pair.
  */
 void PLENS::set_BC()
 {
