@@ -698,9 +698,46 @@ void PLENS::set_IC()
  * @note For the reasons described above, it is mandatory that the 'left' and 'right' boundary ids
  * for a periodic pair are different. Otherwise, it is impossible to set BCs::Periodic::fid
  * correctly.
+ *
+ * @note Consider a special case: this mpi process contains only the 'right' part of a periodic
+ * boundary. In that case, there won't be any separate entry in the prm file for this: we have to
+ * search for the 'left' periodic boundary id in the prm file by parsing all boundaries and note
+ * the entry for which our boundary id of interest is mentioned in 'right periodic boundary id'.
  */
 void PLENS::set_BC()
-{}
+{
+    // get the boundary ids held by this process
+    for(const auto &cell: dof_accessor.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        for(const auto &face: cell->face_iterators()){
+            if(face->at_boundary()){
+                bid_list.emplace(face->boundary_id());
+            }
+        } // loop over faces
+    } // loop over owned active cells
+
+    // now construct the bc objects
+    std::string subsec_name, type;
+    for(auto cur_bid: bid_list){
+        pcout << "Setting BC for bid " << cur_bid;
+
+        subsec_name = "bid" + std::to_string(cur_bid);
+        prm.enter_subsection("BCs."+subsec_name);
+        {
+            type = prm.get("type");
+            AssertThrow(
+                type != "none",
+                StandardExceptions::ExcMessage(
+                    "'none' type BC is not for ids specified in the mesh. It is to be used only "
+                    "for ids not existing in the mesh, that too optionally. For ids mentioned in "
+                    "mesh, a definite boundary type must be specified."
+                )
+            );
+        }
+        prm.leave_subsection();
+    } // loop over bid_list
+}
 
 
 
