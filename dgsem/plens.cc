@@ -791,7 +791,7 @@ void PLENS::set_BC()
                     bc_list[cur_bid] = new BCs::Free(dof_handler, gcrk_cvars, gcrk_avars);
                 }
                 else if(type == "outflow"){
-                    double p = prm.get_double("prescribed p");
+                    const double p = prm.get_double("prescribed p");
                     pcout << "\tPrescribed pressure: " << p << "\n";
                     bc_list[cur_bid] = new BCs::Outflow(
                         dof_handler,
@@ -802,9 +802,9 @@ void PLENS::set_BC()
                     );
                 }
                 else if(type == "uniform inflow"){
-                    double p = prm.get_double("prescribed p");
-                    double T = prm.get_double("prescribed T");
-                    std::string vel_str = prm.get("prescribed velocity");
+                    const double p = prm.get_double("prescribed p");
+                    const double T = prm.get_double("prescribed T");
+                    const std::string vel_str = prm.get("prescribed velocity");
                     std::vector<std::string> splits;
                     Tensor<1,dim> vel;
                     utilities::split_string(vel_str, " ", splits);
@@ -812,7 +812,7 @@ void PLENS::set_BC()
                     pcout << "\t Prescribed p, T and U: " << p << " " << T << " " << vel << "\n";
 
                     State cons;
-                    double rho = p/(ns_ptr->get_R()*T);
+                    const double rho = p/(ns_ptr->get_R()*T);
                     ns_ptr->prim_to_cons(rho, vel, p, cons);
 
                     bc_list[cur_bid] = new BCs::UniformInflow(
@@ -831,8 +831,8 @@ void PLENS::set_BC()
                     );
                 }
                 else if(type == "uniform temp wall"){
-                    double T = prm.get_double("prescribed T");
-                    std::string vel_str = prm.get("prescribed velocity");
+                    const double T = prm.get_double("prescribed T");
+                    const std::string vel_str = prm.get("prescribed velocity");
                     std::vector<std::string> splits;
                     Tensor<1,dim> vel;
                     utilities::split_string(vel_str, " ", splits);
@@ -848,8 +848,63 @@ void PLENS::set_BC()
                         ns_ptr.get()
                     );
                 }
+                else if(type == "periodic"){
+                    const usi other_id = prm.get_integer("other surface boundary id");
+                    AssertThrow(
+                        cur_bid != other_id,
+                        StandardExceptions::ExcMessage(
+                            "Two surfaces of a periodic pair of boundaries must have two "
+                            "different boundary ids"
+                        )
+                    );
+                    const usi per_dir = prm.get_integer("periodic direction");
+
+                    // face orientation id
+                    // foid == 0 ==> this face is left and 'other' face is right
+                    // foid == 1 ==> opposite
+                    usi foid;
+                    usi left_id, right_id; // for forming matched pairs
+                    const std::string per_orientation = prm.get("periodic orientation");
+
+                    if(per_orientation == "left"){
+                        foid = 0;
+                        left_id = cur_bid;
+                        right_id = other_id;
+                    }
+                    else{
+                        foid = 1;
+                        left_id = other_id;
+                        right_id = cur_bid;
+                    }
+
+                    pcout << "\t'Left' id: " << left_id << " 'right' id: " << right_id
+                        << " direction: " << per_dir << "\n";
+
+                    std::vector<GridTools::PeriodicFacePair<
+                        parallel::distributed::Triangulation<dim>::cell_iterator>
+                    > matched_pairs;
+
+                    GridTools::collect_periodic_faces(
+                        triang,
+                        left_id, // 'left' boundary id,
+                        right_id, // 'right' boundary id
+                        per_dir, // direction,
+                        matched_pairs
+                    );
+
+                    bc_list[cur_bid] = new BCs::Periodic(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        matched_pairs,
+                        foid
+                    );
+                }
                 else{
-                    // guaranteed to be periodic
+                    AssertThrow(
+                        false,
+                        StandardExceptions::ExcMessage("Invalid boundary type")
+                    );
                 }
             }
             prm.leave_subsection(); // bid<x>
