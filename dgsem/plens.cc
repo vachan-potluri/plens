@@ -818,6 +818,35 @@ void PLENS::set_BC()
                         cons
                     );
                 }
+                else if(type == "symmetry"){
+                    bc_list[cur_bid] = new BCs::Symmetry(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        ns_ptr.get()
+                    );
+                }
+                else if(type == "uniform temp wall"){
+                    double T = prm.get_double("prescribed T");
+                    std::string vel_str = prm.get("prescribed velocity");
+                    std::vector<std::string> splits;
+                    Tensor<1,dim> vel;
+                    utilities::split_string(vel_str, " ", splits);
+                    for(int d=0; d<dim; d++) vel[d] = std::stod(splits[d]);
+                    pcout << "\t Prescribed T and U: " << T << " " << vel << "\n";
+
+                    bc_list[cur_bid] = new BCs::UniformTempWall(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        T,
+                        vel,
+                        ns_ptr.get()
+                    );
+                }
+                else{
+                    // guaranteed to be periodic
+                }
             }
             prm.leave_subsection(); // bid<x>
         }
