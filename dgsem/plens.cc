@@ -39,7 +39,11 @@ dof_handler(triang)
  * Destructor.
  */
 PLENS::~PLENS()
-{}
+{
+    if(bid_list.size() > 0){
+        for(auto cur_bc_pair: bc_list) delete cur_bc_pair.second;
+    }
+}
 
 
 
