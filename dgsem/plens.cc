@@ -363,7 +363,9 @@ void PLENS::declare_parameters()
  *
  * Supported mesh formats (msh|vtk) are shown in declare_parameters(). VTK format also supports
  * boundary ids, see
- * https://dealii.org/developer/doxygen/deal.II/group__simplex.html#ga058cd187cea704428ac1118410cd0fb8
+ * https://dealii.org/developer/doxygen/deal.II/group__simplex.html#ga058cd187cea704428ac1118410cd0fb8.
+ * However, there seems to be a version mismatch between the vtk meshes that gmsh writes and what
+ * dealii expects. See WJ-07-May-2021
  *
  * For straight edged meshes, the procedure is simple. mapping_ptr is set using
  * MappingQGeneric<dim>(1).

@@ -101,6 +101,44 @@ class plens_test; // forward declaration
  * and the dofs in cells connected by periodicity (if any). Unlike in pens2D, here all the dofs
  * are taken as relevant rather than just the ones lying on the common face. This may be modified
  * in the future.
+ *
+ * @section modelling Fluid and flow modelling
+ *
+ * This is done through the NavierStokes class. The fluid is assumed to be a perfect gas and the
+ * flow is assumed laminar. Viscosity is obtained from Sutherland's law and thermal conductivity
+ * is obtained using constant Prandtl number.
+ *
+ * Additionally, the NavierStokes class also provides functions for flux calculations and some
+ * helper functions too. The flux functions are extensively used in updating the solution.
+ *
+ * @section ICs Initial conditions
+ *
+ * Currently, the code supports only one initial condition: ICs::PiecewiseFunction. See the class
+ * documentation for more details. The domain is divided into pieces using cartesian bifurcators
+ * and in each piece, a function is set.
+ *
+ *
+ * @section BCs Boundary conditions
+ *
+ * Currently, the code supports 6 boundary conditions.
+ * - BCs::Free
+ * - BCs::Outflow
+ * - BCs::UniformInflow
+ * - BCs::UniformTempWall
+ * - BCs::Symmetry
+ * - BCs::Periodic
+ *
+ * See the class documentations for details. The periodic boundary conditions is a very fragile one
+ * to handle. For periodic BC to be applied, the mesh must be in standard orientation (see
+ * dealii's documentation for the meaning of this). Further, there must be two entries per pair
+ * for a periodic BC and each of those entries must be consistent with each other. By consistent,
+ * we mean
+ * 1. The 'periodic direction' must be given same for both entries
+ * 1. The 'other surface boundary id' must be complementary to each other
+ * 1. The 'periodic orientation' must be complementary to each other
+ *
+ * These are absolutely essential and no checks are done on these. If these are not followed, the
+ * code may produce unexpected behaviour.
  */
 class PLENS
 {
