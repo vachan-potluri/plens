@@ -439,11 +439,11 @@ void PLENS::read_mesh()
                 // get axis and axis point
                 temp = prm.get("axis direction"); // prm file guarantees this has exactly 3 doubles
                 utilities::split_string(temp, " ", splits);
-                for(usi d=0; d<dim; d++) axis[d] = stod(splits[d]);
+                for(usi d=0; d<dim; d++) axis[d] = std::stod(splits[d]);
 
                 temp = prm.get("axis point"); // prm file guarantees this has exactly 3 doubles
                 utilities::split_string(temp, " ", splits);
-                for(usi d=0; d<dim; d++) axis_p[d] = stod(splits[d]);
+                for(usi d=0; d<dim; d++) axis_p[d] = std::stod(splits[d]);
             }
             prm.leave_subsection(); // cylinder flare
 
@@ -464,15 +464,15 @@ void PLENS::read_mesh()
                 // get axis and axis point
                 temp = prm.get("axis direction"); // prm file guarantees this has exactly 3 doubles
                 utilities::split_string(temp, " ", splits);
-                for(usi d=0; d<dim; d++) axis[d] = stod(splits[d]);
+                for(usi d=0; d<dim; d++) axis[d] = std::stod(splits[d]);
 
                 temp = prm.get("separation point"); // prm file guarantees this has exactly 3 doubles
                 utilities::split_string(temp, " ", splits);
-                for(usi d=0; d<dim; d++) separation_p[d] = stod(splits[d]);
+                for(usi d=0; d<dim; d++) separation_p[d] = std::stod(splits[d]);
 
                 temp = prm.get("nose center"); // prm file guarantees this has exactly 3 doubles
                 utilities::split_string(temp, " ", splits);
-                for(usi d=0; d<dim; d++) nose_center[d] = stod(splits[d]);
+                for(usi d=0; d<dim; d++) nose_center[d] = std::stod(splits[d]);
             }
             prm.leave_subsection(); // blunted double cone
 
@@ -744,6 +744,8 @@ void PLENS::set_IC()
  * correctly. Moreover, consider a special case: this mpi process contains only the 'right' part
  * of a periodic boundary. In that case, it is inevitable that we have two entries for a periodic
  * pair.
+ *
+ * @warning Dynamic memory allocation will be done for BC objects
  */
 void PLENS::set_BC()
 {
@@ -780,6 +782,42 @@ void PLENS::set_BC()
                 );
 
                 pcout << ": type " << type << "\n";
+
+                if(type == "free"){
+                    bc_list[cur_bid] = new BCs::Free(dof_handler, gcrk_cvars, gcrk_avars);
+                }
+                else if(type == "outflow"){
+                    double p = prm.get_double("prescribed p");
+                    pcout << "\tPrescribed pressure: " << p << "\n";
+                    bc_list[cur_bid] = new BCs::Outflow(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        p,
+                        ns_ptr.get()
+                    );
+                }
+                else if(type == "uniform inflow"){
+                    double p = prm.get_double("prescribed p");
+                    double T = prm.get_double("prescribed T");
+                    std::string vel_str = prm.get("prescribed velocity");
+                    std::vector<std::string> splits;
+                    Tensor<1,dim> vel;
+                    utilities::split_string(vel_str, " ", splits);
+                    for(int d=0; d<dim; d++) vel[d] = std::stod(splits[d]);
+                    pcout << "\t Prescribed p, T and U: " << p << " " << T << " " << vel << "\n";
+
+                    State cons;
+                    double rho = p/(ns_ptr->get_R()*T);
+                    ns_ptr->prim_to_cons(rho, vel, p, cons);
+
+                    bc_list[cur_bid] = new BCs::UniformInflow(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        cons
+                    );
+                }
             }
             prm.leave_subsection(); // bid<x>
         }
