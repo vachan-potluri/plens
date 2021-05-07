@@ -686,6 +686,11 @@ void PLENS::set_sol_vecs()
         gcrk_cvars[var].reinit(locally_owned_dofs, mpi_comm);
         gh_gcrk_cvars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
+
+    for(avar var: avar_list){
+        gcrk_avars[var].reinit(locally_owned_dofs, mpi_comm);
+        gh_gcrk_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
+    }
     pcout << "Completed\n";
 }
 

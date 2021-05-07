@@ -218,6 +218,16 @@ class PLENS
     std::array<LA::MPI::Vector, 5> gh_gcrk_cvars;
 
     /**
+     * Like PLENS::gcrk_cvars, but for auxiliary variables
+     */
+    std::array<LA::MPI::Vector, 9> gcrk_avars;
+
+    /**
+     * Like PLENS::gh_gcrk_avars, but for auxiliary variables
+     */
+    std::array<LA::MPI::Vector, 9> gh_gcrk_avars;
+
+    /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
      * too. This list is populated by looping over all faces held by this process. This is then
      * used to form the boundary condition objects. This list enables construction of BC object
