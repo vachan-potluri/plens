@@ -51,6 +51,10 @@ class FaceDoFInfo
     /**
      * @brief Inverse maps. Access: `maps[face id][cell-local dof id]`. The result is face-local dof
      * id.
+     *
+     * @warning This is a non-const public variable. Hence it is recommended that entries of this
+     * map are accessed using `std::map::at()` rather than `std::map::operator[]` because the
+     * latter can accidentally insert elements is used carelessly
      */
     std::array<std::map<usi, usi>, 2*dim> inverse_maps;
     
