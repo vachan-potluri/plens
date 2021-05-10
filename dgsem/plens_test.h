@@ -22,6 +22,7 @@
 #include <utilities/testing.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
+#include "face_dof_info.h"
 
 using namespace dealii;
 /**
@@ -42,6 +43,7 @@ class plens_test
     void set_IC_test() const;
     void collect_periodic_faces_test() const;
     void set_BC_test() const;
+    void face_dof_matching_test() const;
 };
 
 #endif

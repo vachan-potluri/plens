@@ -12,11 +12,12 @@ plens_test::plens_test()
 :
 t("PLENS", "class")
 {
-    read_mesh_test();
-    set_NS_test();
-    set_IC_test();
-    collect_periodic_faces_test();
-    set_BC_test();
+    // read_mesh_test();
+    // set_NS_test();
+    // set_IC_test();
+    // collect_periodic_faces_test();
+    // set_BC_test();
+    face_dof_matching_test();
 }
 
 
@@ -185,4 +186,51 @@ void plens_test::set_BC_test() const
     problem.set_sol_vecs();
     problem.set_IC();
     problem.set_BC();
+}
+
+
+
+/**
+ * See WJ-08-May-2021 and WJ-10-May-2021. This function loops over all internal faces and sees if
+ * the ordering of dofs used in FaceDoFInfo would be consistent across cells for 'all' meshes. Test
+ * this function with all sorts of wierd meshes. Don't run this in parallel
+ */
+void plens_test::face_dof_matching_test() const
+{
+    t.new_block("testing face_dof_matching_test() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_dof_handler();
+
+    const FaceDoFInfo fdi(problem.dof_handler.get_fe().degree);
+    const usi n_dofs_per_face = (fdi.degree+1)*(fdi.degree+1);
+    const usi n_dofs_per_cell = n_dofs_per_face*(fdi.degree+1);
+
+    std::vector<unsigned int> dof_ids(n_dofs_per_cell);
+    std::vector<unsigned int> dof_ids_neighbor(n_dofs_per_cell);
+    
+    for(const auto &cell: problem.dof_handler.active_cell_iterators()){
+        for(usi fid=0; fid<problem.n_faces_per_cell; fid++){
+            if(cell->face(fid)->at_boundary()) continue;
+
+            usi fid_neighbor = cell->neighbor_of_neighbor(fid); // face id wrt neighbor
+            const auto &neighbor = cell->neighbor(fid);
+            std::cout << "Cell id: " << cell->index()
+                << "\n\tFace id: " << fid
+                << "\n\tNeighbor cell index: " << neighbor->index()
+                << "\n\t Face id wrt neighbor: " << fid_neighbor << "\n";
+            
+            cell->get_dof_indices(dof_ids);
+            neighbor->get_dof_indices(dof_ids_neighbor);
+
+            std::cout << "\tLooping over face dofs\n";
+            for(usi i=0; i<n_dofs_per_face; i++){
+                usi dof_id = dof_ids[fdi.maps[fid].at(i)];
+                usi dof_id_neighbor = dof_ids_neighbor[fdi.maps[fid_neighbor].at(i)];
+                std::cout << "\t\tLocation wrt cell: " << problem.dof_locations[dof_id]
+                    << "\n\t\tLocation wrt neighbor: " << problem.dof_locations[dof_id_neighbor]
+                    << "\n";
+            } // loop over face dofs
+        } // loop over internal faces
+    } // loop over active cells
 }
