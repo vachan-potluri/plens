@@ -22,7 +22,8 @@ mapping_ho_degree(mhod),
 mapping_ptr(nullptr),
 fe(fe_degree),
 fe_face(fe_degree),
-dof_handler(triang)
+dof_handler(triang),
+fdi(fe_degree)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -669,6 +670,8 @@ void PLENS::set_dof_handler()
 
     DoFTools::map_dofs_to_support_points(*mapping_ptr, dof_handler, dof_locations);
     pcout << "Completed\n";
+
+    form_neighbor_face_matchings();
 }
 
 
@@ -913,6 +916,69 @@ void PLENS::set_BC()
         }
         prm.leave_subsection(); // BCs
     } // loop over bid_list
+}
+
+
+
+// * * * * * * * * * * * * * Private functions * * * * * * * * * * * * * * * //
+
+
+
+/**
+ * Populates the data in PLENS::nei_face_matching_dofs. See also @ref face_assem and
+ * plens_test::face_dof_matching_test(). Algorithm:
+ * - Loop over all owned cells
+ *   - Loop over all internal faces
+ *     - Loop over all dofs on face
+ *       - Loop over all neighbor dofs on the same face
+ *         - If the dof locations match (upto tolerance level `tol`), populate the map
+ *
+ * @pre Must be called after read_mesh() and set_dof_handler(). May be called at the end of
+ * set_dof_handler() after `dof_locations` are calculated.
+ */
+void PLENS::form_neighbor_face_matchings(const double tol)
+{
+    pcout << "Matching neighbor side dof ids on internal faces ...\n";
+    std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
+    for(const auto &cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+        cell->get_dof_indices(dof_ids);
+
+        for(usi fid=0; fid<n_faces_per_cell; fid++){
+            // set size of nei_face_matching_dofs
+            nei_face_matching_dofs[cell->index()][fid].resize(fe.dofs_per_cell, 0);
+            if(cell->face(fid)->at_boundary()) continue;
+
+            const auto &neighbor = cell->neighbor(fid);
+            usi fid_nei = cell->neighbor_of_neighbor(fid);
+            neighbor->get_dof_indices(dof_ids_nei);
+
+            for(usi i=0; i<fe_face.dofs_per_face; i++){
+                Point<dim> loc = dof_locations[dof_ids[fdi.maps[fid].at(i)]];
+
+                for(usi j=0; j<fe_face.dofs_per_face; j++){
+                    Point<dim> loc_nei = dof_locations[dof_ids_nei[fdi.maps[fid_nei].at(j)]];
+                    Point<dim> diff(loc - loc_nei);
+                    if(diff.norm() < tol){
+                        // match obtained
+                        nei_face_matching_dofs[cell->index()][fid][i] = j;
+
+                        // print if i and j are not equal (abnormal match)
+                        if(i != j){
+                            std::cout << "\tCell id: " << cell->index()
+                                << ", Cell-local face id: " << fid
+                                << ", Face-local dof id: " << i
+                                << "\n\tFound abnormal match with\n"
+                                << "\tNeighbor cell id: " << neighbor->index()
+                                << ", Neighbor-local face id: " << fid_nei
+                                << ", Neighbor-face-local dof id: " << j << "\n";
+                        }
+                    }
+                } // loop over neighbors dofs on same face
+            } // loop over face dofs
+        } // loop over internal faces
+    } // loop over owned cells
+    pcout << "Completed\n";
 }
 
 

@@ -47,6 +47,7 @@
 #include <IBCs/uniform_temp_wall.h>
 #include <IBCs/symmetry.h>
 #include <IBCs/periodic.h>
+#include "face_dof_info.h"
 
 #ifdef DEBUG
 #include <utilities/testing.h>
@@ -139,6 +140,20 @@ class plens_test; // forward declaration
  *
  * These are absolutely essential and no checks are done on these. If these are not followed, the
  * code may produce unexpected behaviour.
+ *
+ * @section face_assem Face term assembly
+ *
+ * The residual for temporal update consists of a surface term and a volume term. The surface term
+ * requires calculation of numerical flux. For this purpose, it is required to obtain a matching
+ * dof from neighbor for every dof on a face.
+ *
+ * For a 2D mesh, this matching is straight forward: face-local dofs from owner and neighbor side
+ * have same index for matching. However, this is not so for 3D. See
+ * https://groups.google.com/g/dealii/c/u8e2mLq3qeQ
+ * and plens_test::face_dof_matching_test(). This sort of approach may work for most meshes, but is
+ * not guaranteed to work according to dealii. So instead, the approach taken is as suggested by
+ * Wolfgang in the above question: loop over neighbor side dofs on a face and see which of them
+ * matches. This procedure is employed in .
  */
 class PLENS
 {
@@ -208,7 +223,8 @@ class PLENS
     FE_DGQ<dim> fe;
 
     /**
-     * Finite element object for face. Will be used in assembly. Set in constructor.
+     * Finite element object for face. Generally used to get number of dofs per face. Set in
+     * constructor.
      */
     FE_FaceQ<dim> fe_face;
 
@@ -278,6 +294,26 @@ class PLENS
      * this map are from PLENS::bid_list
      */
     std::map<usi, BCs::BC*> bc_list;
+
+    /**
+     * FaceDoFInfo object. Used for looping over faces for surface assembly.
+     */
+    FaceDoFInfo fdi;
+
+    /**
+     * A map giving matching neighbor side dof for a dof on a surface. See @ref face_assem for more
+     * details. Access:
+     * `nei_face_matching_dofs[cell id][face id][face dof id]=j`
+     * such that `dof_ids_neighbor[fdi[neighbor face id][j]]` and
+     * `dof_ids[fdi[face id][face dof id]]` lie at the same location. Here `neighbor face id` can
+     * be obtained using `cell->neighbor_of_neighbor(face id)`. For faces on boundary, the data
+     * held by this object is garbage, unused. Before using, its size must be set.
+     */
+    std::map<psize, std::array<std::vector<usi>, n_faces_per_cell> > nei_face_matching_dofs;
+
+
+
+    void form_neighbor_face_matchings(const double tol = 1e-4);
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);
