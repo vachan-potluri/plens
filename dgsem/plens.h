@@ -153,7 +153,23 @@ class plens_test; // forward declaration
  * and plens_test::face_dof_matching_test(). This sort of approach may work for most meshes, but is
  * not guaranteed to work according to dealii. So instead, the approach taken is as suggested by
  * Wolfgang in the above question: loop over neighbor side dofs on a face and see which of them
- * matches. This procedure is employed in .
+ * matches. This procedure is employed in form_neighbor_face_matchings().
+ *
+ * Once this matchings are available, it is simple to loop over all faces of actively owned cells
+ * and calculate the flux. The function calc_surf_flux() does this. It takes an argument for the
+ * 'stage' of flux computation. The surface fluxes are required in 3 stages. The information about
+ * these stages is given in detail in NavierStokes class.
+ * 1. Auxiliary variable calculation. Here, surface values of conservative variables are required
+ * to compute @f$\nabla\vec{v}@f$ and @f$\nabla T@f$.
+ * 2. Inviscid conservative flux.
+ * 3. Diffusive or viscous conservative flux.
+ *
+ * The functions in NavierStokes class and all classes inherited from BCs::BC have wrappers to the
+ * flux getters of these 3 stages so that they can be indexed by a stage variable. The only
+ * distinction between these 3 stages is that while inviscid and viscous fluxes are calculated
+ * as normal components at a face dof, the auxiliary flux is left as is. This is because different
+ * components of @f$\nabla\vec{v}@f$ and @f$\nabla T@f$ require different normal vector components
+ * and hence, as such, there is no "normal" component for auxiliary flux.
  */
 class PLENS
 {
@@ -352,6 +368,11 @@ class PLENS
     void set_sol_vecs();
     void set_IC();
     void set_BC();
+
+    void calc_surf_flux(
+        const usi stage,
+        locly_ord_surf_flux_term_t<double> &surf_flux_term
+    );
 
 
 

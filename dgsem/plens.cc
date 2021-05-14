@@ -920,6 +920,32 @@ void PLENS::set_BC()
 
 
 
+/**
+ * Calculates the surface flux for a given `stage` into the variable `surf_flux_term`. The
+ * information about stages is given in NavierStokes. See also @ref face_assem and BCs::BC. The
+ * algorithm employed is as in pens2D.
+ * - Loop over owned cells
+ *   - Loop over faces
+ *     - If face is at boundary
+ *       - Calculate the surface flux using BC objects from bc_list
+ *     - Else (internal face)
+ *       - If the neighbor is also owned by this process
+ *         - Compute the flux using owner and neighbor solution.
+ *         - Set the owner flux using outward (w.r.t. owner) normal
+ *         - Set the neighbor flux using inward normal (reversed components)
+ *       - Else (the neighbor is a ghost cell)
+ *         - Use ghosted version of solution vectors
+ *         - Compute the flux using outward normal (w.r.t. owner)
+ *         - Neighbor flux will be computed by a different process, leave it as is
+ */
+void PLENS::calc_surf_flux(
+    const usi stage,
+    locly_ord_surf_flux_term_t<double> &surf_flux_term
+)
+{}
+
+
+
 // * * * * * * * * * * * * * Private functions * * * * * * * * * * * * * * * //
 
 
