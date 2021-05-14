@@ -159,7 +159,7 @@ class PLENS
 {
     friend plens_test; // for testing
 
-    private:
+    public:
     /**
      * The dimension
      */
@@ -175,6 +175,24 @@ class PLENS
      */
     static const usi n_faces_per_cell = GeometryInfo<dim>::faces_per_cell;
 
+    /**
+     * Locally order surface term type. "Locally ordered" is to emphasize that the access must
+     * happen through `cell id --> cell-local face id --> face-local dof id`. Commonly, this type
+     * is used to store surface fluxes on faces of owned cells.
+     *
+     * @note It is very easy to encounter seg fault with this type if the size of inner vectors is
+     * not set before accessing them.
+     */
+    template <class T>
+    using locly_ord_surf_term_t = std::map<
+        psize,
+        std::array<
+            std::vector<T>,
+            n_faces_per_cell
+        >
+    >;
+
+    private:
     /**
      * The MPI communicator. Set to MPI_COMM_WORLD in the constructor
      */
@@ -309,7 +327,8 @@ class PLENS
      * be obtained using `cell->neighbor_of_neighbor(face id)`. For faces on boundary, the data
      * held by this object is garbage, unused. Before using, its size must be set.
      */
-    std::map<psize, std::array<std::vector<usi>, n_faces_per_cell> > nei_face_matching_dofs;
+    // std::map<psize, std::array<std::vector<usi>, n_faces_per_cell> > nei_face_matching_dofs;
+    locly_ord_surf_term_t<usi> nei_face_matching_dofs;
 
 
 
