@@ -178,7 +178,8 @@ class PLENS
     /**
      * Locally order surface term type. "Locally ordered" is to emphasize that the access must
      * happen through `cell id --> cell-local face id --> face-local dof id`. Commonly, this type
-     * is used to store surface fluxes on faces of owned cells.
+     * is used to store surface fluxes on faces of owned cells. More commonly, this type is wrapped
+     * in an array to be used to store conservative variable flux. See locly_ord_surf_flux_term_t
      *
      * @note It is very easy to encounter seg fault with this type if the size of inner vectors is
      * not set before accessing them.
@@ -191,6 +192,13 @@ class PLENS
             n_faces_per_cell
         >
     >;
+
+    /**
+     * A wrapper to locly_ord_surf_term_t for storing conservative flux in local ordering. Access:
+     * `locly_ord_flux_term_t[cvar][cell id][cell-local face id][face-local dof id] = type T`
+     */
+    template <class T>
+    using locly_ord_surf_flux_term_t = std::array<locly_ord_surf_term_t<T>, 5>;
 
     private:
     /**
