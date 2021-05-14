@@ -937,12 +937,49 @@ void PLENS::set_BC()
  *         - Use ghosted version of solution vectors
  *         - Compute the flux using outward normal (w.r.t. owner)
  *         - Neighbor flux will be computed by a different process, leave it as is
+ *
+ * If `stage == 1` or `stage == 2`, then only `gcrk_cvars` will be used to calculate the flux.
+ * Auxiliary variables will be passed to the wrappers (since they require these) but they will not
+ * be used insider the wrappers. If `stage == 3`, both `gcrk_cvars` and `gcrk_avars` will be used.
  */
 void PLENS::calc_surf_flux(
     const usi stage,
     locly_ord_surf_flux_term_t<double> &surf_flux_term
 )
-{}
+{
+    AssertThrow(
+        stage >=1 && stage <= 3,
+        StandardExceptions::ExcMessage(
+            "'stage' parameter must be 1, 2 or 3. Nothing else."
+        )
+    );
+
+    const usi stage_id = stage-1; // to access wrappers from NavierStokes and BC
+    FEFaceValues<dim> fe_face_values(
+        *mapping_ptr,
+        fe,
+        QGaussLobatto<dim-1>(fe.degree+1),
+        update_normal_vectors
+    ); // to get normal vectors at dof locations on face
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+
+    for(const auto &cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        cell->get_dof_indices(dof_ids);
+        for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
+            const auto &face = cell->face(face_id);
+            fe_face_values.reinit(cell, face_id);
+
+            if(face->at_boundary()){
+                // boundary face, use BC objects for flux
+                for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
+                    FaceLocalDoFData ldd(cell->index(), face_id, face_dof);
+                } // loop over face dofs
+            } // boundary face
+        } // loop over faces
+    } // loop over owned cells
+}
 
 
 
