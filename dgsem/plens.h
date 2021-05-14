@@ -15,28 +15,32 @@
 #include <set>
 
 #include <deal.II/base/parameter_handler.h>
-#include <deal.II/distributed/tria.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
-#include <deal.II/grid/grid_in.h>
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/point.h>
+#include <deal.II/base/index_set.h>
+#include <deal.II/base/geometry_info.h>
+#include <deal.II/base/quadrature_lib.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/mapping_q_generic.h>
+#include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_face.h>
+#include <deal.II/fe/fe_values.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/base/index_set.h>
 #include <deal.II/dofs/dof_tools.h>
-#include <deal.II/base/geometry_info.h>
 
 #include "dtype_aliases.h"
+#include "LA.h"
+#include "face_dof_info.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
-#include "LA.h"
 #include <modelling/var_enums.h>
 #include <IBCs/IC.h>
 #include <IBCs/piecewise_function.h>
@@ -47,7 +51,6 @@
 #include <IBCs/uniform_temp_wall.h>
 #include <IBCs/symmetry.h>
 #include <IBCs/periodic.h>
-#include "face_dof_info.h"
 
 #ifdef DEBUG
 #include <utilities/testing.h>
