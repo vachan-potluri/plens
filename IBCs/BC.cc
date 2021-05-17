@@ -147,16 +147,31 @@ void BC::get_cavars(const FaceLocalDoFData &ldd, CAvars &ca) const
  */
 void BC::set_wrappers()
 {
-    get_ghost_wrappers[0] = [=](const FaceLocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
-        this->get_ghost_stage1(ldd, normal, ca.get_state());
+    get_ghost_wrappers[0] = [=](
+        const FaceLocalDoFData &ldd,
+        const CAvars &cav,
+        const Tensor<1,dim> &normal,
+        CAvars &cav_gh
+    ){
+        this->get_ghost_stage1(ldd, cav.get_state(), normal, cav_gh.get_state());
     };
     
-    get_ghost_wrappers[1] = [=](const FaceLocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
-        this->get_ghost_stage2(ldd, normal, ca.get_state());
+    get_ghost_wrappers[1] = [=](
+        const FaceLocalDoFData &ldd,
+        const CAvars &cav,
+        const Tensor<1,dim> &normal,
+        CAvars &cav_gh
+    ){
+        this->get_ghost_stage2(ldd, cav.get_state(), normal, cav_gh.get_state());
     };
     
-    get_ghost_wrappers[2] = [=](const FaceLocalDoFData &ldd, const Tensor<1,dim> &normal, CAvars &ca){
-        this->get_ghost_stage3(ldd, normal, ca);
+    get_ghost_wrappers[2] = [=](
+        const FaceLocalDoFData &ldd,
+        const CAvars &cav,
+        const Tensor<1,dim> &normal,
+        CAvars &cav_gh
+    ){
+        this->get_ghost_stage3(ldd, cav, normal, cav_gh);
     };
 }
 
