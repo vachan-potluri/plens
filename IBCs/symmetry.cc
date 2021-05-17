@@ -14,22 +14,22 @@ using namespace BCs;
  */
 void Symmetry::get_ghost_stage1(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
 {
-    State cons_in, cons_pr; // cons_pr will be set in this fn
-    get_state(ldd, cons_in);
+    State cons_pr; // cons_pr will be set in this fn
     
     Tensor<1,dim> vel_in, vel_pr;
-    for(int d=0; d<dim; d++) vel_in[d] = cons_in[1+d]/cons_in[0];
+    for(int d=0; d<dim; d++) vel_in[d] = cons[1+d]/cons[0];
     double normal_vel = scalar_product(vel_in, normal); // vel_in dot normal
     for(int d=0; d<dim; d++) vel_pr[d] = vel_in[d] - normal_vel*normal[d];
     
-    double p_in = ns_ptr_->get_p(cons_in);
-    ns_ptr_->prim_to_cons(cons_in[0], vel_pr, p_in, cons_pr); // sets cons_pr
+    double p_in = ns_ptr_->get_p(cons);
+    ns_ptr_->prim_to_cons(cons[0], vel_pr, p_in, cons_pr); // sets cons_pr
     
-    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons_in[var];
+    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons[var];
 }
 
 
@@ -43,17 +43,16 @@ void Symmetry::get_ghost_stage1(
  */
 void Symmetry::get_ghost_stage2(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
 {
-    State cons_in;
-    get_state(ldd, cons_in);
-    cons_gh[0] = cons_in[0];
-    cons_gh[4] = cons_in[4];
+    cons_gh[0] = cons[0];
+    cons_gh[4] = cons[4];
     
     Tensor<1,dim> smom_in, smom_gh; // specific momentum
-    for(int d=0; d<dim; d++) smom_in[d] = cons_in[1+d];
+    for(int d=0; d<dim; d++) smom_in[d] = cons[1+d];
     double normal_smom = scalar_product(smom_in, normal); // smom_in dot normal
     for(int d=0; d<dim; d++) smom_gh[d] = smom_in[d] - 2*normal_smom*normal[d];
 }
@@ -67,26 +66,26 @@ void Symmetry::get_ghost_stage2(
  */
 void Symmetry::get_ghost_stage3(
     const FaceLocalDoFData &ldd,
+    const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
 ) const
 {
-    State cons_in, cons_pr; // cons_pr will be set in this fn
+    State cons_pr; // cons_pr will be set in this fn
     State& cons_gh = cav_gh.get_state();
-    get_state(ldd, cons_in);
     
     Tensor<1,dim> vel_in, vel_pr;
-    for(int d=0; d<dim; d++) vel_in[d] = cons_in[1+d]/cons_in[0];
+    for(int d=0; d<dim; d++) vel_in[d] = cons[1+d]/cons[0];
     double normal_vel = scalar_product(vel_in, normal); // vel_in dot normal
     for(int d=0; d<dim; d++) vel_pr[d] = vel_in[d] - normal_vel*normal[d];
     
     double p_in = ns_ptr_->get_p(cons_in);
-    ns_ptr_->prim_to_cons(cons_in[0], vel_pr, p_in, cons_pr); // sets cons_pr
+    ns_ptr_->prim_to_cons(cons[0], vel_pr, p_in, cons_pr); // sets cons_pr
     
-    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons_in[var];
+    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons[var];
     
     Avars& av_gh = cav_gh.get_avars();
-    get_avars(ldd, av_gh);
+    av_gh = cav.get_avars();
 }
 
 
@@ -109,18 +108,19 @@ void Symmetry::test()
         
         // modify bctd.g_cvars to get subsonic/supersonic state
         // State cons({1,1,1,2,53}); // p=20, subsonic
-        State cons({1,1,1,2,13}); // p=4, supersonic
+        State cons({1,1,1,2,13}), cons_gh; // p=4, supersonic
         psize gdof_id = bc_p->get_global_dof_id(ldd);
         for(cvar var: cvar_list) bctd.g_cvars[var][gdof_id] = cons[var];
         
-        Avars av;
-        CAvars cav(&cons, &av);
+        Avars av, av_gh;
+        bc_p->get_avars(ldd, av);
+        CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
         
         for(int i=0; i<3; i++){
             std::cout << "Stage " << i << "\n";
-            bc_p->get_ghost_wrappers[i](ldd, normal, cav);
-            utilities::print_state(cav.get_state());
-            utilities::print_avars(cav.get_avars());
+            bc_p->get_ghost_wrappers[i](ldd, cav, normal, cav_gh);
+            utilities::print_state(cav_gh.get_state());
+            utilities::print_avars(cav_gh.get_avars());
         }
     }
 }

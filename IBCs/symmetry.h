@@ -51,7 +51,7 @@ namespace BCs{
  * \implies \vec{u}_g = \vec{u}_i - 2(\vec{u}_i\cdot\vec{n})\vec{n}
  * @f]
  *
- * For stage 1 & 3, the ghost velocity is just the tangential component of inner velocity
+ * For stage 1 & 3, the interface velocity is just the tangential component of inner velocity
  * @f[
  * \vec{u}_g = \vec{u}_i - (\vec{u}_i\cdot\vec{n})\vec{n}
  * @f]
@@ -78,18 +78,21 @@ class Symmetry: public BC
     
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,
+        const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const override;
     
     virtual void get_ghost_stage2(
         const FaceLocalDoFData &ldd,
+        const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const override;
     
     virtual void get_ghost_stage3(
         const FaceLocalDoFData &ldd,
+        const CAvars &cav,
         const Tensor<1,dim> &normal,
         CAvars &cav_gh
     ) const override;
