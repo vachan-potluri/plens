@@ -121,7 +121,7 @@ class BC
      * inheritance of `this` works as expected, see the small code snippet in WJ-17-Mar-2021.
      */
     std::array< std::function<
-        void(const FaceLocalDoFData&, const Tensor<1,dim>&, CAvars&)
+        void(const FaceLocalDoFData&, const CAvars&, const Tensor<1,dim>&, CAvars&)
     >, 3 > get_ghost_wrappers;
     
     protected:
