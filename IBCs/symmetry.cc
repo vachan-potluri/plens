@@ -73,19 +73,21 @@ void Symmetry::get_ghost_stage3(
 {
     State cons_pr; // cons_pr will be set in this fn
     State& cons_gh = cav_gh.get_state();
+    const State& cons = cav.get_state();
     
     Tensor<1,dim> vel_in, vel_pr;
     for(int d=0; d<dim; d++) vel_in[d] = cons[1+d]/cons[0];
     double normal_vel = scalar_product(vel_in, normal); // vel_in dot normal
     for(int d=0; d<dim; d++) vel_pr[d] = vel_in[d] - normal_vel*normal[d];
     
-    double p_in = ns_ptr_->get_p(cons_in);
+    double p_in = ns_ptr_->get_p(cons);
     ns_ptr_->prim_to_cons(cons[0], vel_pr, p_in, cons_pr); // sets cons_pr
     
     for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons[var];
     
     Avars& av_gh = cav_gh.get_avars();
-    av_gh = cav.get_avars();
+    const Avars &av = cav.get_avars();
+    av_gh = av;
 }
 
 
