@@ -77,7 +77,7 @@ void Free::test()
         
         State cons, cons_gh;
         Avars av, av_gh;
-        CAvars cav(&cons, &av), cav_gh(&cons_gh, av_gh);
+        CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
         fbc_p->get_cavars(ldd, cav); // set cav
         
         for(int i=0; i<3; i++){

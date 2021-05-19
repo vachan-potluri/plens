@@ -91,8 +91,8 @@ void Outflow::test()
         for(cvar var: cvar_list) bctd.g_cvars[var][gdof_id] = cons[var];
         
         Avars av, av_gh;
-        bc_p->get_avars(av);
-        CAvars cav(&cons, &av), cav_gh(&cons_gh, av_gh);
+        bc_p->get_avars(ldd, av);
+        CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
         
         for(int i=0; i<3; i++){
             std::cout << "Stage " << i << "\n";
