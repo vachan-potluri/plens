@@ -17,7 +17,8 @@ t("PLENS", "class")
     // set_IC_test();
     // collect_periodic_faces_test();
     // set_BC_test();
-    face_dof_matching_test();
+    // face_dof_matching_test();
+    calc_surf_flux_test();
 }
 
 
@@ -233,4 +234,28 @@ void plens_test::face_dof_matching_test() const
             } // loop over face dofs
         } // loop over internal faces
     } // loop over active cells
+}
+
+
+
+/**
+ * Simply runs PLENS::calc_surf_flux() for all stages. Just to see that there are no run-time
+ * issues. Preferable to run this in parallel.
+ */
+void plens_test::calc_surf_flux_test() const
+{
+    t.new_block("testing calc_surf_flux() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    PLENS::locly_ord_surf_flux_term_t<double> surf_flux_term;
+    for(usi stage=1; stage<=3; stage++){
+        std::cout << "Stage " << stage << "\n";
+        problem.calc_surf_flux(stage, surf_flux_term);
+    }
 }

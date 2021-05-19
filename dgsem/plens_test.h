@@ -44,6 +44,7 @@ class plens_test
     void collect_periodic_faces_test() const;
     void set_BC_test() const;
     void face_dof_matching_test() const;
+    void calc_surf_flux_test() const;
 };
 
 #endif

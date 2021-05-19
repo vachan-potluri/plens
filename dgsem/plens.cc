@@ -943,7 +943,8 @@ void PLENS::set_BC()
  * be used inside the wrappers. If `stage == 3`, both `gcrk_cvars` and `gcrk_avars` will be used.
  * In all stages, the ghosted version of required vectors are also used.
  *
- * @pre This function assumes that `gh_gcrk_cvars` and `gh_gcrk_avars` are ready to use.
+ * @pre This function assumes that `gh_gcrk_cvars` and `gh_gcrk_avars` are ready to use. Also,
+ * assumes that the entire setup (including BCs) is complete.
  *
  * @warning This function resizes @p surf_flux_term internally. So all data stored up to this point
  * is discarded. Although this is not an efficient practice, for now this will be done.
