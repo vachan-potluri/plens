@@ -24,8 +24,7 @@ void UniformTempWall::get_ghost_stage1(
     
     double p_in = ns_ptr_->get_p(cons);
     double rho_pr = p_in/(ns_ptr_->get_R()*T_pr_);
-    Tensor<1,dim> vel; // initialise to 0
-    ns_ptr_->prim_to_cons(rho_pr, vel, p_in, cons_pr);
+    ns_ptr_->prim_to_cons(rho_pr, vel_pr_, p_in, cons_pr);
     for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons[var];
 }
 
@@ -68,8 +67,7 @@ void UniformTempWall::get_ghost_stage3(
     
     double p_in = ns_ptr_->get_p(cons);
     double rho_pr = p_in/(ns_ptr_->get_R()*T_pr_);
-    Tensor<1,dim> vel; // initialise to 0
-    ns_ptr_->prim_to_cons(rho_pr, vel, p_in, cons_pr);
+    ns_ptr_->prim_to_cons(rho_pr, vel_pr_, p_in, cons_pr);
     for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons[var];
     
     const Avars& av = cav.get_avars();
