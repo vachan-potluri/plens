@@ -19,8 +19,9 @@ PROJECT(plens)
 OPTION(BUILD_SPACETIME "Build the code on spacetime" OFF)
 IF(BUILD_SPACETIME)
     ADD_DEFINITIONS(-DSPACETIME) # for older cmake versions
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # required on spacetime
 ENDIF(BUILD_SPACETIME)
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # required on spacetime
 
 ADD_SUBDIRECTORY(utilities)
 ADD_SUBDIRECTORY(modelling)
