@@ -940,7 +940,10 @@ void PLENS::set_BC()
  *
  * If `stage == 1` or `stage == 2`, then only `gcrk_cvars` will be used to calculate the flux.
  * Auxiliary variables will be passed to the wrappers (since they require these) but they will not
- * be used insider the wrappers. If `stage == 3`, both `gcrk_cvars` and `gcrk_avars` will be used.
+ * be used inside the wrappers. If `stage == 3`, both `gcrk_cvars` and `gcrk_avars` will be used.
+ * In all stages, the ghosted version of required vectors are also used.
+ *
+ * @pre This function assumes that `gh_gcrk_cvars` and `gh_gcrk_avars` are ready to use.
  *
  * @warning This function resizes @p surf_flux_term internally. So all data stored up to this point
  * is discarded. Although this is not an efficient practice, for now this will be done.
@@ -974,7 +977,7 @@ void PLENS::calc_surf_flux(
         QGaussLobatto<dim-1>(fe.degree+1),
         update_normal_vectors
     ); // to get normal vectors at dof locations on face
-    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
 
     for(const auto &cell: dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
@@ -1012,6 +1015,44 @@ void PLENS::calc_surf_flux(
                     }
                 } // loop over face dofs
             } // boundary face
+
+            else if(cell->neighbor(face_id)->is_ghost()){
+                // internal face at processor boundary
+                const auto &neighbor = cell->neighbor(face_id);
+                usi face_id_nei = cell->neighbor_of_neighbor(face_id);
+                neighbor->get_dof_indices(dof_ids_nei);
+
+                for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
+                    // first get matching dof's global id
+                    psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
+                    usi face_dof_nei = nei_face_matching_dofs[cell->index()][face_id][face_dof];
+                    psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
+
+                    // use ghosted vectors to get neighbor state information
+                    State cons, cons_nei;
+                    Avars av, av_nei;
+                    for(cvar var: cvar_list){
+                        cons[var] = gcrk_cvars[var][gdof_id];
+                        cons_nei[var] = gh_gcrk_cvars[var][gdof_id_nei];
+                    }
+                    for(avar var: avar_list){
+                        av[var] = gcrk_avars[var][gdof_id];
+                        av_nei[var] = gh_gcrk_avars[var][gdof_id_nei];
+                    }
+
+                    // get the flux
+                    CAvars cav(&cons, &av), cav_nei(&cons_nei, &av_nei);
+                    State flux;
+                    Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
+                    ns_ptr->surf_flux_wrappers[stage_id](cav, cav_nei, normal, flux);
+
+                    // set surf_flux_term entries for owner, neighbors flux will be calculated
+                    // by its own process
+                    for(cvar var: cvar_list){
+                        surf_flux_term[var][cell->index()][face_id][face_dof] = flux[var];
+                    }
+                } // loop over face dofs
+            } // internal face at processor boundary
         } // loop over faces
     } // loop over owned cells
 }
