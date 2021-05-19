@@ -29,19 +29,19 @@ int main(int argc, char** argv){
     // NavierStokes::test();
     // FaceLocalDoFData::test();
     // FaceDoFInfo::test();
-    BCs::BC::test();
-    BCs::Free::test();
-    BCs::Outflow::test();
-    BCs::UniformInflow::test();
-    BCs::UniformTempWall::test();
-    BCs::Symmetry::test();
-    BCs::Periodic::test();
+    // BCs::BC::test();
+    // BCs::Free::test();
+    // BCs::Outflow::test();
+    // BCs::UniformInflow::test();
+    // BCs::UniformTempWall::test();
+    // BCs::Symmetry::test();
+    // BCs::Periodic::test();
     // utilities::split_string_test();
     // ICs::PiecewiseFunction::test();
     // PLENS::test();
     // plens_test pt(); // doesn't work
     #endif
 
-    // plens_test();
+    plens_test();
     return 0;
 }
