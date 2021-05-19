@@ -941,6 +941,9 @@ void PLENS::set_BC()
  * If `stage == 1` or `stage == 2`, then only `gcrk_cvars` will be used to calculate the flux.
  * Auxiliary variables will be passed to the wrappers (since they require these) but they will not
  * be used insider the wrappers. If `stage == 3`, both `gcrk_cvars` and `gcrk_avars` will be used.
+ *
+ * @warning This function resizes @p surf_flux_term internally. So all data stored up to this point
+ * is discarded. Although this is not an efficient practice, for now this will be done.
  */
 void PLENS::calc_surf_flux(
     const usi stage,
@@ -953,6 +956,16 @@ void PLENS::calc_surf_flux(
             "'stage' parameter must be 1, 2 or 3. Nothing else."
         )
     );
+
+    // (re)set the size of surf_flux_term
+    for(cvar var: cvar_list){
+        for(const auto &cell: dof_handler.active_cell_iterators()){
+            if(!cell->is_locally_owned()) continue;
+            for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
+                surf_flux_term[var][cell->index()][face_id].resize(fe_face.dofs_per_face, 0);
+            }
+        }
+    }
 
     const usi stage_id = stage-1; // to access wrappers from NavierStokes and BC
     FEFaceValues<dim> fe_face_values(
@@ -975,6 +988,28 @@ void PLENS::calc_surf_flux(
                 // boundary face, use BC objects for flux
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     FaceLocalDoFData ldd(cell->index(), face_id, face_dof);
+                    usi bid = face->boundary_id();
+
+                    // set inner cons and avars
+                    State cons, cons_gh;
+                    Avars av, av_gh;
+                    psize global_dof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
+                    for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][global_dof_id];
+                    for(avar var: avar_list) av[var] = gcrk_avars[var][global_dof_id];
+
+                    // first get ghost state
+                    CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
+                    Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
+                    bc_list[bid]->get_ghost_wrappers[stage_id](ldd, cav, normal,cav_gh);
+
+                    // now get the flux
+                    State flux;
+                    ns_ptr->surf_flux_wrappers[stage_id](cav, cav_gh, normal, flux);
+
+                    // set surf_flux_term object
+                    for(cvar var: cvar_list){
+                        surf_flux_term[var][cell->index()][face_id][face_dof] = flux[var];
+                    }
                 } // loop over face dofs
             } // boundary face
         } // loop over faces
