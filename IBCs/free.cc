@@ -15,11 +15,12 @@ using namespace BCs;
  */
 void Free::get_ghost_stage1(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
 {
-    get_state(ldd, cons_gh);
+    cons_gh = cons;
 }
 
 
@@ -32,11 +33,12 @@ void Free::get_ghost_stage1(
  */
 void Free::get_ghost_stage2(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
 {
-    get_state(ldd, cons_gh);
+    cons_gh = cons;
 }
 
 
@@ -48,11 +50,12 @@ void Free::get_ghost_stage2(
  */
 void Free::get_ghost_stage3(
     const FaceLocalDoFData &ldd,
+    const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
 ) const
 {
-    get_cavars(ldd, cav_gh);
+    cav_gh = cav;
 }
 
 
@@ -72,15 +75,16 @@ void Free::test()
         Tensor<1,dim> normal; // immaterial
         FaceLocalDoFData ldd(1, 1, 3); // cell id, face id, face dof id
         
-        State cons;
-        Avars av;
-        CAvars cav(&cons, &av);
+        State cons, cons_gh;
+        Avars av, av_gh;
+        CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
+        fbc_p->get_cavars(ldd, cav); // set cav
         
         for(int i=0; i<3; i++){
             std::cout << "Stage " << i << "\n";
-            fbc_p->get_ghost_wrappers[i](ldd, normal, cav);
-            utilities::print_state(cav.get_state());
-            utilities::print_avars(cav.get_avars());
+            fbc_p->get_ghost_wrappers[i](ldd, cav, normal, cav_gh);
+            utilities::print_state(cav_gh.get_state());
+            utilities::print_avars(cav_gh.get_avars());
         }
     }
 }

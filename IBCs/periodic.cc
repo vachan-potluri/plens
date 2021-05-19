@@ -118,6 +118,7 @@ void Periodic::get_periodic_ldd(const FaceLocalDoFData& ldd, FaceLocalDoFData& p
  */
 void Periodic::get_ghost_stage1(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
@@ -134,6 +135,7 @@ void Periodic::get_ghost_stage1(
  */
 void Periodic::get_ghost_stage2(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
@@ -150,6 +152,7 @@ void Periodic::get_ghost_stage2(
  */
 void Periodic::get_ghost_stage3(
     const FaceLocalDoFData &ldd,
+    const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
 ) const
@@ -199,15 +202,15 @@ void Periodic::test()
         // but things are not so, see WJ-30-Mar-2021
         
         if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
-            State cons;
-            Avars av;
-            CAvars cav(&cons, &av);
+            State cons, cons_gh;
+            Avars av, av_gh;
+            CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
             
             for(int i=0; i<3; i++){
                 std::cout << "Stage " << i << "\n";
-                bc_p->get_ghost_wrappers[i](ldd, normal, cav);
-                utilities::print_state(cav.get_state());
-                utilities::print_avars(cav.get_avars());
+                bc_p->get_ghost_wrappers[i](ldd, cav, normal, cav_gh);
+                utilities::print_state(cav_gh.get_state());
+                utilities::print_avars(cav_gh.get_avars());
             }
         }
     }
@@ -219,27 +222,27 @@ void Periodic::test()
         // run this in parallel with 2 processes
         FaceLocalDoFData ldd(5,0,0);
         if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
-            State cons;
-            Avars av;
-            CAvars cav(&cons, &av);
+            State cons, cons_gh;
+            Avars av, av_gh;
+            CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
             
             for(int i=0; i<3; i++){
                 std::cout << "Stage " << i << "\n";
                 // crash: cell not owned by process
-                // bc_p->get_ghost_wrappers[i](ldd, normal, cav);
+                // bc_p->get_ghost_wrappers[i](ldd, cav, normal, cav_gh);
             }
         }
 
         FaceLocalDoFData ldd2(0,1,0); // run this in serial/parallel
         if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
-            State cons;
-            Avars av;
-            CAvars cav(&cons, &av);
+            State cons, cons_gh;
+            Avars av, av_gh;
+            CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
             
             for(int i=0; i<3; i++){
                 std::cout << "Stage " << i << "\n";
                 // crash: face not periodic
-                // bc_p->get_ghost_wrappers[i](ldd2, normal, cav);
+                // bc_p->get_ghost_wrappers[i](ldd2, cav, normal, cav_gh);
             }
         }
     }

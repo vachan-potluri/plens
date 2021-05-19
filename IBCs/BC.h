@@ -70,7 +70,12 @@ using namespace dealii;
  * dof handler object, and vectors holding global conservative and auxiliary variables. The periodic
  * BC class will additionally have some more entities to be set which will be done by that specific
  * class implementation. In each stage getter, the local information about dof will be taken through
- * FaceLocalDoFData. This will be inevitable for periodic BCs and for spatially varying BCs.
+ * FaceLocalDoFData along with the cons/aux state at that particular dof. Initially, this class
+ * was designed to work based on FaceLocalDoFData alone. However, to actually get the cons/aux
+ * state at this location, a call to BC::get_global_dof_id() would be required for every dof and
+ * in each stage. This can soon get quite time consuming. Having said that, the FaceLocalDoFData is
+ * still relevant for periodic BC and hence it is not removed completely. Just that for most BCs,
+ * this object is unused.
  * Additionally, the local unit normal will also be required. Although the normal could in principle
  * be calculated using dof handler and the local data provided, it would be expensive. Imagine
  * reinitialising an fe values object for each function call.
@@ -82,10 +87,13 @@ using namespace dealii;
  * equivalent, it is possible to establish a simple algebraic relation between the weak-Prescribed
  * fluxes and weak-Riemann ghost variables. However, underlying this relation, the algorithms used
  * for auxiliary and viscous flux evaluation are sort of assumed. Currently, all derived classes
- * assume BR1 algorithm (simple avg, see NavierStokes) for these two fluxes. As a result, most
- * derived classes first calculate the face value/flux that would occur and then proceed to
- * calculate the ghost state that ensures this face value. This is the approach taken for steps 1 &
- * 3. For step 2, theories generally provide the ghost values directly.
+ * assume BR1 algorithm (simple avg, see NavierStokes) for these two fluxes. The reason is simple:
+ * most auxiliary/diffusive fluxes are a combination of averaging and diffusing. BR1 flux just does
+ * the averaging part. So even if a different scheme were to be used (which may include diffusing),
+ * the ghost state provided would then have least dissipation.
+ * And hence, most derived classes first calculate the face value/flux that would occur and then
+ * proceed to calculate the ghost state that ensures this face value. This is the approach taken
+ * for steps 1 & 3. For step 2, theories generally provide the ghost values directly.
  */
 class BC
 {
@@ -113,7 +121,7 @@ class BC
      * inheritance of `this` works as expected, see the small code snippet in WJ-17-Mar-2021.
      */
     std::array< std::function<
-        void(const FaceLocalDoFData&, const Tensor<1,dim>&, CAvars&)
+        void(const FaceLocalDoFData&, const CAvars&, const Tensor<1,dim>&, CAvars&)
     >, 3 > get_ghost_wrappers;
     
     protected:
@@ -141,6 +149,7 @@ class BC
      */
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,
+        const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const {}
@@ -152,6 +161,7 @@ class BC
      */
     virtual void get_ghost_stage2(
         const FaceLocalDoFData &ldd,
+        const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const {}
@@ -164,6 +174,7 @@ class BC
      */
     virtual void get_ghost_stage3(
         const FaceLocalDoFData &ldd,
+        const CAvars &cav,
         const Tensor<1,dim> &normal,
         CAvars &cav_gh
     ) const {}
