@@ -1044,7 +1044,7 @@ void PLENS::form_neighbor_face_matchings(const double tol)
 
         for(usi fid=0; fid<n_faces_per_cell; fid++){
             // set size of nei_face_matching_dofs
-            nei_face_matching_dofs[cell->index()][fid].resize(fe.dofs_per_cell, 0);
+            nei_face_matching_dofs[cell->index()][fid].resize(fe_face.dofs_per_face, 0);
             if(cell->face(fid)->at_boundary()) continue;
 
             const auto &neighbor = cell->neighbor(fid);
