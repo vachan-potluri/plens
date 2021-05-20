@@ -23,7 +23,9 @@ mapping_ptr(nullptr),
 fe(fe_degree),
 fe_face(fe_degree),
 dof_handler(triang),
-fdi(fe_degree)
+fdi(fe_degree),
+w_1d(fe_degree+1),
+ref_D_1d(fe_degree+1)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -1172,6 +1174,30 @@ void PLENS::form_neighbor_face_matchings(const double tol)
         } // loop over internal faces
     } // loop over owned cells
     pcout << "Completed\n";
+}
+
+
+
+/**
+ * Calculates all metric terms. More specifically
+ * 1. 1D quadrature weights
+ */
+void PLENS::calc_metric_terms()
+{
+    // Set weights. Size of w_1d set in ctor
+    QGaussLobatto<1> quad_lgl_1d(fe.degree+1);
+    for(usi i=0; i<=fe.degree; i++){
+        w_1d[i] = quad_lgl_1d.weight(i);
+    }
+    const std::vector<Point<1>> &points_1d = quad_lgl_1d.get_points();
+
+    // Compute the 1D differentiation matrix in reference cell. Size of ref_D_1d set in ctor
+    FE_DGQ<1> fe_1d(fe.degree);
+    for(usi row=0; row<=fe.degree; row++){
+        for(usi col=0; col<=fe.degree; col++){
+            ref_D_1d(row,col) = fe_1d.shape_grad(col, points_1d[row])[0];
+        }
+    }
 }
 
 

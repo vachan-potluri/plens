@@ -35,6 +35,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/lac/full_matrix.h>
 
 #include "dtype_aliases.h"
 #include "LA.h"
@@ -384,9 +385,20 @@ class PLENS
      */
     std::vector<double> w_1d;
 
+    /**
+     * 1D differentiation matrix in reference cell. Note that the algo uses strong form of DG and
+     * hence, the components are (from [2])
+     * @f[
+     * D_{ij} = \frac{\partial l_j}{\partial \xi}(\xi_i)
+     * @f]
+     * @note This involves gradient wrt reference cell, and not wrt physical cell.
+     */
+    FullMatrix<double> ref_D_1d;
+
 
 
     void form_neighbor_face_matchings(const double tol = 1e-4);
+    void calc_metric_terms();
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);
