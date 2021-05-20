@@ -173,6 +173,28 @@ class plens_test; // forward declaration
  * as normal components at a face dof, the auxiliary flux is left as is. This is because different
  * components of @f$\nabla\vec{v}@f$ and @f$\nabla T@f$ require different normal vector components
  * and hence, as such, there is no "normal" component for auxiliary flux.
+ *
+ * @section vol_contrib Volumetric contribution
+ *
+ * This is the most important, most involved part of the code. The relevant papers are
+ *
+ * [1] Hennemann, Ramirez, Hindenlang et al, JCP, 2021.
+ *
+ * [2] Gassner, Winters & Kopriva, JCP, 2016.
+ *
+ * [3] Fischer & Carpenter, JCP, 2013.
+ *
+ * Took all relevant notes in short and attached them to WJ-22-Feb-2021. Also, took detailed notes
+ * and attached them to WJ-20-May-2021. These notes are also present physically in TW1 book.
+ * Further notes taken will be mentioned as and when done.
+ * Explaining the algo here is impossible. However, some very important notes are mentioned here.
+ * 1. Like in [1-3], dealii also uses @f$[0,1]^3@f$ as the reference cell. Had it been
+ * @f$[-1,1]^3@f$, things would have got slightly complicated.
+ * 1. The volumetric contribution is always calculated by transforming the physical cell to
+ * reference space. Thus, every cell's calculation is completely isolated from other cells.
+ * 1. The subcell normal vectors obtained in (1-B.53)
+ *    - May not be unit vectors
+ *    - Do not match (in direction) with the physical normals at faces (local indices) 0, 2 and 4.
  */
 class PLENS
 {
@@ -356,6 +378,11 @@ class PLENS
      */
     // std::map<psize, std::array<std::vector<usi>, n_faces_per_cell> > nei_face_matching_dofs;
     locly_ord_surf_term_t<usi> nei_face_matching_dofs;
+
+    /**
+     * 1D weights corresponding to LGL quadrature
+     */
+    std::vector<double> w_1d;
 
 
 
