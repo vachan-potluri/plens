@@ -25,7 +25,8 @@ fe_face(fe_degree),
 dof_handler(triang),
 fdi(fe_degree),
 w_1d(fe_degree+1),
-ref_D_1d(fe_degree+1)
+ref_D_1d(fe_degree+1),
+ref_Q_1d(fe_degree+1)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -1196,6 +1197,7 @@ void PLENS::calc_metric_terms()
     for(usi row=0; row<=fe.degree; row++){
         for(usi col=0; col<=fe.degree; col++){
             ref_D_1d(row,col) = fe_1d.shape_grad(col, points_1d[row])[0];
+            ref_Q_1d(row,col) = w_1d[row]*ref_D_1d(row,col);
         }
     }
 }

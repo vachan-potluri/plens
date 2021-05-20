@@ -395,6 +395,14 @@ class PLENS
      */
     FullMatrix<double> ref_D_1d;
 
+    /**
+     * Q matrix
+     * @f[
+     * Q = \text{diag}(w_0, \ldots, w_N) D
+     * @f]
+     */
+    FullMatrix<double> ref_Q_1d;
+
 
 
     void form_neighbor_face_matchings(const double tol = 1e-4);
