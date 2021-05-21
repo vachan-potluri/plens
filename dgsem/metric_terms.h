@@ -6,17 +6,52 @@
 #ifndef METRIC_TERMS_H
 #define METRIC_TERMS_H
 
+#include <deal.II/base/utilities.h>
+#include <deal.II/base/exceptions.h>
+#include <deal.II/base/tensor.h>
+
+#include <vector>
+#include <array>
+
+using namespace dealii;
+
 /**
  * @class MetricTerms
  * This class computes and stores metric terms required for DGSEM algorithm for a cell. Using this
- * class is simple. First, construct the class by specifying the polynomial degree. Then, call
- * MetricTerms::reinit() by passing an appropriate `FEValues` object. When making this call, the
- * `FEValues` object must also have been re-initialised on the desired cell.
+ * class is simple. Construct the class by passing an appropriate `FEValues` object. The
+ * constructor internally calls MetricTerms::reinit(). When making this call, the `FEValues`
+ * object must also have been re-initialised on the desired cell. A plain constructor is also
+ * provided in case MetricTerms::reinit() is to be called separately.
  *
  * The most common way of using this with a `DoFHandler` is to use a `std::map` of `MetricTerms`
  * objects using the cell index as the key. This will however not work for adaptively refined
  * meshes where a cell index is not sufficient to uniquely identify a cell. However, we are not
  * interested in such cases and for our purposes, a simple map will suffice.
+ *
+ * The metric terms currently calculated and stored are (update the list when required)
+ * - Contravariant vectors
+ * - Subcell normals
+ *
+ * Access to stored quantities is provided directly through public variables. Hence it might be
+ * dangerous to use non-const version of this object. However, a const version can be readily
+ * constructed by passing an appropriate `FEValues` object for construction.
  */
+template <int dim>
+class MetricTerms
+{
+    public:
+
+    /**
+     * A variable holding the contravariant vectors. Access:
+     * `JxContra_vecs[cell-local dof id][direction][component]`.
+     * Note here that cell-local dof ordering is used, rather than a tensor-product ordering.
+     */
+    std::vector<std::array<Tensor<1,dim>, dim>> JxContra_vecs;
+
+    /**
+     * Plain constructor. Does nothing.
+     */
+    MetricTerms(){}
+};
 
 #endif
