@@ -1,5 +1,6 @@
 ADD_LIBRARY(dgsem SHARED
     plens.cc
+    metric_terms.cc
     plens_test.cc
 )
 
