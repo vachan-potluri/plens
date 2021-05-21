@@ -74,12 +74,12 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev)
 
 
 #ifdef DEBUG
+template <int dim>
 void MetricTerms<dim>::test()
 {
     utilities::Testing t("MetricTerms", "class");
 
     t.new_block("Testing reinit() function");
-    constexpr usi dim = 3;
 
     Triangulation<dim> triang;
     Point<dim> p1,p2;
@@ -124,6 +124,7 @@ void MetricTerms<dim>::test()
  * Transforms point `p`. Does a simple 30 degree rotation in xy plane. Note the points are
  * transformed, not the axes.
  */
+template <int dim>
 Point<dim> MetricTerms<dim>::transform(const Point<dim>& p)
 {
     // if point lies at origin:

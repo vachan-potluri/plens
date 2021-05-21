@@ -29,7 +29,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <iostream>
 #include <cmath>
-#include <function>
+#include <functional>
 #include <utilities/testing.h>
 #endif
 

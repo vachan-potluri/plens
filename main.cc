@@ -41,7 +41,7 @@ int main(int argc, char** argv){
     // ICs::PiecewiseFunction::test();
     // PLENS::test();
     // plens_test pt(); // doesn't work
-    MetricTerms::test();
+    MetricTerms<3>::test();
     #endif
 
     // plens_test();
