@@ -98,7 +98,7 @@ void MetricTerms<dim>::test()
     FEValues<dim> fe_values(
         fe,
         QGaussLobatto<dim>(fe.degree+1),
-        update_values | update_JxW_values | update_quadrature_points
+        update_values | update_jacobians | update_quadrature_points
     );
 
     const auto &cell = dof_handler.begin_active(); // first and only cell
@@ -126,7 +126,7 @@ Point<dim> MetricTerms<dim>::transform(const Point<dim>& p)
     // if point lies at origin:
     if(p.norm() == 0) return Point<dim>();
 
-    const double PI = 3.142;
+    const double PI = 3.141592653;
     const double rot_angle = 30*PI/180;
     double theta_xy;
     if(p[0] == 0) theta_xy = PI/2;
