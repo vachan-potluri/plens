@@ -20,10 +20,16 @@
 
 #ifdef DEBUG
 #include <deal.II/base/point.h>
+#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/fe/mapping_q_generic.h>
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/dofs/dof_handler.h>
 #include <iostream>
 #include <cmath>
+#include <function>
 #include <utilities/testing.h>
 #endif
 

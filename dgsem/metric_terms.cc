@@ -79,6 +79,43 @@ void MetricTerms<dim>::test()
     utilities::Testing t("MetricTerms", "class");
 
     t.new_block("Testing reinit() function");
+    constexpr usi dim = 3;
+
+    Triangulation<dim> triang;
+    Point<dim> p1,p2;
+    p1[0] = 0; p1[1] = 0; p1[2] = 0;
+    p2[0] = 4; p2[1] = 2; p2[2] = 1;
+    GridGenerator::hyper_rectangle(triang, p1, p2);
+
+    std::function<Point<dim>(const Point<dim>&)> transformation = [=](
+        const Point<dim>& p
+    ){
+        MetricTerms<dim>::transform(p);
+    };
+
+    GridTools::transform(transformation, triang);
+
+    DoFHandler<dim> dof_handler(triang);
+    FE_DGQ<dim> fe(2); // 2nd order polynomial
+    dof_handler.distribute_dofs(fe);
+
+    FEValues<dim> fe_values(
+        fe,
+        QGaussLobatto<dim>(fe.degree+1),
+        update_values | update_JxW_values | update_quadrature_points
+    );
+
+    const auto &cell = dof_handler.begin_active(); // first and only cell
+    fe_values.reinit(cell);
+
+    MetricTerms<dim> mt(fe_values);
+    std::cout << "JxContra_vecs:\n";
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        std::cout << "\tDof " << i << "\n";
+        for(usi dir=0; dir<dim; dir++){
+            std::cout << "\t\tDirection " << dir << ": " << mt.JxContra_vecs[i][dir] << "\n";
+        }
+    }
 }
 
 
