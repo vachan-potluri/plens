@@ -80,4 +80,30 @@ void MetricTerms<dim>::test()
 
     t.new_block("Testing reinit() function");
 }
+
+
+
+/**
+ * Transforms point `p`. Does a simple 30 degree rotation in xy plane. Note the points are
+ * transformed, not the axes.
+ */
+Point<dim> MetricTerms<dim>::transform(const Point<dim>& p)
+{
+    // if point lies at origin:
+    if(p.norm() == 0) return Point<dim>();
+
+    const double PI = 3.142;
+    const double rot_angle = 30*PI/180;
+    const double theta_xy;
+    if(p[0] == 0) theta_xy = PI/2;
+    else theta_xy = atan(p[1]/p[0]);
+    const double l = p.norm();
+
+    Point<dim> p_rot;
+    p_rot[2] = p[2];
+    p_rot[0] = l*cos(theta_xy + rot_angle);
+    p_rot[1] = l*sin(theta_xy + rot_angle);
+
+    return p_rot;
+}
 #endif

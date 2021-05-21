@@ -19,7 +19,11 @@
 #include "dtype_aliases.h"
 
 #ifdef DEBUG
+#include <deal.II/base/point.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
 #include <iostream>
+#include <cmath>
 #include <utilities/testing.h>
 #endif
 
@@ -68,6 +72,7 @@ class MetricTerms
 
     #ifdef DEBUG
     static void test();
+    static Point<dim> transform(const Point<dim>&);
     #endif
 };
 
