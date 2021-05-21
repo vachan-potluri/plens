@@ -17,6 +17,7 @@
 #include "IBCs/piecewise_function.h"
 #include "dgsem/plens.h"
 #include "dgsem/plens_test.h"
+#include "dgsem/metric_terms.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -40,8 +41,9 @@ int main(int argc, char** argv){
     // ICs::PiecewiseFunction::test();
     // PLENS::test();
     // plens_test pt(); // doesn't work
+    MetricTerms::test();
     #endif
 
-    plens_test();
+    // plens_test();
     return 0;
 }
