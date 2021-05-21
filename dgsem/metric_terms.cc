@@ -87,11 +87,7 @@ void MetricTerms<dim>::test()
     p2[0] = 4; p2[1] = 2; p2[2] = 1;
     GridGenerator::hyper_rectangle(triang, p1, p2);
 
-    std::function<Point<dim>(const Point<dim>&)> transformation = [=](
-        const Point<dim>& p
-    ){
-        MetricTerms<dim>::transform(p);
-    };
+    std::function<Point<dim>(const Point<dim>&)> transformation = MetricTerms<dim>::transform;
 
     GridTools::transform(transformation, triang);
 
