@@ -9,6 +9,8 @@
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/tensor.h>
+#include <deal.II/fe/fe.h>
+#include <deal.II/fe/fe_values.h>
 
 #include <vector>
 #include <array>
@@ -43,7 +45,8 @@ class MetricTerms
 
     /**
      * A variable holding the contravariant vectors. Access:
-     * `JxContra_vecs[cell-local dof id][direction][component]`.
+     * `JxContra_vecs[cell-local dof id][direction]`
+     * gives contravariant vector in the direction `direction`.
      * Note here that cell-local dof ordering is used, rather than a tensor-product ordering.
      */
     std::vector<std::array<Tensor<1,dim>, dim>> JxContra_vecs;
@@ -52,6 +55,8 @@ class MetricTerms
      * Plain constructor. Does nothing.
      */
     MetricTerms(){}
+    MetricTerms(const FEValues<dim>&);
+    void reinit(const FEValues<dim>&);
 };
 
 #endif
