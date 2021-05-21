@@ -132,7 +132,7 @@ Point<dim> MetricTerms<dim>::transform(const Point<dim>& p)
 
     const double PI = 3.142;
     const double rot_angle = 30*PI/180;
-    const double theta_xy;
+    double theta_xy;
     if(p[0] == 0) theta_xy = PI/2;
     else theta_xy = atan(p[1]/p[0]);
     const double l = p.norm();
@@ -145,3 +145,5 @@ Point<dim> MetricTerms<dim>::transform(const Point<dim>& p)
     return p_rot;
 }
 #endif
+
+#include "metric_terms.inst"
