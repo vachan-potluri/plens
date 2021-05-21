@@ -9,11 +9,14 @@
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/tensor.h>
+#include <deal.II/base/derivative_form.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_values.h>
 
 #include <vector>
 #include <array>
+
+#include "dtype_aliases.h"
 
 using namespace dealii;
 
