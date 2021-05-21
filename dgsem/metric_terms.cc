@@ -112,6 +112,13 @@ void MetricTerms<dim>::test()
             std::cout << "\t\tDirection " << dir << ": " << mt.JxContra_vecs[i][dir] << "\n";
         }
     }
+
+    // Expected result (assuming the triang box has widths 4, 2 and 1)
+    // Ja^1 = (2*cos r, 2*sin r, 0)
+    // Ja^2 = (-4*sin r, 4*cos r, 0)
+    // Ja^3 = (0, 0, 8)
+    // where r is the rotation angle in transform function (assuming transform does 2d rotation
+    // in xy plane)
 }
 
 
@@ -123,20 +130,13 @@ void MetricTerms<dim>::test()
 template <int dim>
 Point<dim> MetricTerms<dim>::transform(const Point<dim>& p)
 {
-    // if point lies at origin:
-    if(p.norm() == 0) return Point<dim>();
-
     const double PI = 3.141592653;
     const double rot_angle = 30*PI/180;
-    double theta_xy;
-    if(p[0] == 0) theta_xy = PI/2;
-    else theta_xy = atan(p[1]/p[0]);
-    const double l = p.norm();
 
     Point<dim> p_rot;
     p_rot[2] = p[2];
-    p_rot[0] = l*cos(theta_xy + rot_angle);
-    p_rot[1] = l*sin(theta_xy + rot_angle);
+    p_rot[0] = p[0]*std::cos(rot_angle) - p[1]*std::sin(rot_angle);
+    p_rot[1] = p[0]*std::sin(rot_angle) + p[1]*std::cos(rot_angle);
 
     return p_rot;
 }
