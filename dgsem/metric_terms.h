@@ -18,6 +18,11 @@
 
 #include "dtype_aliases.h"
 
+#ifdef DEBUG
+#include <iostream>
+#include <utilities/testing.h>
+#endif
+
 using namespace dealii;
 
 /**
@@ -60,6 +65,10 @@ class MetricTerms
     MetricTerms(){}
     MetricTerms(const FEValues<dim>&);
     void reinit(const FEValues<dim>&);
+
+    #ifdef DEBUG
+    static void test();
+    #endif
 };
 
 #endif

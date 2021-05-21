@@ -70,3 +70,14 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev)
         }
     } // loop over dofs == quad points
 }
+
+
+
+#ifdef DEBUG
+void MetricTerms<dim>::test()
+{
+    utilities::Testing t("MetricTerms", "class");
+
+    t.new_block("Testing reinit() function");
+}
+#endif
