@@ -46,6 +46,6 @@ int main(int argc, char** argv){
     CellDoFInfo::test();
     #endif
 
-    // plens_test();
+    plens_test();
     return 0;
 }

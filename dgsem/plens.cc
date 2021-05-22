@@ -675,6 +675,7 @@ void PLENS::set_dof_handler()
     pcout << "Completed\n";
 
     form_neighbor_face_matchings();
+    calc_metric_terms();
 }
 
 
@@ -941,7 +942,7 @@ void PLENS::set_BC()
  */
 void PLENS::form_neighbor_face_matchings(const double tol)
 {
-    pcout << "Matching neighbor side dof ids on internal faces ...\n";
+    pcout << "Matching neighbor side dof ids on internal faces ... ";
     std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
     for(const auto &cell: dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
@@ -997,7 +998,7 @@ void PLENS::form_neighbor_face_matchings(const double tol)
  */
 void PLENS::calc_metric_terms()
 {
-    pcout << "Calculating all relevant metric terms ...\n";
+    pcout << "Calculating all relevant metric terms ... ";
     // Set weights. Size of w_1d set in ctor
     QGaussLobatto<1> quad_lgl_1d(fe.degree+1);
     for(usi i=0; i<=fe.degree; i++){
