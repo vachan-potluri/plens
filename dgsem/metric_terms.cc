@@ -116,7 +116,7 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
                     ti0[dir2] = id2;
 
                     // initialise normal
-                    subcell_normals[dir](ti) = JxContra_vecs[dir][cdi.tensorial_to_local(ti0)];
+                    subcell_normals[dir](ti) = JxContra_vecs[cdi.tensorial_to_local(ti0)][dir];
 
                     for(usi l=0; l<=id-1; l++){
                         for(usi m=0; m<=degree; m++){
@@ -125,7 +125,7 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
                             ti0[dir1] = id1;
                             ti0[dir2] = id2;
                             subcell_normals[dir](ti) += Q(l,m)*
-                                JxContra_vecs[dir][cdi.tensorial_to_local(tim)];
+                                JxContra_vecs[cdi.tensorial_to_local(tim)][dir];
                         }
                     }
                 } // loop over tensor index
