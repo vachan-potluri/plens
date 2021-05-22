@@ -40,6 +40,7 @@
 #include "dtype_aliases.h"
 #include "LA.h"
 #include "face_dof_info.h"
+#include "metric_terms.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
@@ -196,6 +197,11 @@ class plens_test; // forward declaration
  * 1. The subcell normal vectors obtained in (1-B.53)
  *    - May not be unit vectors
  *    - Do not match (in direction) with the physical normals at faces (local indices) 0, 2 and 4.
+ *
+ * The metric terms are calculated using the class MetricTerms and stored as a map. Read the class
+ * documentation and also that of MetricTerms::reinit() to get an idea of what is being done.
+ * Specifically, note the comments made in these documentations about subcell normals. They don't
+ * match with cell normals on all faces.
  */
 class PLENS
 {
@@ -403,10 +409,21 @@ class PLENS
      */
     FullMatrix<double> ref_Q_1d;
 
+    /**
+     * A map of metric terms. The map will be formed in PLENS::calc_metric_terms().
+     * @warning The data stored in metric terms is all public and hence modifiable externally.
+     * Don't accidentally modify this data.
+     */
+    std::map<psize, MetricTerms<dim>> metrics;
+
 
 
     void form_neighbor_face_matchings(const double tol = 1e-4);
     void calc_metric_terms();
+    void calc_surf_flux(
+        const usi stage,
+        locly_ord_surf_flux_term_t<double> &surf_flux_term
+    );
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);
@@ -418,11 +435,6 @@ class PLENS
     void set_sol_vecs();
     void set_IC();
     void set_BC();
-
-    void calc_surf_flux(
-        const usi stage,
-        locly_ord_surf_flux_term_t<double> &surf_flux_term
-    );
 
 
 

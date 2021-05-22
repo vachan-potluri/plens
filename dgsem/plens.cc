@@ -923,6 +923,118 @@ void PLENS::set_BC()
 
 
 
+// * * * * * * * * * * * * * Private functions * * * * * * * * * * * * * * * //
+
+
+
+/**
+ * Populates the data in PLENS::nei_face_matching_dofs. See also @ref face_assem and
+ * plens_test::face_dof_matching_test(). Algorithm:
+ * - Loop over all owned cells
+ *   - Loop over all internal faces
+ *     - Loop over all dofs on face
+ *       - Loop over all neighbor dofs on the same face
+ *         - If the dof locations match (upto tolerance level `tol`), populate the map
+ *
+ * @pre Must be called after read_mesh() and set_dof_handler(). May be called at the end of
+ * set_dof_handler() after `dof_locations` are calculated.
+ */
+void PLENS::form_neighbor_face_matchings(const double tol)
+{
+    pcout << "Matching neighbor side dof ids on internal faces ...\n";
+    std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
+    for(const auto &cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+        cell->get_dof_indices(dof_ids);
+
+        for(usi fid=0; fid<n_faces_per_cell; fid++){
+            // set size of nei_face_matching_dofs
+            nei_face_matching_dofs[cell->index()][fid].resize(fe_face.dofs_per_face, 0);
+            if(cell->face(fid)->at_boundary()) continue;
+
+            const auto &neighbor = cell->neighbor(fid);
+            usi fid_nei = cell->neighbor_of_neighbor(fid);
+            neighbor->get_dof_indices(dof_ids_nei);
+
+            for(usi i=0; i<fe_face.dofs_per_face; i++){
+                Point<dim> loc = dof_locations[dof_ids[fdi.maps[fid].at(i)]];
+
+                for(usi j=0; j<fe_face.dofs_per_face; j++){
+                    Point<dim> loc_nei = dof_locations[dof_ids_nei[fdi.maps[fid_nei].at(j)]];
+                    Point<dim> diff(loc - loc_nei);
+                    if(diff.norm() < tol){
+                        // match obtained
+                        nei_face_matching_dofs[cell->index()][fid][i] = j;
+
+                        // print if i and j are not equal (abnormal match)
+                        if(i != j){
+                            std::cout << "\tCell id: " << cell->index()
+                                << ", Cell-local face id: " << fid
+                                << ", Face-local dof id: " << i
+                                << "\n\tFound abnormal match with\n"
+                                << "\tNeighbor cell id: " << neighbor->index()
+                                << ", Neighbor-local face id: " << fid_nei
+                                << ", Neighbor-face-local dof id: " << j << "\n";
+                        }
+                    }
+                } // loop over neighbors dofs on same face
+            } // loop over face dofs
+        } // loop over internal faces
+    } // loop over owned cells
+    pcout << "Completed\n";
+}
+
+
+
+/**
+ * Calculates all metric terms. More specifically
+ * 1. 1D quadrature weights
+ * 1. 1D Differentiation (strong version) and "Q" matrix
+ * 1. Other metric terms using MetricTerms
+ *
+ * @pre `dof_handler` must be ready to use. This function can be called at the end of
+ * PLENS::set_dof_handler().
+ */
+void PLENS::calc_metric_terms()
+{
+    pcout << "Calculating all relevant metric terms ...\n";
+    // Set weights. Size of w_1d set in ctor
+    QGaussLobatto<1> quad_lgl_1d(fe.degree+1);
+    for(usi i=0; i<=fe.degree; i++){
+        w_1d[i] = quad_lgl_1d.weight(i);
+    }
+    const std::vector<Point<1>> &points_1d = quad_lgl_1d.get_points();
+
+    // Compute the 1D differentiation matrix in reference cell. Size of ref_D_1d set in ctor
+    FE_DGQ<1> fe_1d(fe.degree);
+    for(usi row=0; row<=fe.degree; row++){
+        for(usi col=0; col<=fe.degree; col++){
+            ref_D_1d(row,col) = fe_1d.shape_grad(col, points_1d[row])[0];
+            ref_Q_1d(row,col) = w_1d[row]*ref_D_1d(row,col);
+        }
+    }
+
+    // Calculate and store the metric terms
+    FEValues<dim> fe_values(
+        *mapping_ptr,
+        fe,
+        QGaussLobatto<dim>(fe.degree+1),
+        update_values | update_jacobians | update_quadrature_points
+    );
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        fe_values.reinit(cell);
+        metrics.emplace(std::make_pair(
+            cell->index(),
+            MetricTerms<dim>(fe_values, ref_Q_1d)
+        ));
+    } // loop over owned cells
+    pcout << "Completed\n";
+}
+
+
+
 /**
  * Calculates the surface flux for a given `stage` into the variable `surf_flux_term`. The
  * information about stages is given in NavierStokes. See also @ref face_assem and BCs::BC. The
@@ -1112,94 +1224,6 @@ void PLENS::calc_surf_flux(
             else continue;
         } // loop over faces
     } // loop over owned cells
-}
-
-
-
-// * * * * * * * * * * * * * Private functions * * * * * * * * * * * * * * * //
-
-
-
-/**
- * Populates the data in PLENS::nei_face_matching_dofs. See also @ref face_assem and
- * plens_test::face_dof_matching_test(). Algorithm:
- * - Loop over all owned cells
- *   - Loop over all internal faces
- *     - Loop over all dofs on face
- *       - Loop over all neighbor dofs on the same face
- *         - If the dof locations match (upto tolerance level `tol`), populate the map
- *
- * @pre Must be called after read_mesh() and set_dof_handler(). May be called at the end of
- * set_dof_handler() after `dof_locations` are calculated.
- */
-void PLENS::form_neighbor_face_matchings(const double tol)
-{
-    pcout << "Matching neighbor side dof ids on internal faces ...\n";
-    std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
-    for(const auto &cell: dof_handler.active_cell_iterators()){
-        if(!cell->is_locally_owned()) continue;
-        cell->get_dof_indices(dof_ids);
-
-        for(usi fid=0; fid<n_faces_per_cell; fid++){
-            // set size of nei_face_matching_dofs
-            nei_face_matching_dofs[cell->index()][fid].resize(fe_face.dofs_per_face, 0);
-            if(cell->face(fid)->at_boundary()) continue;
-
-            const auto &neighbor = cell->neighbor(fid);
-            usi fid_nei = cell->neighbor_of_neighbor(fid);
-            neighbor->get_dof_indices(dof_ids_nei);
-
-            for(usi i=0; i<fe_face.dofs_per_face; i++){
-                Point<dim> loc = dof_locations[dof_ids[fdi.maps[fid].at(i)]];
-
-                for(usi j=0; j<fe_face.dofs_per_face; j++){
-                    Point<dim> loc_nei = dof_locations[dof_ids_nei[fdi.maps[fid_nei].at(j)]];
-                    Point<dim> diff(loc - loc_nei);
-                    if(diff.norm() < tol){
-                        // match obtained
-                        nei_face_matching_dofs[cell->index()][fid][i] = j;
-
-                        // print if i and j are not equal (abnormal match)
-                        if(i != j){
-                            std::cout << "\tCell id: " << cell->index()
-                                << ", Cell-local face id: " << fid
-                                << ", Face-local dof id: " << i
-                                << "\n\tFound abnormal match with\n"
-                                << "\tNeighbor cell id: " << neighbor->index()
-                                << ", Neighbor-local face id: " << fid_nei
-                                << ", Neighbor-face-local dof id: " << j << "\n";
-                        }
-                    }
-                } // loop over neighbors dofs on same face
-            } // loop over face dofs
-        } // loop over internal faces
-    } // loop over owned cells
-    pcout << "Completed\n";
-}
-
-
-
-/**
- * Calculates all metric terms. More specifically
- * 1. 1D quadrature weights
- */
-void PLENS::calc_metric_terms()
-{
-    // Set weights. Size of w_1d set in ctor
-    QGaussLobatto<1> quad_lgl_1d(fe.degree+1);
-    for(usi i=0; i<=fe.degree; i++){
-        w_1d[i] = quad_lgl_1d.weight(i);
-    }
-    const std::vector<Point<1>> &points_1d = quad_lgl_1d.get_points();
-
-    // Compute the 1D differentiation matrix in reference cell. Size of ref_D_1d set in ctor
-    FE_DGQ<1> fe_1d(fe.degree);
-    for(usi row=0; row<=fe.degree; row++){
-        for(usi col=0; col<=fe.degree; col++){
-            ref_D_1d(row,col) = fe_1d.shape_grad(col, points_1d[row])[0];
-            ref_Q_1d(row,col) = w_1d[row]*ref_D_1d(row,col);
-        }
-    }
 }
 
 
