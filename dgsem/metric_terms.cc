@@ -58,6 +58,12 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
     // resize the metric term containers
     JxContra_vecs.resize(fev.n_quadrature_points); // dofs_per_cell == n_quadrature_points
     detJ.resize(fev.n_quadrature_points);
+    const usi degree = fev.get_fe().degree;
+    for(usi dir=0; dir<dim; dir++){
+        TableIndices<dim> ti(degree+1,degree+1,degree+1);
+        ti[dir] += 1; // one size extra in direction `dir`
+        subcell_normals[dir].reinit(ti);
+    }
 
     // calculate the contravariant vectors
     std::array<Tensor<1,dim>, dim> co_vecs; // covariant vectors

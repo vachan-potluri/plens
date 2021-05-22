@@ -23,6 +23,8 @@
 #ifdef DEBUG
 #include <deal.II/base/point.h>
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/table.h>
+#include <deal.II/base/table_indices.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/mapping_q_generic.h>
@@ -57,6 +59,9 @@ using namespace dealii;
  * Access to stored quantities is provided directly through public variables. Hence it might be
  * dangerous to use non-const version of this object. However, a const version can be readily
  * constructed by passing an appropriate `FEValues` object for construction.
+ *
+ * @note Although this class is constructed from a template, only `dim=3` is currently supported.
+ * The file `metric_terms.inst` instantiates this template class only for `dim=3`.
  */
 template <int dim>
 class MetricTerms
@@ -94,14 +99,7 @@ class MetricTerms
      * `dir=0`, `i=0,1,...,N+1` and `j,k=0,1,...,N`. With `dir=0`, when `i=0`, this gives
      * @f$\vec{n}_{(L,0)jk}@f$ and when `i=N+1`, this gives @f$\vec{n}_{(N,R)jk}@f$.
      */
-    std::array<
-        std::vector<
-            std::vector<
-                std::vector<double>
-            >
-        >,
-        3
-    > subcell_normals;
+    std::array< Table<3, Tensor<1,dim>>, dim > subcell_normals;
 
     /**
      * Plain constructor. Does nothing.
