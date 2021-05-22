@@ -35,6 +35,8 @@ ref_Q_1d(fe_degree+1)
         mhod > 0,
         StandardExceptions::ExcMessage("High order mapping degree must be >= 1.")
     );
+
+    MPI_Barrier(mpi_comm);
 }
 
 
@@ -358,6 +360,8 @@ void PLENS::declare_parameters()
     prm.print_parameters(sample_file, ParameterHandler::Text);
     sample_file.close();
     pcout << "Sample input file named 'sample_input_file.prm' written\n";
+
+    MPI_Barrier(mpi_comm);
 }
 
 
@@ -503,6 +507,8 @@ void PLENS::read_mesh()
     }
     prm.leave_subsection(); // subsection mesh
     pcout << "Completed\n";
+
+    MPI_Barrier(mpi_comm);
 }
 
 
@@ -569,6 +575,8 @@ void PLENS::set_NS()
     }
     prm.leave_subsection(); // subsection Navier-Stokes
     pcout << "Completed\n";
+
+    MPI_Barrier(mpi_comm);
 }
 
 
@@ -674,8 +682,12 @@ void PLENS::set_dof_handler()
     DoFTools::map_dofs_to_support_points(*mapping_ptr, dof_handler, dof_locations);
     pcout << "Completed\n";
 
+    MPI_Barrier(mpi_comm);
+
     form_neighbor_face_matchings();
     calc_metric_terms();
+
+    MPI_Barrier(mpi_comm);
 }
 
 
@@ -705,6 +717,8 @@ void PLENS::set_sol_vecs()
         gh_gcrk_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
     pcout << "Completed\n";
+
+    MPI_Barrier(mpi_comm);
 }
 
 
@@ -736,6 +750,8 @@ void PLENS::set_IC()
 
     ic_ptr->set();
     pcout << "Completed\n";
+
+    MPI_Barrier(mpi_comm);
 }
 
 
@@ -920,6 +936,8 @@ void PLENS::set_BC()
         }
         prm.leave_subsection(); // BCs
     } // loop over bid_list
+
+    MPI_Barrier(mpi_comm);
 }
 
 
