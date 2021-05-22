@@ -41,7 +41,13 @@ MetricTerms<dim>::MetricTerms(const FEValues<dim>& fev, const FullMatrix<double>
  * 21-May-2021.
  *
  * The parameter `Q` is used for calculation of subcell normals. Its values must be consistent with
- * `fev`. No checks on this are done.
+ * `fev`. No checks on this are done. The formula for normal calculation is (for `dir=0`)
+ * @f[
+ * \vec{n}_{(i-1,i)jk} = (J\vec{a}^1)_{0jk} +
+ *      \sum_{l=0}^{i-1} \sum_{m=0}^{N} Q_{lm} (J\vec{a}^1)_{mjk}
+ * @f]
+ * When @f$i=0@f$ in above formula, we get @f$\vec{n}_{(L,0)jk}@f$ and when @f$i=N+1@f$, we get
+ * @f$\vec{n}_{(N,R)jk}@f$. The formula is valid for both these end cases also.
  *
  * @pre `fev` must be reinitialised on the appropriate cell on which metric terms are desired. It
  * is also assumed that the quadrature type and FE type are correctly set to `QGaussLobatto` and
@@ -65,6 +71,8 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
         subcell_normals[dir].reinit(ti);
     }
 
+    CellDoFInfo cdi(degree);
+
     // calculate the contravariant vectors
     std::array<Tensor<1,dim>, dim> co_vecs; // covariant vectors
     for(usi i=0; i<fev.n_quadrature_points; i++){
@@ -85,6 +93,45 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
             JxContra_vecs[i][dir] = cross_product_3d(co_vecs[dir1], co_vecs[dir2]);
         }
     } // loop over dofs == quad points
+
+    // subcell normals
+    // here, `id*` is the tensor index corresponding to direction `dir*`
+    for(usi dir=0; dir<dim; dir++){
+        // other directions
+        usi dir1 = (dir+1)%dim;
+        usi dir2 = (dir+2)%dim;
+
+        // loop over tensor indices
+        for(usi id=0; id<=degree+1; id++){
+            for(usi id1=0; id1<=degree; id1++){
+                for(usi id2=0; id2<=degree; id2++){
+                    TableIndices<dim> ti;
+                    ti[dir] = id;
+                    ti[dir1] = id1;
+                    ti[dir2] = id2;
+                    // indices corrsponding to the first term in normal expression
+                    TableIndices<dim> ti0;
+                    ti0[dir] = 0;
+                    ti0[dir1] = id1;
+                    ti0[dir2] = id2;
+
+                    // initialise normal
+                    subcell_normals[dir](ti) = JxContra_vecs[dir][cdi.tensorial_to_local(ti0)];
+
+                    for(usi l=0; l<=id-1; l++){
+                        for(usi m=0; m<=degree; m++){
+                            TableIndices<dim> tim;
+                            ti0[dir] = m;
+                            ti0[dir1] = id1;
+                            ti0[dir2] = id2;
+                            subcell_normals[dir](ti) += Q(l,m)*
+                                JxContra_vecs[dir][cdi.tensorial_to_local(tim)];
+                        }
+                    }
+                } // loop over tensor index
+            } // loop over tensor index
+        } // loop over tensor index
+    } // loop over direction
 }
 
 
