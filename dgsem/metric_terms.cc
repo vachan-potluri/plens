@@ -144,30 +144,46 @@ void MetricTerms<dim>::test()
 
     t.new_block("Testing reinit() function");
 
+    // create test triangulation
     Triangulation<dim> triang;
     Point<dim> p1,p2;
     p1[0] = 0; p1[1] = 0; p1[2] = 0;
     p2[0] = 4; p2[1] = 2; p2[2] = 1;
     GridGenerator::hyper_rectangle(triang, p1, p2);
-
     std::function<Point<dim>(const Point<dim>&)> transformation = MetricTerms<dim>::transform;
-
     GridTools::transform(transformation, triang);
 
     DoFHandler<dim> dof_handler(triang);
     FE_DGQ<dim> fe(2); // 2nd order polynomial
     dof_handler.distribute_dofs(fe);
 
+    // create fevalues object
     FEValues<dim> fe_values(
         fe,
         QGaussLobatto<dim>(fe.degree+1),
         update_values | update_jacobians | update_quadrature_points
     );
-
     const auto &cell = dof_handler.begin_active(); // first and only cell
     fe_values.reinit(cell);
 
-    MetricTerms<dim> mt(fe_values, FullMatrix<double>());
+    // form Q matrix
+    std::vector<double> w_1d(fe.degree+1);
+    FullMatrix<double> D(fe.degree+1), Q(fe.degree+1);
+    FE_DGQ<1> fe_1d(fe.degree);
+    QGaussLobatto<1> quad_lgl_1d(fe.degree+1);
+    for(usi i=0; i<=fe.degree; i++){
+        w_1d[i] = quad_lgl_1d.weight(i);
+    }
+    const std::vector<Point<1>> &points_1d = quad_lgl_1d.get_points();
+    for(usi row=0; row<=fe.degree; row++){
+        for(usi col=0; col<=fe.degree; col++){
+            D(row,col) = fe_1d.shape_grad(col, points_1d[row])[0];
+            Q(row,col) = w_1d[row]*D(row,col);
+        }
+    }
+
+    // invoke and print
+    MetricTerms<dim> mt(fe_values, Q);
     std::cout << "JxContra_vecs:\n";
     for(usi i=0; i<fe.dofs_per_cell; i++){
         std::cout << "\tDof " << i << "\n";
@@ -181,12 +197,35 @@ void MetricTerms<dim>::test()
         std::cout << "\tDof " << i << " : " << mt.detJ[i] << "\n";
     }
 
+    std::cout << "Subcell normals:\n";
+    for(usi dir=0; dir<dim; dir++){
+        std::cout << "\tDirection " << dir << "\n";
+        usi dir1 = (dir+1)%dim;
+        usi dir2 = (dir+2)%dim;
+
+        for(usi id=0; id<=fe.degree+1; id++){
+            for(usi id1=0; id1<=fe.degree; id1++){
+                for(usi id2=0; id2<=fe.degree; id2++){
+                    TableIndices<dim> ti;
+                    ti[dir] = id;
+                    ti[dir1] = id1;
+                    ti[dir2] = id2;
+
+                    std::cout << "\t\tTable indices " << ti << " : "
+                        << mt.subcell_normals[dir](ti) << "\n";
+                }
+            }
+        }
+    }
+
     // Expected result (assuming the triang box has widths 4, 2 and 1)
     // Ja^1 = (2*cos r, 2*sin r, 0)
     // Ja^2 = (-4*sin r, 4*cos r, 0)
     // Ja^3 = (0, 0, 8)
     // where r is the rotation angle in transform function (assuming transform does 2d rotation
     // in xy plane)
+
+    // For normals, all subcell normals must match with Ja^{1/2/3} depending on the direction
 }
 
 
