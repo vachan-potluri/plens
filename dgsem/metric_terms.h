@@ -12,6 +12,7 @@
 #include <deal.II/base/derivative_form.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_values.h>
+#include <deal.II/lac/full_matrix.h>
 
 #include <vector>
 #include <array>
@@ -77,11 +78,36 @@ class MetricTerms
     std::vector<double> detJ;
 
     /**
+     * Subcell normal vectors. There is one important distinction between subcell normals and cell
+     * normals as used in PLENS. The subcell normals are uni-directional: their doesn't change
+     * depending on the subcell. This implies that the normal will point _into_ the subcell on the
+     * "left" subcell face and will point _outward_ the subcell on the "right" subcell face.
+     * There is one more point to note: these vectors are not unit vectors. These are actually the
+     * area vectors, scaled by some weight factor. See TW1 notes 20-May-2021 or WJ-20-May-2021. So,
+     * if a subcell shares the cell's face, then the normal given by this variable will point in
+     * the direction of outward face normal if the face index is 1, 3 or 5. If the face index is 0,
+     * 2 or 4, then the subcell normal and the face outward normal point in opposite directions.
+     * Because this deals with the subcell, the ordering has to be tensorial. Access:
+     * `subcell_normals[dir][i][j][k]`
+     * gives @f$\vec{n}_{(i-1,i)jk}@f$ for `dir=0` and similarly for `dir=1` and `dir=2`. For
+     * `dir=0`, `i=0,1,...,N+1` and `j,k=0,1,...,N`. With `dir=0`, when `i=0`, this gives
+     * @f$\vec{n}_{(L,0)jk}@f$ and when `i=N+1`, this gives @f$\vec{n}_{(N,R)jk}@f$.
+     */
+    std::array<
+        std::vector<
+            std::vector<
+                std::vector<double>
+            >
+        >,
+        3
+    > subcell_normals;
+
+    /**
      * Plain constructor. Does nothing.
      */
     MetricTerms(){}
-    MetricTerms(const FEValues<dim>&);
-    void reinit(const FEValues<dim>&);
+    MetricTerms(const FEValues<dim>&, const FullMatrix<double>&);
+    void reinit(const FEValues<dim>&, const FullMatrix<double>&);
 
     #ifdef DEBUG
     static void test();

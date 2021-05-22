@@ -44,6 +44,6 @@ int main(int argc, char** argv){
     MetricTerms<3>::test();
     #endif
 
-    // plens_test();
+    plens_test();
     return 0;
 }

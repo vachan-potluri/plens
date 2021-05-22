@@ -9,9 +9,9 @@
  * Constructor using `FEValues`. Calls reinit() internally
  */
 template <int dim>
-MetricTerms<dim>::MetricTerms(const FEValues<dim>& fev)
+MetricTerms<dim>::MetricTerms(const FEValues<dim>& fev, const FullMatrix<double>& Q)
 {
-    reinit(fev);
+    reinit(fev, Q);
 }
 
 
@@ -40,12 +40,20 @@ MetricTerms<dim>::MetricTerms(const FEValues<dim>& fev)
  * of them can be shown to be equivalent to this form, see WJ-21-May-2021 or the notes in TW1 dated
  * 21-May-2021.
  *
+ * The parameter `Q` is used for calculation of subcell normals. Its values must be consistent with
+ * `fev`. No checks on this are done.
+ *
  * @pre `fev` must be reinitialised on the appropriate cell on which metric terms are desired. It
  * is also assumed that the quadrature type and FE type are correctly set to `QGaussLobatto` and
  * `FE_DGQ` respectively.
+ * @pre Values in `Q` must be consistent with `fev`. It must be the product of 1D weights diagonal
+ * matrix and the 1D differentiation matrix:
+ * @f$Q_{ij} = w_i D_{ij} = w_i \frac{\partial l_j}{\partial \xi_i}@f$
+ * where @f$w@f$ and @f$l@f$ are the weights and shape functions corresponding to 1D LGL
+ * quadrature.
  */
 template <int dim>
-void MetricTerms<dim>::reinit(const FEValues<dim>& fev)
+void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>& Q)
 {
     // resize the metric term containers
     JxContra_vecs.resize(fev.n_quadrature_points); // dofs_per_cell == n_quadrature_points
