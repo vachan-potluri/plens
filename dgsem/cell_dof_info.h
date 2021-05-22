@@ -59,6 +59,18 @@ class CellDoFInfo
         const usi n_dofs_per_cell = std::pow(degree+1, dim);
         local_to_tensorial.reinit(TableIndices<2>(n_dofs_per_cell, dim));
         tensorial_to_local.reinit(TableIndices<3>(degree+1, degree+1, degree+1));
+
+        // local to tensorial
+        for(usi i=0; i<n_dofs_per_cell; i++){
+            // get the tensorial indices
+            std::array<usi, dim> ids = {
+                i%(degree+1),
+                std::floor( (i%((degree+1)*(degree+1)))/(degree+1) ),
+                std::floor(i/((degree+1)*(degree+1)))
+            };
+
+            for(usi dir=0; dir<dim; dir++) local_to_tensorial[i][dir] = ids[dir];
+        }
     }
 };
 

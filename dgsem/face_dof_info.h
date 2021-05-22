@@ -36,6 +36,8 @@ for(auto &cell: dof_handler.active_cell_iterators()){
 @endcode
  * The maps themselves are easy to construct. See the note <b>pens2D to plens</b> and also see
  * [FE_DGQ](https://www.dealii.org/current/doxygen/deal.II/classFE__DGQ.html) class.
+ *
+ * @todo Use `dealii::Table<N,T>` instead of nested arrays. CellDoFInfo does this. 22-May-2021.
  */
 class FaceDoFInfo
 {
