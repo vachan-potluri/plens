@@ -6,7 +6,14 @@
 #ifndef CELL_DOF_INFO_H
 #define CELL_DOF_INFO_H
 
+#include <deal.II/base/table.h>
+#include <deal.II/base/table_indices.h>
+
+#include <cmath>
+
 #include "dtype_aliases.h"
+
+using namespace dealii;
 
 /**
  * @class CellDoFInfo
@@ -18,6 +25,8 @@
 class CellDoFInfo
 {
     public:
+    static constexpr usi dim = 3;
+
     /**
      * Degree of polynomial basis. Of course, assuming that the `FiniteElement` is `FE_DGQ`.
      */
@@ -26,20 +35,17 @@ class CellDoFInfo
     /**
      * Cell-local to tensorial map. Access:
      * `local_to_tensorial[cell-local dof id][dir]`
-     * gives the tensor index for direction `dir`.
+     * gives the tensor index for direction `dir`. The access can also be done using `operator()`.
      */
-    std::vector<std::array<usi, 3>> local_to_tensorial;
+    Table<2, usi> local_to_tensorial;
 
     /**
      * Tensorial indies to cell-local map. Access:
      * `tensorial_to_local[i][j][k]`
-     * gives the cell-local dof id corresponding to tensor indices i, j and k.
+     * gives the cell-local dof id corresponding to tensor indices i, j and k. The access can also
+     * be done using `operator()`.
      */
-    std::vector<
-        std::vector<
-            std::vector<usi>
-        >
-    > tensorial_to_local;
+    Table<3, usi> tensorial_to_local;
 
 
 
@@ -48,7 +54,12 @@ class CellDoFInfo
      */
     CellDoFInfo(const usi deg)
     : degree(deg)
-    {}
+    {
+        // first set sizes
+        const usi n_dofs_per_cell = std::pow(degree+1, dim);
+        local_to_tensorial.reinit(TableIndices<2>(n_dofs_per_cell, dim));
+        tensorial_to_local.reinit(TableIndices<3>(degree+1, degree+1, degree+1));
+    }
 };
 
 #endif

@@ -18,6 +18,7 @@
 #include <array>
 
 #include "dtype_aliases.h"
+#include "cell_dof_info.h"
 
 #ifdef DEBUG
 #include <deal.II/base/point.h>
