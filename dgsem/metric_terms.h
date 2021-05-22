@@ -70,6 +70,13 @@ class MetricTerms
     std::vector<std::array<Tensor<1,dim>, dim>> JxContra_vecs;
 
     /**
+     * An array holding the Jacobian determinants. The ordering is cell-local again, as against
+     * tensorial ordering. Access:
+     * `detJ[cell-local dof id]`
+     */
+    std::vector<double> detJ;
+
+    /**
      * Plain constructor. Does nothing.
      */
     MetricTerms(){}

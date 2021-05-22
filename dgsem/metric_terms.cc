@@ -49,13 +49,15 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev)
 {
     // resize the metric term containers
     JxContra_vecs.resize(fev.n_quadrature_points); // dofs_per_cell == n_quadrature_points
+    detJ.resize(fev.n_quadrature_points);
 
     // calculate the contravariant vectors
     std::array<Tensor<1,dim>, dim> co_vecs; // covariant vectors
     for(usi i=0; i<fev.n_quadrature_points; i++){
         const DerivativeForm<1,dim,dim>& J_mat = fev.jacobian(i); // jacobian matrix
-        const DerivativeForm<1,dim,dim> J_mat_T = J_mat.transpose();
+        detJ[i] = J_mat.determinant();
 
+        const DerivativeForm<1,dim,dim> J_mat_T = J_mat.transpose();
         // get covariant vecs
         for(usi dir=0; dir<dim; dir++) co_vecs[dir] = J_mat_T[dir];
 
@@ -111,6 +113,11 @@ void MetricTerms<dim>::test()
         for(usi dir=0; dir<dim; dir++){
             std::cout << "\t\tDirection " << dir << ": " << mt.JxContra_vecs[i][dir] << "\n";
         }
+    }
+
+    std::cout << "Determinants:\n";
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        std::cout << "\tDof " << i << " : " << mt.detJ[i] << "\n";
     }
 
     // Expected result (assuming the triang box has widths 4, 2 and 1)
