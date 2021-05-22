@@ -114,7 +114,7 @@ void MetricTerms<dim>::test()
     const auto &cell = dof_handler.begin_active(); // first and only cell
     fe_values.reinit(cell);
 
-    MetricTerms<dim> mt(fe_values);
+    MetricTerms<dim> mt(fe_values, FullMatrix<double>());
     std::cout << "JxContra_vecs:\n";
     for(usi i=0; i<fe.dofs_per_cell; i++){
         std::cout << "\tDof " << i << "\n";
