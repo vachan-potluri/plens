@@ -13,6 +13,11 @@
 
 #include "dtype_aliases.h"
 
+#ifdef DEBUG
+#include <iostream>
+#include <utilities/testing.h>
+#endif
+
 using namespace dealii;
 
 /**
@@ -71,7 +76,49 @@ class CellDoFInfo
 
             for(usi dir=0; dir<dim; dir++) local_to_tensorial[i][dir] = ids[dir];
         }
+
+        // tensorial to local
+        for(usi i=0; i<=degree; i++){
+            for(usi j=0; j<=degree; j++){
+                for(usi k=0; k<=degree; k++){
+                    tensorial_to_local[i][j][k] = i + j*(degree+1) + k*(degree+1)*(degree+1);
+                }
+            }
+        }
     }
+
+    #ifdef DEBUG
+    static void test()
+    {
+        utilities::Testing t("CellDoFInfo", "class");
+        t.new_block("Testing maps construction");
+
+        const usi degree = 2;
+        const usi n_dofs_per_cell = pow(degree+1,3);
+
+        CellDoFInfo cdi(degree);
+        std::cout << "Degree " << degree << " maps:\n";
+
+        std::cout << "Local to tensorial:\n";
+        for(usi i=0; i<n_dofs_per_cell; i++){
+            std::cout << "\tDof " << i << " : ";
+            for(usi dir=0; dir<3; dir++){
+                std::cout << cdi.local_to_tensorial[i][dir] << " ";
+            }
+            std::cout << "\n";
+        }
+
+        std::cout << "Tensorial to local:\n";
+        for(usi i=0; i<=degree; i++){
+            for(usi j=0; j<=degree; j++){
+                for(usi k=0; k<=degree; k++){
+                    std::cout << "\tTensor indices: " << i << " " << j << " " << k << " : "
+                        << cdi.tensorial_to_local[i][j][k] << "\n";
+                }
+            }
+        }
+    }
+    #endif
 };
 
 #endif
