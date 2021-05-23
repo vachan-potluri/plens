@@ -1340,6 +1340,46 @@ void PLENS::calc_cell_cons_grad(
         } // loop tensor index 1
 
         // now surface contribution for those dofs lying on face
+        for(usi surf_dir=0; surf_dir<dim; surf_dir++){
+            usi dir1 = (surf_dir+1)%dim;
+            usi dir2 = (surf_dir+2)%dim;
+
+            for(usi id1=0; id1<=fe.degree; id1++){
+                for(usi id2=0; id2<=fe.degree; id2++){
+                    TableIndices<dim> ti;
+
+                    // first for id 0
+                    ti[surf_dir] = 0;
+                    ti[dir1] = id1;
+                    ti[dir2] = id2;
+                    usi ldof = cdi.tensorial_to_local(ti);
+                    usi face_id = 2*surf_dir;
+                    usi face_dof_id = fdi.inverse_maps[face_id][ldof];
+                    State flux_in, flux_surf;
+                    for(cvar var: cvar_list){
+                        flux_in[var] = gcrk_cvars[var][dof_ids[ldof]]*
+                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
+                        flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
+                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
+                        cons_grad[ldof][grad_dir][var] -= (flux_surf[var]-flux_in[var])/w_1d[0];
+                    }
+
+                    // now for id N
+                    ti[surf_dir] = fe.degree;
+                    ldof = cdi.tensorial_to_local(ti);
+                    face_id = 2*surf_dir + 1;
+                    face_dof_id = fdi.inverse_maps[face_id][ldof];
+                    for(cvar var: cvar_list){
+                        flux_in[var] = gcrk_cvars[var][dof_ids[ldof]]*
+                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
+                        flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
+                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
+                        cons_grad[ldof][grad_dir][var] += (flux_surf[var]-flux_in[var])/
+                            w_1d[fe.degree];
+                    }
+                } // loop over face indices (complementary dir 2)
+            } // loop over face indices (complementary dir 1)
+        } // loop over directions for surface contrib
 
         // divide by Jacobian determinant
     } // loop over gradient directions
