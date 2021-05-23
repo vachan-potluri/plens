@@ -1264,9 +1264,8 @@ void PLENS::calc_surf_flux(
  *
  * The strategy for calculation is simple. For the two point volume fluxes, use
  * NavierStokes::get_aux_vol_flux(). For BR1 flux, the direction passed in this function doesn't
- * matter. Depending on the gradient direction, this flux is multiplied by the appropriate
- * component of contravariant vector. See eq. (B.15) of [1]. See also TW1 notes or WJ dated
- * 20-May-2021.
+ * matter. This flux is multiplied by the component of contravariant vector in the gradient
+ * direction. See eq. (B.15) of [1]. See also TW1 notes or WJ dated 20-May-2021.
  *
  * @param[in] cell The iterator corresponding to the cell in which gradients are to be calculated
  * @param[in] s0_surf_flux Stage 0 surface flux of conservative variables. Access:
@@ -1293,8 +1292,9 @@ void PLENS::calc_cell_cons_grad(
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
 
-    // first calculate volumetric contribution
     for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+
+        // first calculate volumetric contribution
         for(usi i=0; i<=fe.degree; i++){
             for(usi j=0; j<=fe.degree; j++){
                 for(usi k=0; k<=fe.degree; k++){
@@ -1331,6 +1331,10 @@ void PLENS::calc_cell_cons_grad(
                 } // loop tensor index 3
             } // loop tensor index 2
         } // loop tensor index 1
+
+        // now volumetric contribution
+
+        // divide by Jacobian determinant
     } // loop over gradient directions
 }
 
