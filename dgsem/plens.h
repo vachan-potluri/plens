@@ -205,6 +205,14 @@ class plens_test; // forward declaration
  * documentation and also that of MetricTerms::reinit() to get an idea of what is being done.
  * Specifically, note the comments made in these documentations about subcell normals. They don't
  * match with cell normals on all faces.
+ *
+ * Unlike for surface flux calculation, volumetric contribution cannot be unified for conservative
+ * and auxiliary variable calculation. This is because auxiliary variables require gradients of
+ * conservative variables in all 3 directions. This means a total of 5*3=15 equations need to be
+ * set up for these gradients whereas inviscid/diffusive contribution for conservative variable
+ * residual requires only 5 equations. Hence a straight-forward unified approach is not possible.
+ * However, the inviscid and diffusive high order residual contributions can be calculated in a
+ * single loop. The inviscid subcell contribution can then be added separately.
  */
 class PLENS
 {
