@@ -1382,6 +1382,16 @@ void PLENS::calc_cell_cons_grad(
         } // loop over directions for surface contrib
 
         // divide by Jacobian determinant
+        for(usi i=0; i<=fe.degree; i++){
+            for(usi j=0; j<=fe.degree; j++){
+                for(usi k=0; k<=fe.degree; k++){
+                    usi ldof = cdi.tensorial_to_local(i,j,k);
+                    for(cvar var: cvar_list){
+                        cons_grad[ldof][grad_dir][var] /= metrics[cell->index()].detJ[ldof];
+                    }
+                }
+            }
+        }
     } // loop over gradient directions
 }
 
