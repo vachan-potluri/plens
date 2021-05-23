@@ -1253,6 +1253,21 @@ void PLENS::calc_surf_flux(
  * [1]. The volumetric terms are calculated using PLENS::gcrk_cvars and the surface flux is taken
  * from `s0_surf_flux` which holds the conservative variable flux for stage 0.
  *
+ * Suppose @f$\partial \rho/\partial x@f$ is to be calculated. Then, a differential equation is
+ * constructed:
+ * @f[
+ * X + \frac{\partial}{\partial x}(-\rho) = 0
+ * @f]
+ * where @f$X=\partial \rho/\partial x@f$ is to be calculated. This then is in the form shown in
+ * eq. (B.1) of [1]. Hence, eq. (B.14) is used to calculate the gradient. For every conservative
+ * variable, 3 such equations corresponding to 3 gradients are used.
+ *
+ * The strategy for calculation is simple. For the two point volume fluxes, use
+ * NavierStokes::get_aux_vol_flux(). For BR1 flux, the direction passed in this function doesn't
+ * matter. Depending on the gradient direction, this flux is multiplied by the appropriate
+ * component of contravariant vector. See eq. (B.15) of [1]. See also TW1 notes or WJ dated
+ * 20-May-2021.
+ *
  * @param[in] cell The iterator corresponding to the cell in which gradients are to be calculated
  * @param[in] s0_surf_flux Stage 0 surface flux of conservative variables. Access:
  * `s0_surf_flux[var][cell id][cell-local face id][face-local dof id]`
@@ -1266,7 +1281,58 @@ void PLENS::calc_cell_cons_grad(
     const locly_ord_surf_flux_term_t<double> &s0_surf_flux,
     std::vector<std::array<State, 3>> cons_grad
 )
-{}
+{
+    AssertThrow(
+        cons_grad.size() == fe.dofs_per_cell,
+        StandardExceptions::ExcMessage(
+            "The vector provided to store conservative gradients must have the proper size."
+        )
+    );
+
+    // get cell dof indices
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+
+    // first calculate volumetric contribution
+    for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+        for(usi i=0; i<=fe.degree; i++){
+            for(usi j=0; j<=fe.degree; j++){
+                for(usi k=0; k<=fe.degree; k++){
+                    State cons_this;
+                    TableIndices<dim> ti_this(i,j,k);
+                    usi ldof_this = cdi.tensorial_to_local(ti_this);
+                    for(cvar var: cvar_list){
+                        cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
+                        cons_grad[ldof_this][grad_dir][var] = 0; // initialise to 0
+                    }
+                    State flux; // flux between 'this' and 'other' states
+                    Tensor<1,dim> temp_dir; // temporary, doesn't matter for BR1 flux calculation
+
+                    for(usi m=0; m<=fe.degree; m++){
+                        for(usi m_dir=0; m_dir<dim; m_dir++){
+                            State cons_other;
+                            TableIndices<dim> ti_other(i,j,k);
+                            ti_other[m_dir] = m;
+                            usi ldof_other = cdi.tensorial_to_local(ti_other);
+                            for(cvar var: cvar_list){
+                                cons_other[var] = gcrk_cvars[var][dof_ids[ldof_other]];
+                            }
+                            ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
+                            double JxContra_avg_comp = 0.5*(
+                                metrics[cell->index()].JxContra_vecs[ldof_this][m_dir][grad_dir] +
+                                metrics[cell->index()].JxContra_vecs[ldof_other][m_dir][grad_dir]
+                            ); // component (of average contravariant vector) in gradient direction
+                            for(cvar var: cvar_list){
+                                cons_grad[ldof_this][grad_dir][var] +=
+                                    2*ref_D_1d(ti_this[m_dir],m)*flux[var]*JxContra_avg_comp;
+                            }
+                        } // loop over three directions for m
+                    } // loop over m
+                } // loop tensor index 3
+            } // loop tensor index 2
+        } // loop tensor index 1
+    } // loop over gradient directions
+}
 
 
 

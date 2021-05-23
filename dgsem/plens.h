@@ -23,6 +23,8 @@
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/geometry_info.h>
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/table.h>
+#include <deal.II/base/table_indices.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/manifold_lib.h>
