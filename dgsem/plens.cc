@@ -1251,7 +1251,7 @@ void PLENS::calc_surf_flux(
 /**
  * Calculates conservative variable gradients in a `cell`. The relevant formula is eq. (B.14) of
  * [1]. The volumetric terms are calculated using PLENS::gcrk_cvars and the surface flux is taken
- * from `s0_surf_flux` which holds the conservative variable flux for stage 0.
+ * from `s1_surf_flux` which holds the conservative variable flux for stage 1.
  *
  * Suppose @f$\partial \rho/\partial x@f$ is to be calculated. Then, a differential equation is
  * constructed:
@@ -1267,9 +1267,16 @@ void PLENS::calc_surf_flux(
  * matter. This flux is multiplied by the component of contravariant vector in the gradient
  * direction. See eq. (B.15) of [1]. See also TW1 notes or WJ dated 20-May-2021.
  *
+ * Note that for the surface contribution of those dofs lying on face, since this involves stage 1
+ * flux, it has no direction (see PLENS::calc_surf_flux()). The flux has same sign in the storage
+ * of both cells having the common interface. This is unlike stages 2 and 3 where the flux for
+ * every cell is stored as normal flux with outward pointing face normal. This means that the
+ * surface contribution expression in (B.14) of [1] can be directly used here (without worrying
+ * about surface normals).
+ *
  * @param[in] cell The iterator corresponding to the cell in which gradients are to be calculated
- * @param[in] s0_surf_flux Stage 0 surface flux of conservative variables. Access:
- * `s0_surf_flux[var][cell id][cell-local face id][face-local dof id]`
+ * @param[in] s1_surf_flux Stage 1 surface flux of conservative variables. Access:
+ * `s1_surf_flux[var][cell id][cell-local face id][face-local dof id]`
  * @param[out] cons_grad Conservative variable gradients calculated for the cell. Access:
  * `cons_grad[cell-local dof id][dir][var]`
  *
@@ -1277,7 +1284,7 @@ void PLENS::calc_surf_flux(
  */
 void PLENS::calc_cell_cons_grad(
     const DoFHandler<dim>::active_cell_iterator& cell,
-    const locly_ord_surf_flux_term_t<double> &s0_surf_flux,
+    const locly_ord_surf_flux_term_t<double> &s1_surf_flux,
     std::vector<std::array<State, 3>> cons_grad
 )
 {
@@ -1332,7 +1339,7 @@ void PLENS::calc_cell_cons_grad(
             } // loop tensor index 2
         } // loop tensor index 1
 
-        // now volumetric contribution
+        // now surface contribution for those dofs lying on face
 
         // divide by Jacobian determinant
     } // loop over gradient directions

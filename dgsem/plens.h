@@ -442,7 +442,7 @@ class PLENS
     );
     void calc_cell_cons_grad(
         const DoFHandler<dim>::active_cell_iterator& cell,
-        const locly_ord_surf_flux_term_t<double> &s0_surf_flux,
+        const locly_ord_surf_flux_term_t<double> &s1_surf_flux,
         std::vector<std::array<State, 3>> cons_grad
     );
 
