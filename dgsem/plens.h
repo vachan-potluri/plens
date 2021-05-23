@@ -424,6 +424,11 @@ class PLENS
         const usi stage,
         locly_ord_surf_flux_term_t<double> &surf_flux_term
     );
+    void calc_cell_cons_grad(
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        const locly_ord_surf_flux_term_t<double> &s0_surf_flux,
+        std::vector<std::array<State, 3>> cons_grad
+    );
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);

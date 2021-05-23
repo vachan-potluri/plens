@@ -1247,6 +1247,28 @@ void PLENS::calc_surf_flux(
 
 
 
+/**
+ * Calculates conservative variable gradients in a `cell`. The relevant formula is eq. (B.14) of
+ * [1]. The volumetric terms are calculated using PLENS::gcrk_cvars and the surface flux is taken
+ * from `s0_surf_flux` which holds the conservative variable flux for stage 0.
+ *
+ * @param[in] cell The iterator corresponding to the cell in which gradients are to be calculated
+ * @param[in] s0_surf_flux Stage 0 surface flux of conservative variables. Access:
+ * `s0_surf_flux[var][cell id][cell-local face id][face-local dof id]`
+ * @param[out] cons_grad Conservative variable gradients calculated for the cell. Access:
+ * `cons_grad[cell-local dof id][dir][var]`
+ *
+ * @pre `cons_grad` must have the appropriate size. An assertion will be done.
+ */
+void PLENS::calc_cell_cons_grad(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    const locly_ord_surf_flux_term_t<double> &s0_surf_flux,
+    std::vector<std::array<State, 3>> cons_grad
+)
+{}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {
