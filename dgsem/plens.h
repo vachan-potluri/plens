@@ -41,6 +41,7 @@
 #include "LA.h"
 #include "face_dof_info.h"
 #include "metric_terms.h"
+#include "cell_dof_info.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
@@ -415,6 +416,11 @@ class PLENS
      * Don't accidentally modify this data.
      */
     std::map<psize, MetricTerms<dim>> metrics;
+
+    /**
+     * A CellDoFInfo object. Useful for calculating residuals.
+     */
+    CellDoFInfo cdi;
 
 
 

@@ -26,7 +26,8 @@ dof_handler(triang),
 fdi(fe_degree),
 w_1d(fe_degree+1),
 ref_D_1d(fe_degree+1),
-ref_Q_1d(fe_degree+1)
+ref_Q_1d(fe_degree+1),
+cdi(fe_degree)
 {
     declare_parameters();
     prm.parse_input("input.prm");
