@@ -1279,6 +1279,17 @@ void PLENS::calc_surf_flux(
  * equation. We need not worry about the physical cell at this point (of course, assuming the
  * metrics are properly calculated).
  *
+ * As mentioned in @ref vol_contrib, a unified function for calculating residual is not possible.
+ * Moreover, having this function separate also helps if in future, just the algorithm for
+ * calculating auxiliary variables needs to be changed. The way I am currently doing is not what
+ * is suggested in the DGSEM algorithm. Although refs [1-2] don't mention this explicitly, ref [3]
+ * provides a different algo for second derivative calculation in section 2.3.3 with the following
+ * comment:
+ * _It is trivial to show that two applications of the first derivative operator satisfy the SBP
+ * condition. In practice, this is not advisable, as the approximation using two first derivative
+ * operations requires a much wider stencil (is less efficient), is less accurate, and leads to
+ * only neutrally stable approximations_
+ *
  * @param[in] cell The iterator corresponding to the cell in which gradients are to be calculated
  * @param[in] s1_surf_flux Stage 1 surface flux of conservative variables. Access:
  * `s1_surf_flux[var][cell id][cell-local face id][face-local dof id]`
