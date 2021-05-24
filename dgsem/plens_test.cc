@@ -18,7 +18,8 @@ t("PLENS", "class")
     // collect_periodic_faces_test();
     // set_BC_test();
     // face_dof_matching_test();
-    calc_surf_flux_test();
+    // calc_surf_flux_test();
+    calc_cell_cons_grad_test();
 }
 
 
@@ -257,5 +258,55 @@ void plens_test::calc_surf_flux_test() const
     for(usi stage=1; stage<=3; stage++){
         std::cout << "Stage " << stage << "\n";
         problem.calc_surf_flux(stage, surf_flux_term);
+    }
+}
+
+
+
+/**
+ * Tests calculation of conervative gradients
+ */
+void plens_test::calc_cell_cons_grad_test() const
+{
+    t.new_block("testing calc_cell_cons_grad() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    // set gcrk_cvars to g_cvars
+    std::cout << "IC:\n";
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    PLENS::locly_ord_surf_flux_term_t<double> s1_surf_flux;
+    problem.calc_surf_flux(1, s1_surf_flux); // stage 1 flux
+
+    const auto &cell = problem.dof_handler.begin_active();
+    std::vector<std::array<State, 3>> cons_grad(problem.fe.dofs_per_cell);
+    problem.calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
+
+    std::cout << "Cell " << cell->index() << " conservative gradients:\n";
+    for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+        std::cout << "\tDoF " << i << "\n";
+        for(usi dir=0; dir<PLENS::dim; dir++){
+            std::cout << "\t\tDirection " << dir << ": ";
+            for(cvar var: cvar_list){
+                std::cout << cons_grad[i][dir][var] << " ";
+            }
+            std::cout << "\n";
+        }
     }
 }

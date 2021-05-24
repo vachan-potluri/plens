@@ -23,6 +23,7 @@
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
 #include "face_dof_info.h"
+#include <utilities/printing.h>
 
 using namespace dealii;
 /**
@@ -45,6 +46,7 @@ class plens_test
     void set_BC_test() const;
     void face_dof_matching_test() const;
     void calc_surf_flux_test() const;
+    void calc_cell_cons_grad_test() const;
 };
 
 #endif
