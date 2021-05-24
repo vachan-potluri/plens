@@ -1274,6 +1274,11 @@ void PLENS::calc_surf_flux(
  * surface contribution expression in (B.14) of [1] can be directly used here (without worrying
  * about surface normals).
  *
+ * Note that the mapping to reference cell has already been done and we are concerned only with
+ * the reference cell-transformed equation and its derivative equations now. (B.14) is one such
+ * equation. We need not worry about the physical cell at this point (of course, assuming the
+ * metrics are properly calculated).
+ *
  * @param[in] cell The iterator corresponding to the cell in which gradients are to be calculated
  * @param[in] s1_surf_flux Stage 1 surface flux of conservative variables. Access:
  * `s1_surf_flux[var][cell id][cell-local face id][face-local dof id]`
@@ -1308,95 +1313,66 @@ void PLENS::calc_cell_cons_grad(
 
     for(usi grad_dir=0; grad_dir<dim; grad_dir++){
         // first calculate volumetric contribution
-        for(usi i=0; i<=fe.degree; i++){
-            for(usi j=0; j<=fe.degree; j++){
-                for(usi k=0; k<=fe.degree; k++){
-                    State cons_this;
-                    TableIndices<dim> ti_this(i,j,k);
-                    usi ldof_this = cdi.tensorial_to_local(ti_this);
-                    for(cvar var: cvar_list){
-                        cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
-                    }
-                    State flux; // flux between 'this' and 'other' states
-                    Tensor<1,dim> temp_dir; // temporary, doesn't matter for BR1 flux calculation
+        for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
+            State cons_this;
+            for(cvar var: cvar_list) cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
+            TableIndices<dim> ti_this;
+            for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
 
-                    for(usi m=0; m<=fe.degree; m++){
-                        for(usi m_dir=0; m_dir<dim; m_dir++){
-                            State cons_other;
-                            TableIndices<dim> ti_other(i,j,k);
-                            ti_other[m_dir] = m;
-                            usi ldof_other = cdi.tensorial_to_local(ti_other);
-                            for(cvar var: cvar_list){
-                                cons_other[var] = gcrk_cvars[var][dof_ids[ldof_other]];
-                            }
-                            ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
-                            double JxContra_avg_comp = 0.5*(
-                                metrics[cell->index()].JxContra_vecs[ldof_this][m_dir][grad_dir] +
-                                metrics[cell->index()].JxContra_vecs[ldof_other][m_dir][grad_dir]
-                            ); // component (of average contravariant vector) in gradient direction
-                            for(cvar var: cvar_list){
-                                cons_grad[ldof_this][grad_dir][var] +=
-                                    2*ref_D_1d(ti_this[m_dir],m)*flux[var]*JxContra_avg_comp;
-                            }
-                        } // loop over three directions for m
-                    } // loop over m
-                } // loop tensor index 3
-            } // loop tensor index 2
-        } // loop tensor index 1
+            State flux; // flux between 'this' and 'other' states
+            Tensor<1,dim> temp_dir; // temporary, doesn't matter for BR1 flux calculation
+
+            for(usi m=0; m<=fe.degree; m++){
+                for(usi m_dir=0; m_dir<dim; m_dir++){
+                    State cons_other;
+                    // strangely TableIndices doesn't have a copy ctor
+                    TableIndices<dim> ti_other(ti_this[0], ti_this[1], ti_this[2]);
+                    ti_other[m_dir] = m;
+                    usi ldof_other = cdi.tensorial_to_local(ti_other);
+
+                    for(cvar var: cvar_list){
+                        cons_other[var] = gcrk_cvars[var][dof_ids[ldof_other]];
+                    }
+                    ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
+                    double JxContra_avg_comp = 0.5*(
+                        metrics[cell->index()].JxContra_vecs[ldof_this][m_dir][grad_dir] +
+                        metrics[cell->index()].JxContra_vecs[ldof_other][m_dir][grad_dir]
+                    ); // component (of average contravariant vector) in gradient direction
+                    for(cvar var: cvar_list){
+                        cons_grad[ldof_this][grad_dir][var] +=
+                            2*ref_D_1d(ti_this[m_dir],m)*flux[var]*JxContra_avg_comp;
+                    }
+                } // loop over three directions for m
+            } // loop over m
+        } // loop over cell dofs
 
         // now surface contribution for those dofs lying on face
         for(usi surf_dir=0; surf_dir<dim; surf_dir++){
-            usi dir1 = (surf_dir+1)%dim;
-            usi dir2 = (surf_dir+2)%dim;
-
-            for(usi id1=0; id1<=fe.degree; id1++){
-                for(usi id2=0; id2<=fe.degree; id2++){
-                    TableIndices<dim> ti;
-
-                    // first for id 0
-                    ti[surf_dir] = 0;
-                    ti[dir1] = id1;
-                    ti[dir2] = id2;
-                    usi ldof = cdi.tensorial_to_local(ti);
-                    usi face_id = 2*surf_dir;
-                    usi face_dof_id = fdi.inverse_maps[face_id][ldof];
+            // loop over 'l'eft and 'r'ight faces
+            for(usi lr_id=0; lr_id<=1; lr_id++){
+                usi face_id = 2*surf_dir + lr_id; // the face id
+                for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                    usi ldof = fdi.maps[face_id][face_dof_id];
                     State flux_in, flux_surf;
                     for(cvar var: cvar_list){
                         flux_in[var] = gcrk_cvars[var][dof_ids[ldof]]*
                             metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
                         flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
                             metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
-                        cons_grad[ldof][grad_dir][var] -= (flux_surf[var]-flux_in[var])/w_1d[0];
+                        // a hack for incorporating contributions from both left and right faces
+                        cons_grad[ldof][grad_dir][var] -= std::pow(-1,lr_id)*
+                            (flux_surf[var]-flux_in[var])/w_1d[lr_id*fe.degree];
                     }
+                } // loop over face dofs
+            } // loop over two surfaces with normal in 'surf_dir'
+        } // loop over 3 directions for surface contributions
 
-                    // now for id N
-                    ti[surf_dir] = fe.degree;
-                    ldof = cdi.tensorial_to_local(ti);
-                    face_id = 2*surf_dir + 1;
-                    face_dof_id = fdi.inverse_maps[face_id][ldof];
-                    for(cvar var: cvar_list){
-                        flux_in[var] = gcrk_cvars[var][dof_ids[ldof]]*
-                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
-                        flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
-                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
-                        cons_grad[ldof][grad_dir][var] += (flux_surf[var]-flux_in[var])/
-                            w_1d[fe.degree];
-                    }
-                } // loop over face indices (complementary dir 2)
-            } // loop over face indices (complementary dir 1)
-        } // loop over directions for surface contrib
-
-        // divide by Jacobian determinant
-        for(usi i=0; i<=fe.degree; i++){
-            for(usi j=0; j<=fe.degree; j++){
-                for(usi k=0; k<=fe.degree; k++){
-                    usi ldof = cdi.tensorial_to_local(i,j,k);
-                    for(cvar var: cvar_list){
-                        cons_grad[ldof][grad_dir][var] /= metrics[cell->index()].detJ[ldof];
-                    }
-                }
+        // now divide by Jacobian determinant
+        for(usi ldof=0; ldof<fe.dofs_per_cell; ldof++){
+            for(cvar var: cvar_list){
+                cons_grad[ldof][grad_dir][var] /= metrics[cell->index()].detJ[ldof];
             }
-        }
+        } // loop over cell dofs
     } // loop over gradient directions
 }
 
