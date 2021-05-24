@@ -294,7 +294,13 @@ void plens_test::calc_cell_cons_grad_test() const
     PLENS::locly_ord_surf_flux_term_t<double> s1_surf_flux;
     problem.calc_surf_flux(1, s1_surf_flux); // stage 1 flux
 
-    const auto &cell = problem.dof_handler.begin_active();
+    auto cell = problem.dof_handler.begin_active();
+    for(auto c: problem.dof_handler.active_cell_iterators()){
+        if(!(c->at_boundary())){
+            cell = c;
+            break;
+        }
+    }
     std::vector<std::array<State, 3>> cons_grad(problem.fe.dofs_per_cell);
     problem.calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
 
