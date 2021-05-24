@@ -1284,8 +1284,8 @@ void PLENS::calc_surf_flux(
  */
 void PLENS::calc_cell_cons_grad(
     const DoFHandler<dim>::active_cell_iterator& cell,
-    const locly_ord_surf_flux_term_t<double> &s1_surf_flux,
-    std::vector<std::array<State, 3>> cons_grad
+    const locly_ord_surf_flux_term_t<double>& s1_surf_flux,
+    std::vector<std::array<State, 3>>& cons_grad
 )
 {
     AssertThrow(
@@ -1299,8 +1299,14 @@ void PLENS::calc_cell_cons_grad(
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
 
-    for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+    // initialise cons_grad to 0
+    for(usi dir=0; dir<dim; dir++){
+        for(usi i=0; i<fe.dofs_per_cell; i++){
+            for(cvar var: cvar_list) cons_grad[i][dir][var] = 0; // initialise to 0
+        }
+    }
 
+    for(usi grad_dir=0; grad_dir<dim; grad_dir++){
         // first calculate volumetric contribution
         for(usi i=0; i<=fe.degree; i++){
             for(usi j=0; j<=fe.degree; j++){
@@ -1310,7 +1316,6 @@ void PLENS::calc_cell_cons_grad(
                     usi ldof_this = cdi.tensorial_to_local(ti_this);
                     for(cvar var: cvar_list){
                         cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
-                        cons_grad[ldof_this][grad_dir][var] = 0; // initialise to 0
                     }
                     State flux; // flux between 'this' and 'other' states
                     Tensor<1,dim> temp_dir; // temporary, doesn't matter for BR1 flux calculation
