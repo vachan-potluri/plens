@@ -111,17 +111,16 @@ class ChangeOfBasisMatrix
         utilities::Testing t("ChangeOfBasisMatrix", "class");
         t.new_block("testing construction");
 
-        const udi degree = 2;
+        const usi degree = 2;
         std::cout << "Degree: " << degree << "\n";
-        for(usi d=0; d<3; d++){
-            ChangeOfBasisMatrix<d> C(2);
-            std::cout << "\n\nDimension: " << d << "\nMatrix:\n";
-            for(usi row=0; row<C.n_poly; row++){
-                for(usi col=0; col<C.n_poly; col++){
-                    std::cout << C(row,col) << "\t";
-                }
-                std::cout << "\n";
+        const usi d = 2;
+        ChangeOfBasisMatrix<d> C(degree);
+        std::cout << "\n\nDimension: " << d << "\nMatrix:\n";
+        for(usi row=0; row<C.n_poly; row++){
+            for(usi col=0; col<C.n_poly; col++){
+                std::cout << C(row,col) << "\t";
             }
+            std::cout << "\n";
         }
     }
     #endif

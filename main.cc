@@ -19,6 +19,7 @@
 #include "dgsem/plens_test.h"
 #include "dgsem/metric_terms.h"
 #include "dgsem/cell_dof_info.h"
+#include "dgsem/change_of_basis_matrix.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -44,6 +45,7 @@ int main(int argc, char** argv){
     // plens_test pt(); // doesn't work
     MetricTerms<3>::test();
     CellDoFInfo::test();
+    ChangeOfBasisMatrix<3>::test(); // template argument doesn't matter for test() as it is static
     #endif
 
     plens_test();
