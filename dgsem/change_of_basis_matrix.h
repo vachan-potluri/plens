@@ -7,8 +7,14 @@
 #define CHANGE_OF_BASIS_MATRIX_H
 
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/point.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/lac/full_matrix.h>
+
+#include "dtype_aliases.h"
+
+#include <cmath>
+#include <vector>
 
 /**
  * @class ChangeOfBasisMatrix
@@ -28,7 +34,11 @@
  * FE_DGQLegendre<3>. The ordering of basis functions for the is the same as the nodal/support
  * points' ordering. The shape function ordering in the latter is lexicographic: see the
  * documentation of TensorProductPolynomials.
+ *
+ * Although this class is inteded for using only in 3d, the dimension parameter is taken as a
+ * template. So this class can be used in any dimension.
  */
+template <int dim>
 class ChangeOfBasisMatrix
 {
     public:
@@ -59,9 +69,28 @@ class ChangeOfBasisMatrix
     ChangeOfBasisMatrix(const usi d)
     :
     degree(d),
-    n_poly((d+1)*(d+1)*(d+1)),
-    matrix_((d+1)*(d+1)*(d+1)) // initialise to square matrix
-    {}
+    n_poly(std::pow(d+1,dim)),
+    matrix_(std::pow(d+1,dim)) // initialise to square matrix
+    {
+        const FE_DGQ<dim> fe_nodal(degree);
+        const FE_DGQLegendre<dim> fe_modal(degree);
+        const QGauss<dim> quad(degree+1); // gives exact quadrature
+        const std::vector<Point<dim>> points = quad.get_points();
+        const std::vector<double> weights = quad.get_weights();
+        const usi n_qp = quad.size(); // number of quadrature points
+
+        matrix_ = 0; // initialise
+        for(usi i=0; i<n_poly; i++){
+            for(usi j=0; j<n_poly; j++){
+                // integrate the product of shape functions over [0,1]^dim
+                for(usi k=0; k<n_qp; k++){
+                    matrix_(i,j) += weights[k]*
+                        fe_nodal.shape_value(i, points[k])*
+                        fe_modal.shape_value(j, points[k]);
+                } // loop over quad points
+            } // loop over cols
+        } // loop over rows
+    }
 
     /**
      * Operator overload for accessing elements of ChangeOfBasisMatrix::matrix_. Returned by value.
