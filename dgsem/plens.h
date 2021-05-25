@@ -44,6 +44,7 @@
 #include "face_dof_info.h"
 #include "metric_terms.h"
 #include "cell_dof_info.h"
+#include "change_of_basis_matrix.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
