@@ -16,6 +16,11 @@
 #include <cmath>
 #include <vector>
 
+#ifdef DEBUG
+#include <iostream>
+#include <utilities/testing.h>
+#endif
+
 /**
  * @class ChangeOfBasisMatrix
  * @brief Provides a class for storing change of basis (from DG nodal to DG modal) matrix
@@ -99,6 +104,27 @@ class ChangeOfBasisMatrix
     {
         return matrix_(i,j);
     }
+
+    #ifdef DEBUG
+    static void test()
+    {
+        utilities::Testing t("ChangeOfBasisMatrix", "class");
+        t.new_block("testing construction");
+
+        const udi degree = 2;
+        std::cout << "Degree: " << degree << "\n";
+        for(usi d=0; d<3; d++){
+            ChangeOfBasisMatrix<d> C(2);
+            std::cout << "\n\nDimension: " << d << "\nMatrix:\n";
+            for(usi row=0; row<C.n_poly; row++){
+                for(usi col=0; col<C.n_poly; col++){
+                    std::cout << C(row,col) << "\t";
+                }
+                std::cout << "\n";
+            }
+        }
+    }
+    #endif
 };
 
 #endif
