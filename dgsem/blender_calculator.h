@@ -7,6 +7,8 @@
 #define BLENDER_CALCULATOR_H
 
 #include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/utilities.h>
+#include <deal.II/base/exceptions.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 
@@ -16,6 +18,7 @@
 
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 using namespace dealii;
 
