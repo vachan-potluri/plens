@@ -199,7 +199,8 @@ void BlenderCalculator::test()
     parallel::distributed::Triangulation<dim> triang(MPI_COMM_WORLD);
     GridGenerator::hyper_cube(triang); // generates [0,1]^dim with 1 cell
     DoFHandler<dim> dof_handler(triang);
-    const usi fe_degree = 2;
+    const usi fe_degree = 3;
+    std::cout << "FE degree: " << fe_degree << "\n";
     FE_DGQ<dim> fe(fe_degree);
     dof_handler.distribute_dofs(fe);
 
