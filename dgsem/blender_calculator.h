@@ -8,11 +8,14 @@
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_accessor.h>
 
 #include "LA.h"
 #include "change_of_basis_matrix.h"
+#include "dtype_aliases.h"
 
 #include <vector>
+#include <cmath>
 
 using namespace dealii;
 
