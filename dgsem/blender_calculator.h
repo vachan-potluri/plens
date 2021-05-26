@@ -9,6 +9,7 @@
 #include <deal.II/base/parameter_handler.h>
 
 #include "LA.h"
+#include "change_of_basis_matrix.h"
 
 using namespace dealii;
 
@@ -21,6 +22,9 @@ using namespace dealii;
  * ParameterHandler are kept public in this class. Hence it is suggested to use a const version of
  * this class object.
  *
+ * @note It will be assumed that the ParameterHandler is in the outer most scope from where, the
+ * relevant section is accessible and is one level down.
+ *
  * The conversion from nodal to modal basis happens using the class ChangeOfBasisMatrix. One of the
  * most important aspect is the calculation of trouble (@f$\mathbb{E}@f$). Hennemann et al (2021)
  * provide the formula only for 1D.
@@ -28,6 +32,8 @@ using namespace dealii;
 class BlenderCalculator
 {
     public:
+
+    static constexpr usi dim = 3;
 
     /**
      * Const reference to the variable vector passed in the ctor
@@ -59,9 +65,16 @@ class BlenderCalculator
      */
     double alpha_max;
 
+    /**
+     * The change of basis matrix. The also stores the degree, so a separate variable for that is
+     * not required.
+     */
+    const ChangeOfBasisMatrix<dim> cbm;
+
     BlenderCalculator(
-        const ParameterHandler& prm,
-        const LA::MPI::Vector& var
+        const usi d,
+        const LA::MPI::Vector& var,
+        ParameterHandler& prm
     );
 };
 
