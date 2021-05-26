@@ -7,6 +7,7 @@
 #define BLENDER_CALCULATOR_H
 
 #include <deal.II/base/parameter_handler.h>
+#include <deal.II/dofs/dof_handler.h>
 
 #include "LA.h"
 #include "change_of_basis_matrix.h"
@@ -76,6 +77,10 @@ class BlenderCalculator
         const LA::MPI::Vector& var,
         ParameterHandler& prm
     );
+
+    double get_blender(
+        const DoFHandler<dim>::active_cell_iterator& cell
+    ) const;
 };
 
 #endif

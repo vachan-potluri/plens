@@ -29,3 +29,13 @@ cbm(d)
     }
     prm.leave_subsection();
 }
+
+
+
+/**
+ * Calculates blender value for the given cell according to section 4 of Hennemann et al (2021).
+ */
+double BlenderCalculator::get_blender(
+    const DoFHandler<dim>::active_cell_iterator& cell
+) const
+{}
