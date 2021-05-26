@@ -20,6 +20,19 @@
 #include <cmath>
 #include <algorithm>
 
+// #ifdef DEBUG
+#include <deal.II/base/index_set.h>
+#include <deal.II/grid/tria.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/mapping_q1.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <iostream>
+#include <utilities/testing.h>
+// #endif
+
 using namespace dealii;
 
 /**
@@ -94,6 +107,10 @@ class BlenderCalculator
     double get_blender(
         const DoFHandler<dim>::active_cell_iterator& cell
     ) const;
+
+    // #ifdef DEBUG
+    static void test();
+    // #endif
 };
 
 #endif

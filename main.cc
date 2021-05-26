@@ -20,6 +20,7 @@
 #include "dgsem/metric_terms.h"
 #include "dgsem/cell_dof_info.h"
 #include "dgsem/change_of_basis_matrix.h"
+#include "dgsem/blender_calculator.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -46,8 +47,10 @@ int main(int argc, char** argv){
     MetricTerms<3>::test();
     CellDoFInfo::test();
     ChangeOfBasisMatrix<3>::test(); // template argument doesn't matter for test() as it is static
+    BlenderCalculator::test();
     #endif
 
-    plens_test();
+    BlenderCalculator::test();
+    // plens_test();
     return 0;
 }

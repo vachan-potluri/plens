@@ -108,3 +108,106 @@ double BlenderCalculator::get_blender(
     if(cbm.degree>1) return std::max(1-e_Nm1/e_tot, 1-e_Nm2/e_Nm1);
     else return 1-e_Nm1/e_tot;
 }
+
+
+
+// #ifdef DEBUG
+void BlenderCalculator::test()
+{
+    utilities::Testing t("BlenderCalculator", "class");
+
+    ParameterHandler prm;
+    prm.enter_subsection("blender parameters");
+    {
+        prm.declare_entry(
+            "variable",
+            "pxrho",
+            Patterns::Selection("pxrho|p|rho"),
+            "The variable used to calculate trouble (and hence the blender). Options: "
+            "'pxrho|p|rho'. 'pxrho' means the product of pressure and density."
+        );
+        prm.declare_entry(
+            "threshold factor",
+            "0.5",
+            Patterns::Double(1e-2),
+            "The pre-factor for threshold calculation. See WJ-24-May-2021."
+        );
+        prm.declare_entry(
+            "threshold exponent factor",
+            "1.8",
+            Patterns::Double(1e-2),
+            "The pre-factor of exponent for threshold calculation. See WJ-24-May-2021. Range: "
+            "[1e-2, infty)."
+        );
+        prm.declare_entry(
+            "sharpness factor",
+            "9.21024",
+            Patterns::Double(1e-2),
+            "The sharpness factor for calculating blender value from trouble and threshold. See "
+            "WJ-24-May-2021. Range: [1e-2, infty)."
+        );
+        prm.declare_entry(
+            "blender min value",
+            "1e-3",
+            Patterns::Double(1e-8,1),
+            "Minimum value of blender (alpha min). See WJ-24-May-2021. Range: [1e-8, 1]."
+        );
+        prm.declare_entry(
+            "blender max value",
+            "0.5",
+            Patterns::Double(0.5,1),
+            "Maximum value of blender (alpha max). See WJ-24-May-2021. Range: [0.5, 1]."
+        );
+    }
+    prm.leave_subsection(); // blender parameters
+    prm.parse_input("input.prm", "", true); // ignores undefined entries in input.prm
+
+    // parallel data structures being used just to be compatible
+    // can comfortably test this function in serial as well
+    parallel::distributed::Triangulation<dim> triang(MPI_COMM_WORLD);
+    GridGenerator::hyper_cube(triang); // generates [0,1]^dim with 1 cell
+    DoFHandler<dim> dof_handler(triang);
+    const usi fe_degree = 5;
+    FE_DGQ<dim> fe(fe_degree);
+    dof_handler.distribute_dofs(fe);
+
+    IndexSet locally_owned_dofs = dof_handler.locally_owned_dofs();
+    IndexSet locally_relevant_dofs;
+    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    LA::MPI::Vector var;
+    var.reinit(locally_owned_dofs, MPI_COMM_WORLD);
+
+    std::map<unsigned int, Point<dim>> dof_locations;
+    DoFTools::map_dofs_to_support_points(MappingQ1<dim>(), dof_handler, dof_locations);
+
+    t.new_block("testing construction");
+    {
+        BlenderCalculator bc(fe_degree, var, prm);
+        std::cout << "Parameters read:\n" << bc.threshold_factor << "\n"
+            << bc.threshold_exp_factor << "\n" << bc.sharpness_factor << "\n"
+            << bc.alpha_min << "\n" << bc.alpha_max << "\n";
+    }
+
+    t.new_block("testing get_blender()");
+    {
+        // assuming dof handler has only 1 cell spanning [0,1]^3
+        const auto& cell = dof_handler.begin_active();
+        for(auto i: locally_owned_dofs){
+            // step from 0 to 1 in x-direction
+            var[i] = 0;
+            if(dof_locations[i][0]>=0.5) var[i] = 1;
+        }
+
+        BlenderCalculator bc(fe_degree, var, prm);
+        std::cout << "step from 0 to 1 in x-direction\n";
+        std::cout << "Blender value: " << bc.get_blender(cell) << "\n";
+
+        for(auto i: locally_owned_dofs){
+            // linear variation in x, y and z
+            var[i] = dof_locations[i][0] + 2*dof_locations[i][1] + 5*dof_locations[i][2];
+        }
+        std::cout << "linear variation in x, y and z\n";
+        std::cout << "Blender value: " << bc.get_blender(cell) << "\n";
+    }
+}
+// #endif
