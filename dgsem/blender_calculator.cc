@@ -34,8 +34,28 @@ cbm(d)
 
 /**
  * Calculates blender value for the given cell according to section 4 of Hennemann et al (2021).
+ * Calls BlenderCalculator::get_troubled() to calculate the trouble and then returns the modified
+ * blender value.
  */
 double BlenderCalculator::get_blender(
     const DoFHandler<dim>::active_cell_iterator& cell
 ) const
 {}
+
+
+
+// * * * * * * * * * * * * * Private functions * * * * * * * * * * * * * * * //
+
+
+
+/**
+ * Calculates the troubled based on the modal coefficients provided in `modes`.
+ *
+ * @pre `modes` must have a size `(degree+1)^dim`
+ */
+ double BlenderCalculator::get_trouble(
+    const std::vector<double>& modes
+) const
+{
+    return 0;
+}

@@ -12,6 +12,8 @@
 #include "LA.h"
 #include "change_of_basis_matrix.h"
 
+#include <vector>
+
 using namespace dealii;
 
 /**
@@ -28,10 +30,15 @@ using namespace dealii;
  *
  * The conversion from nodal to modal basis happens using the class ChangeOfBasisMatrix. One of the
  * most important aspect is the calculation of trouble (@f$\mathbb{E}@f$). Hennemann et al (2021)
- * provide the formula only for 1D.
+ * provide the formula only for 1D. For multidimensional problems, Perrson & Peraire (2006) have a
+ * formula, but it would be ineffictive against one-dimensional variations. See WJ-26-May-2021.
  */
 class BlenderCalculator
 {
+    private:
+
+    double get_trouble(const std::vector<double>&) const;
+
     public:
 
     static constexpr usi dim = 3;
