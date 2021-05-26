@@ -10,7 +10,12 @@
 /**
  * Constructor. Parses all blender parameters. Calls `enter_subsection("blender parameters")` and
  * then exits that subsection. Also populates BlenderCalculator::mode_indices_Nm1 and
- * BlenderCalculator::mode_indices_Nm2.
+ * BlenderCalculator::mode_indices_Nm2. These indices are set such that they give tensor product
+ * polynomials with uni-directional polynomials of degree at most @f$N-1@f$ and @f$N-2@f$
+ * respectively.
+ *
+ * @note BlenderCalculator::mode_indices_Nm2 are empty if `d=1`. And for `d=2`, even though this
+ * array is populated, it is not used. See BlenderCalculator::get_trouble()
  */
 BlenderCalculator::BlenderCalculator(
     const usi d,
@@ -43,6 +48,7 @@ cbm(d)
     }
 
     // for mode_indices_Nm2
+    // although calculated only when d>1, these are actually used only if d>2
     if(d>1){
         std::cout << "Nm2 indices:\n";
         for(usi i=0; i<d-1; i++){
@@ -112,6 +118,9 @@ double BlenderCalculator::get_blender(
  * implemented also uses the small modification proposed by Hennemann et al (2021) in section 4.
  * This function will need modification after some testing.
  *
+ * @note The modification by Hennemann et al (2021) will be considered only if @f$N>2@f$. Otherwise
+ * it doesn't make sense.
+ *
  * @pre `modes` must have a size `(degree+1)^dim`
  */
  double BlenderCalculator::get_trouble(
@@ -135,7 +144,7 @@ double BlenderCalculator::get_blender(
     double e_Nm2 = 0; // energy of modes only upto (N-2)-th polynomial degree
     for(usi i: mode_indices_Nm2) e_Nm2 += modes[i]*modes[i];
 
-    if(cbm.degree>1) return std::max(1-e_Nm1/e_tot, 1-e_Nm2/e_Nm1);
+    if(cbm.degree>2) return std::max(1-e_Nm1/e_tot, 1-e_Nm2/e_Nm1);
     else return 1-e_Nm1/e_tot; // degree=1
 }
 
