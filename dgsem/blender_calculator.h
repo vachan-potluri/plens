@@ -56,6 +56,19 @@ class BlenderCalculator
 {
     private:
 
+    /**
+     * The indices in a modes list that indicate modes of order upto @F$N-1@f$. This is required
+     * because the modes list has to be in 3d index ordering (as against tensorial ordering) to be
+     * usable with ChangeOfBasisMatrix. This vector is populated in the ctor.
+     */
+    std::vector<usi> mode_indices_Nm1;
+
+    /**
+     * Similar to BlenderCalculator::mode_indices_Nm1 but for modes of order upto @F$N-2@f$. This
+     * is also populated in the ctor and is empty if the degree passed in the ctor is 1.
+     */
+    std::vector<usi> mode_indices_Nm2;
+
     double get_trouble(const std::vector<double>&) const;
 
     public:

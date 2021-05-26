@@ -9,7 +9,8 @@
 
 /**
  * Constructor. Parses all blender parameters. Calls `enter_subsection("blender parameters")` and
- * then exits that subsection.
+ * then exits that subsection. Also populates BlenderCalculator::mode_indices_Nm1 and
+ * BlenderCalculator::mode_indices_Nm2.
  */
 BlenderCalculator::BlenderCalculator(
     const usi d,
@@ -28,6 +29,32 @@ cbm(d)
         alpha_max = prm.get_double("blender max value");
     }
     prm.leave_subsection();
+
+    // for mode_indices_Nm1
+    std::cout << "Nm1 indices:\n";
+    for(usi i=0; i<d; i++){
+        for(usi j=0; j<d; j++){
+            for(usi k=0; k<d; k++){
+                usi index = i + j*(d+1) + k*(d+1)*(d+1);
+                mode_indices_Nm1.emplace_back(index);
+                std::cout << index << "\n";
+            }
+        }
+    }
+
+    // for mode_indices_Nm2
+    if(d>1){
+        std::cout << "Nm2 indices:\n";
+        for(usi i=0; i<d-1; i++){
+            for(usi j=0; j<d-1; j++){
+                for(usi k=0; k<d-1; k++){
+                    usi index = i + j*(d+1) + k*(d+1)*(d+1);
+                    mode_indices_Nm2.emplace_back(index);
+                    std::cout << index << "\n";
+                }
+            }
+        }
+    }
 }
 
 
@@ -98,15 +125,18 @@ double BlenderCalculator::get_blender(
         )
     );
 
+    std::cout << "Modes:\n";
+    for(double m: modes) std::cout << m << "\n";
+
     double e_tot = 0; // total energy of all modes
     for(double m: modes) e_tot += m*m;
     double e_Nm1 = 0; // energy of modes only upto (N-1)-th polynomial degree
-    for(usi i=0; i<std::pow(cbm.degree,dim); i++) e_Nm1 += modes[i]*modes[i];
+    for(usi i: mode_indices_Nm1) e_Nm1 += modes[i]*modes[i];
     double e_Nm2 = 0; // energy of modes only upto (N-2)-th polynomial degree
-    for(usi i=0; i<std::pow(cbm.degree-1,dim); i++) e_Nm2 += modes[i]*modes[i];
+    for(usi i: mode_indices_Nm2) e_Nm2 += modes[i]*modes[i];
 
     if(cbm.degree>1) return std::max(1-e_Nm1/e_tot, 1-e_Nm2/e_Nm1);
-    else return 1-e_Nm1/e_tot;
+    else return 1-e_Nm1/e_tot; // degree=1
 }
 
 
@@ -167,7 +197,7 @@ void BlenderCalculator::test()
     parallel::distributed::Triangulation<dim> triang(MPI_COMM_WORLD);
     GridGenerator::hyper_cube(triang); // generates [0,1]^dim with 1 cell
     DoFHandler<dim> dof_handler(triang);
-    const usi fe_degree = 5;
+    const usi fe_degree = 2;
     FE_DGQ<dim> fe(fe_degree);
     dof_handler.distribute_dofs(fe);
 
