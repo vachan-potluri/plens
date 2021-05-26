@@ -97,6 +97,8 @@ class ChangeOfBasisMatrix
         } // loop over rows
     }
 
+
+
     /**
      * Operator overload for accessing elements of ChangeOfBasisMatrix::matrix_. Returned by value.
      */
@@ -104,6 +106,18 @@ class ChangeOfBasisMatrix
     {
         return matrix_(i,j);
     }
+
+
+
+    /**
+     * Returns a constant reference to the matrix stored.
+     */
+    const FullMatrix<double>& get() const
+    {
+        return matrix_;
+    }
+
+
 
     #ifdef DEBUG
     static void test()
