@@ -36,13 +36,11 @@ cbm(d)
     prm.leave_subsection();
 
     // for mode_indices_Nm1
-    std::cout << "Nm1 indices:\n";
     for(usi i=0; i<d; i++){
         for(usi j=0; j<d; j++){
             for(usi k=0; k<d; k++){
                 usi index = i + j*(d+1) + k*(d+1)*(d+1);
                 mode_indices_Nm1.emplace_back(index);
-                std::cout << index << "\n";
             }
         }
     }
@@ -50,13 +48,11 @@ cbm(d)
     // for mode_indices_Nm2
     // although calculated only when d>1, these are actually used only if d>2
     if(d>1){
-        std::cout << "Nm2 indices:\n";
         for(usi i=0; i<d-1; i++){
             for(usi j=0; j<d-1; j++){
                 for(usi k=0; k<d-1; k++){
                     usi index = i + j*(d+1) + k*(d+1)*(d+1);
                     mode_indices_Nm2.emplace_back(index);
-                    std::cout << index << "\n";
                 }
             }
         }
@@ -133,9 +129,6 @@ double BlenderCalculator::get_blender(
             "The size of modes provided doesn't match with the expected size: (degree+1)^dim."
         )
     );
-
-    std::cout << "Modes:\n";
-    for(double m: modes) std::cout << m << "\n";
 
     double e_tot = 0; // total energy of all modes
     for(double m: modes) e_tot += m*m;
