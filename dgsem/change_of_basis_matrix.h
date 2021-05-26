@@ -30,7 +30,7 @@
  * @f[
  * \sum_{i=0}^{N_p-1} u_i \phi_i = \sum_{j=0}^{N_p-1} m_j \psi_j \\
  * m_j = \sum_{k=0}^{N_p-1} C_{jk} u_k \\
- * C_{jk} = \int_{0}^{1} \int_{0}^{1} \int_{0}^{1} \phi_j \psi_k\, dx dy dz
+ * C_{jk} = \int_{0}^{1} \int_{0}^{1} \int_{0}^{1} \psi_j \phi_k\, dx dy dz
  * @f]
  * where @f$\{\phi_i\}@f$ are the Lagrange interpolation basis functions, @f$\psi_j@f$ are the
  * Legendre interpolation basis functions and @f$N_p=(N+1)^3@f$ is the number of polynomials.
@@ -90,8 +90,8 @@ class ChangeOfBasisMatrix
                 // integrate the product of shape functions over [0,1]^dim
                 for(usi k=0; k<n_qp; k++){
                     matrix_(i,j) += weights[k]*
-                        fe_nodal.shape_value(i, points[k])*
-                        fe_modal.shape_value(j, points[k]);
+                        fe_modal.shape_value(i, points[k])*
+                        fe_nodal.shape_value(j, points[k]);
                 } // loop over quad points
             } // loop over cols
         } // loop over rows
