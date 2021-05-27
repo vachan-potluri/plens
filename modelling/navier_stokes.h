@@ -269,17 +269,11 @@ class NavierStokes
     inline double get_cv() const {return get_R()/(gma_-1);}
 
     /**
-     * Gives @f$\mu@f$ based on temperature provided. Asserts positivity of temperature, although
-     * there is no issue algebraically.
+     * Gives @f$\mu@f$ based on temperature provided. Blindly calculates the value based on
+     * Sutherland's formula, without any assertion on `T`.
      */
     inline double get_mu(const double T) const
     {
-        AssertThrow(
-            T>0,
-            dealii::StandardExceptions::ExcMessage(
-                "Negative temperature encountered in NavierStokes::get_mu()"
-            )
-        );
         return mu0_*std::pow(T/T0_, 1.5)*(T0_+S_)/(T+S_);
     }
 
