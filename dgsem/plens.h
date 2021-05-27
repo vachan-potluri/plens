@@ -470,6 +470,7 @@ class PLENS
         std::vector<std::array<State, 3>>& cons_grad
     );
     void calc_aux_vars();
+    void calc_blender();
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);

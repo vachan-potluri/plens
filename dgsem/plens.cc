@@ -1585,6 +1585,41 @@ void PLENS::calc_aux_vars()
 
 
 
+/**
+ * Calculates the value of blender (@f$\alpha@f$)
+ *
+ * @note This function doesn't involve any dangerous operations like taking square root or
+ * division. Hence, assertion of positivity is not done here. Moreover, in the logical sequence,
+ * assertion would have already been done in PLENS::calc_aux_vars()
+ */
+void PLENS::calc_blender()
+{
+    // first update gcrk_blender_var
+    prm.enter_subsection("blender parameters");
+    {
+        const std::string var_name = prm.get("variable");
+        if(var_name == "rho") gcrk_blender_var = gcrk_cvars[0];
+        else if(var_name == "p"){
+            for(psize i: locally_owned_dofs){
+                State cons;
+                for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+                gcrk_blender_var[i] = ns_ptr->get_p(cons);
+            }
+        }
+        else{
+            // p times rho
+            for(psize i: locally_owned_dofs){
+                State cons;
+                for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+                gcrk_blender_var[i] = ns_ptr->get_p(cons)*cons[0];
+            }
+        }
+    }
+    prm.leave_subsection();
+}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {
