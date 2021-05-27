@@ -1565,9 +1565,17 @@ void PLENS::calc_aux_vars()
             }
 
             // set (factored) heat flux components
-            for(usi d=0; d<dim; d++) gcrk_avars[6+d][dof_ids[i]] = e_grad[d]/cv;
+            // the negative sign is added here so that the vectors can be scaled with gcrk_k
+            // (instead of -gcrk_k)
+            for(usi d=0; d<dim; d++) gcrk_avars[6+d][dof_ids[i]] = -e_grad[d]/cv;
         } // loop over cell dofs
     } // loop over owned cells
+
+    // now compress and scale with mu and k, then set the ghosted vectors
+    for(avar var: avar_list) gcrk_avars[var].compress(VectorOperation::insert);
+    for(usi i=0; i<6; i++) gcrk_avars[i].scale(gcrk_mu);
+    for(usi i=6; i<9; i++) gcrk_avars[i].scale(gcrk_k);
+    for(avar var: avar_list) gh_gcrk_avars[var] = gcrk_avars[var];
 }
 
 
