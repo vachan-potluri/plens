@@ -36,9 +36,9 @@ cbm(d)
     prm.leave_subsection();
 
     // for mode_indices_Nm1
-    for(usi i=0; i<d; i++){
+    for(usi k=0; k<d; k++){
         for(usi j=0; j<d; j++){
-            for(usi k=0; k<d; k++){
+            for(usi i=0; i<d; i++){
                 usi index = i + j*(d+1) + k*(d+1)*(d+1);
                 mode_indices_Nm1.emplace_back(index);
             }
@@ -48,9 +48,9 @@ cbm(d)
     // for mode_indices_Nm2
     // although calculated only when d>1, these are actually used only if d>2
     if(d>1){
-        for(usi i=0; i<d-1; i++){
+        for(usi k=0; k<d-1; k++){
             for(usi j=0; j<d-1; j++){
-                for(usi k=0; k<d-1; k++){
+                for(usi i=0; i<d; i++){
                     usi index = i + j*(d+1) + k*(d+1)*(d+1);
                     mode_indices_Nm2.emplace_back(index);
                 }
