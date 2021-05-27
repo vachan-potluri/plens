@@ -1461,11 +1461,36 @@ void PLENS::calc_cell_cons_grad(
  * All these operations will be done using simple dof-wise multiplication.
  *
  * @note Since division by density is required, an assertion of positivity of density is done.
- * No assertion on energy is done.
+ * Also, since viscosity and thermal conductivity are calculated, positivity of energy is asserted.
  */
 void PLENS::calc_aux_vars()
 {
-    // first calculate stage 1 flux
+    // update viscosity and thermal conductivity
+    const double cv = ns_ptr->get_cv();
+    double e;
+    State cons;
+    for(psize i: locally_owned_dofs){
+        for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+        AssertThrow(
+            cons[0] > 0,
+            StandardExceptions::ExcMessage(
+                "Negative density encountered in PLENS::calc_aux_vars()."
+            )
+        );
+        e = ns_ptr->get_e(cons);
+        AssertThrow(
+            e > 0,
+            StandardExceptions::ExcMessage(
+                "Negative energy encountered in PLENS::calc_aux_vars()."
+            )
+        );
+        gcrk_mu[i] = ns_ptr->get_mu(e/cv);
+        gcrk_k[i] = ns_ptr->get_k(gcrk_mu[i]);
+    } // loop over owned dofs
+    gcrk_mu.compress(VectorOperation::insert);
+    gcrk_k.compress(VectorOperation::insert);
+
+    // calculate stage 1 flux
     locly_ord_surf_flux_term_t<double> s1_surf_flux;
     calc_surf_flux(1, s1_surf_flux);
 
@@ -1483,12 +1508,6 @@ void PLENS::calc_aux_vars()
         for(usi i=0; i<fe.dofs_per_cell; i++){
             // assert positivity of density
             double rho = gcrk_cvars[0][dof_ids[i]];
-            AssertThrow(
-                rho > 0,
-                StandardExceptions::ExcMessage(
-                    "Negative density encountered in PLENS::calc_aux_vars()."
-                )
-            );
 
             // calculate velocity gradient
             std::array<std::array<double, dim>, dim> vel_grad; // access: cel_grad[vel_dir][grad_dir]
