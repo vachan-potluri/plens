@@ -46,6 +46,7 @@
 #include "metric_terms.h"
 #include "cell_dof_info.h"
 #include "change_of_basis_matrix.h"
+#include "blender_calculator.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
@@ -379,6 +380,12 @@ class PLENS
     LA::MPI::Vector gcrk_k;
 
     /**
+     * Variable used for calculating blender (@f$\apha@f$) value. This need not be ghosted. Its
+     * value will be set in PLENS::calc_blender() based on the parameters provided.
+     */
+    LA::MPI::Vector gcrk_blender_var;
+
+    /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
      * too. This list is populated by looping over all faces held by this process. This is then
      * used to form the boundary condition objects. This list enables construction of BC object
@@ -443,6 +450,11 @@ class PLENS
      * A CellDoFInfo object. Useful for calculating residuals.
      */
     CellDoFInfo cdi;
+
+    /**
+     * The blender calculator object
+     */
+    BlenderCalculator blender_calc;
 
 
 
