@@ -216,6 +216,16 @@ class plens_test; // forward declaration
  * residual requires only 5 equations. Hence a straight-forward unified approach is not possible.
  * However, the inviscid and diffusive high order residual contributions can be calculated in a
  * single loop. The inviscid subcell contribution can then be added separately.
+ *
+ * @section final_residual_calc Final residual calculation
+ *
+ * This is generally done in the following steps
+ * - PLENS::calc_aux_vars()
+ *   - Invokes PLENS::calc_surf_flux() and PLENS::calc_cell_cons_grad() cell-by-cell
+ * - PLENS::calc_blender()
+ *   - Calculates the value of @f$\alpha@f$. This will subsequently be used for calculating
+ * inviscid contribution
+ * - so on...
  */
 class PLENS
 {
