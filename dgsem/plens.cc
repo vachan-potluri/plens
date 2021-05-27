@@ -1543,7 +1543,9 @@ void PLENS::calc_aux_vars()
                 for(usi col=row; col<dim; col++){
                     gcrk_avars[stress_id][dof_ids[i]] = vel_grad[row][col] + vel_grad[col][row];
                     if(col == row){
-                        gcrk_avars[stress_id][dof_ids[i]] -= 2/3*vel_grad_trace;
+                        // somehow operator -= doesn't work together with operator=
+                        gcrk_avars[stress_id][dof_ids[i]] = gcrk_avars[stress_id][dof_ids[i]] -
+                            2.0/3*vel_grad_trace;
                     }
                     stress_id++;
                 }
