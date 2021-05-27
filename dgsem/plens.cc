@@ -1541,11 +1541,15 @@ void PLENS::calc_aux_vars()
             for(usi d=0; d<dim; d++) vel_grad_trace += vel_grad[d][d];
             for(usi row=0; row<dim; row++){
                 for(usi col=row; col<dim; col++){
-                    gcrk_avars[stress_id][dof_ids[i]] = vel_grad[row][col] + vel_grad[col][row];
                     if(col == row){
                         // somehow operator -= doesn't work together with operator=
-                        gcrk_avars[stress_id][dof_ids[i]] = gcrk_avars[stress_id][dof_ids[i]] -
-                            2.0/3*vel_grad_trace;
+                        // hence this split is required
+                        gcrk_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
+                            vel_grad[col][row] - 2.0/3*vel_grad_trace;
+                    }
+                    else{
+                        gcrk_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
+                            vel_grad[col][row];
                     }
                     stress_id++;
                 }
