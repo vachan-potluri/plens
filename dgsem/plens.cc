@@ -1518,7 +1518,9 @@ void PLENS::calc_aux_vars()
         cell->get_dof_indices(dof_ids);
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
-            double rho = gcrk_cvars[0][dof_ids[i]];
+            // cons declared above
+            for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[i]];
+            std::array<double, dim> vel{cons[1]/cons[0], cons[2]/cons[0], cons[3]/cons[0]};
 
             // calculate velocity gradient
             std::array<std::array<double, dim>, dim> vel_grad; // access: vel_grad[vel_dir][grad_dir]
@@ -1527,8 +1529,8 @@ void PLENS::calc_aux_vars()
                     vel_grad[vel_dir][grad_dir] = (
                         cons_grad[i][grad_dir][1+vel_dir] - // grad (rho u)
                         cons_grad[i][grad_dir][0]* // grad rho
-                            gcrk_cvars[1+vel_dir][dof_ids[i]]/rho // u
-                    )/rho;
+                            vel[vel_dir] // u
+                    )/cons[0];
                 } // loop over gradient directions
             } // loop over velocity directions
 
@@ -1539,7 +1541,7 @@ void PLENS::calc_aux_vars()
             for(usi d=0; d<dim; d++) vel_grad_trace += vel_grad[d][d];
             for(usi row=0; row<dim; row++){
                 for(usi col=row; col<dim; col++){
-                    gcrk_avars[stress_id][dof_ids[i]] = vel_avg[row][col] + vel_grad[col][row];
+                    gcrk_avars[stress_id][dof_ids[i]] = vel_grad[row][col] + vel_grad[col][row];
                     if(col == row){
                         gcrk_avars[stress_id][dof_ids[i]] -= 2/3*vel_grad_trace;
                     }
@@ -1549,16 +1551,14 @@ void PLENS::calc_aux_vars()
 
             // calculate temperature gradient
             std::array<double, dim> e_grad;
-            State cons;
-            for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[i]];
-            e = ns_ptr->get_e(cons);
+            e = ns_ptr->get_e(cons); // e declared above
             for(usi grad_dir=0; grad_dir<dim; grad_dir++){
                 e_grad[grad_dir] = (cons_grad[i][grad_dir][4] - cons_grad[i][grad_dir][0]*e)/rho;
                 for(usi vel_dir=0; vel_dir<dim; vel_dir++){
                     e_grad[grad_dir] -= (
-                        0.5*cons_grad[i][grad_dir][0]*std::pow(cons[1+vel_dir]/cons[0],2) +
+                        0.5*cons_grad[i][grad_dir][0]*vel[vel_dir]*vel[vel_dir] +
                         cons[1+vel_dir]*vel_grad[vel_dir][grad_dir]
-                    )/rho;
+                    )/cons[0];
                 }
             }
 
