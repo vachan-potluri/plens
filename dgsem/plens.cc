@@ -1469,8 +1469,6 @@ void PLENS::calc_aux_vars()
     // now set avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
-    std::array<std::array<double, dim>, dim> vel_grad; // access: cel_grad[vel_dir][grad_dir]
-    std::array<double, dim> e_grad;
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
@@ -1490,6 +1488,8 @@ void PLENS::calc_aux_vars()
             );
 
             // calculate velocity gradient
+            std::array<std::array<double, dim>, dim> vel_grad; // access: cel_grad[vel_dir][grad_dir]
+            std::array<double, dim> e_grad;
             for(usi vel_dir=0; vel_dir<dim; vel_dir++){
                 for(usi grad_dir=0; grad_dir<dim; grad_dir++){
                     vel_grad[vel_dir][grad_dir] = (
@@ -1497,8 +1497,8 @@ void PLENS::calc_aux_vars()
                         cons_grad[i][grad_dir][0]* // grad rho
                             gcrk_cvars[1+vel_dir][dof_ids[i]]/rho // u
                     )/rho;
-                }
-            }
+                } // loop over gradient directions
+            } // loop over velocity directions
         } // loop over cell dofs
     } // loop over owned cells
 }

@@ -19,6 +19,7 @@
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/tensor.h>
+#include <deal.II/base/symmetric_tensor.h>
 #include <deal.II/base/point.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/geometry_info.h>
