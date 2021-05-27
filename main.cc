@@ -50,7 +50,6 @@ int main(int argc, char** argv){
     BlenderCalculator::test();
     #endif
 
-    BlenderCalculator::test();
-    // plens_test();
+    plens_test();
     return 0;
 }

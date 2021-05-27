@@ -20,7 +20,7 @@
 #include <cmath>
 #include <algorithm>
 
-// #ifdef DEBUG
+#ifdef DEBUG
 #include <deal.II/base/index_set.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_generator.h>
@@ -31,7 +31,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <iostream>
 #include <utilities/testing.h>
-// #endif
+#endif
 
 using namespace dealii;
 
@@ -130,9 +130,9 @@ class BlenderCalculator
         const DoFHandler<dim>::active_cell_iterator& cell
     ) const;
 
-    // #ifdef DEBUG
+    #ifdef DEBUG
     static void test();
-    // #endif
+    #endif
 };
 
 #endif

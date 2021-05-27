@@ -138,7 +138,7 @@ double BlenderCalculator::get_blender(
 
 
 
-// #ifdef DEBUG
+#ifdef DEBUG
 void BlenderCalculator::test()
 {
     utilities::Testing t("BlenderCalculator", "class");
@@ -238,4 +238,4 @@ void BlenderCalculator::test()
         std::cout << "Blender value: " << bc.get_blender(cell) << "\n";
     }
 }
-// #endif
+#endif
