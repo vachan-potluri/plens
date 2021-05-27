@@ -369,6 +369,16 @@ class PLENS
     std::array<LA::MPI::Vector, 9> gh_gcrk_avars;
 
     /**
+     * Vector holding dof-wise viscosity for current RK solution.
+     */
+    LA::MPI::Vector gcrk_mu;
+
+    /**
+     * Vector holding dof-wise thermal conductivity for current RK solution.
+     */
+    LA::MPI::Vector gcrk_k;
+
+    /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
      * too. This list is populated by looping over all faces held by this process. This is then
      * used to form the boundary condition objects. This list enables construction of BC object

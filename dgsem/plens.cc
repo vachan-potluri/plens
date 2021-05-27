@@ -761,6 +761,9 @@ void PLENS::set_sol_vecs()
         gcrk_avars[var].reinit(locally_owned_dofs, mpi_comm);
         gh_gcrk_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
+
+    gcrk_mu.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_k.reinit(locally_owned_dofs, mpi_comm);
     pcout << "Completed\n";
 
     MPI_Barrier(mpi_comm);
