@@ -19,7 +19,8 @@ t("PLENS", "class")
     // set_BC_test();
     // face_dof_matching_test();
     // calc_surf_flux_test();
-    calc_cell_cons_grad_test();
+    // calc_cell_cons_grad_test();
+    calc_aux_vars_test();
 }
 
 
@@ -278,7 +279,7 @@ void plens_test::calc_cell_cons_grad_test() const
     problem.set_BC();
 
     // set gcrk_cvars to g_cvars
-    std::cout << "IC:\n";
+    // since time loop is not started, this is manually done
     for(cvar var: cvar_list){
         // std::cout << "\tVar: " << cvar_names[var] << "\n";
         for(auto i: problem.locally_owned_dofs){
@@ -313,6 +314,55 @@ void plens_test::calc_cell_cons_grad_test() const
                 std::cout << cons_grad[i][dir][var] << " ";
             }
             std::cout << "\n";
+        }
+    }
+}
+
+
+
+/**
+ * Tests the calculation of auxiliary variables.
+ */
+void plens_test::calc_aux_vars_test() const
+{
+    t.new_block("testing calc_aux_vars() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    problem.calc_aux_vars();
+
+    std::vector<psize> dof_ids(problem.fe.dofs_per_cell);
+    for(auto cell: problem.dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        cell->get_dof_indices(dof_ids);
+
+        std::cout << "Cell: " << cell->index() << "\n";
+        for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+            std::cout << "\tDoF: " << i << "\n";
+            for(avar var: avar_list){
+                std::cout << "\t\tAvar " << avar_names[var] << ": "
+                    << problem.gcrk_avars[var][dof_ids[i]] << "\n";
+            }
         }
     }
 }

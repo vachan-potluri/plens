@@ -47,6 +47,7 @@ class plens_test
     void face_dof_matching_test() const;
     void calc_surf_flux_test() const;
     void calc_cell_cons_grad_test() const;
+    void calc_aux_vars_test() const;
 };
 
 #endif
