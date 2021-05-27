@@ -1553,7 +1553,7 @@ void PLENS::calc_aux_vars()
             std::array<double, dim> e_grad;
             e = ns_ptr->get_e(cons); // e declared above
             for(usi grad_dir=0; grad_dir<dim; grad_dir++){
-                e_grad[grad_dir] = (cons_grad[i][grad_dir][4] - cons_grad[i][grad_dir][0]*e)/rho;
+                e_grad[grad_dir] = (cons_grad[i][grad_dir][4] - cons_grad[i][grad_dir][0]*e)/cons[0];
                 for(usi vel_dir=0; vel_dir<dim; vel_dir++){
                     e_grad[grad_dir] -= (
                         0.5*cons_grad[i][grad_dir][0]*vel[vel_dir]*vel[vel_dir] +
