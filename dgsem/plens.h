@@ -446,6 +446,7 @@ class PLENS
         const locly_ord_surf_flux_term_t<double>& s1_surf_flux,
         std::vector<std::array<State, 3>>& cons_grad
     );
+    void calc_aux_vars();
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);

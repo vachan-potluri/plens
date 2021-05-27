@@ -1433,6 +1433,78 @@ void PLENS::calc_cell_cons_grad(
 
 
 
+/**
+ * Calculates the auxiliary variables and populates gcrk_avars. Internally uses calc_surf_flux()
+ * and calc_cell_cons_grad(). Obviously, gcrk_cvars are used within these functions to calculate
+ * the relevant quantities. The latter function gives the gradients of conservative variables, from
+ * which the auxiliary variables are to be calculated. The relevant formulae are
+ * @f[
+ * \tau_{ij} = \mu \left(
+ * \frac{\partial u_i}{\partial x_j} + \frac{\partial u_i}{\partial x_j}
+ * \right) - \frac{2\mu}{3} \delta_{ij} \frac{\partial u_k}{\partial x_k}\\
+ * \vec{q} = -k\nabla T
+ * @f]
+ * The key is to obtain @f$\nabla \vec{u}@f$ and @f$\nabla T@f$ from the gradients of conservative
+ * variables. For velocity
+ * @f[
+ * \nabla u_i = \frac{1}{\rho} \left[ \nabla (\rho u_i) - u_i \nabla \rho \right]
+ * @f]
+ * For energy
+ * @f[
+ * \rho \nabla e = \nabla(\rho E) - e \nabla \rho -
+ * \frac{u_i u_i}{2} \nabla \rho - \rho u_i \nabla u_i
+ * @f]
+ * Since @f$e=c_v T@f$, and @f$c_v@f$ is constant, @f$\nabla T = \frac{\nabla e}{c_v}@f$.
+ * All these operations will be done using simple dof-wise multiplication.
+ *
+ * @note Since division by density is required, an assertion of positivity of density is done.
+ * No assertion on energy is done.
+ */
+void PLENS::calc_aux_vars()
+{
+    // first calculate stage 1 flux
+    locly_ord_surf_flux_term_t<double> s1_surf_flux;
+    calc_surf_flux(1, s1_surf_flux);
+
+    // now set avars, cell-by-cell
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
+    std::array<std::array<double, dim>, dim> vel_grad; // access: cel_grad[vel_dir][grad_dir]
+    std::array<double, dim> e_grad;
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        // calculate conservative gradients
+        calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
+
+        cell->get_dof_indices(dof_ids);
+
+        for(usi i=0; i<fe.dofs_per_cell; i++){
+            // assert positivity of density
+            double rho = gcrk_cvars[0][dof_ids[i]];
+            AssertThrow(
+                rho > 0,
+                StandardExceptions::ExcMessage(
+                    "Negative density encountered in calc_aux_vars()."
+                )
+            );
+
+            // calculate velocity gradient
+            for(usi vel_dir=0; vel_dir<dim; vel_dir++){
+                for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+                    vel_grad[vel_dir][grad_dir] = (
+                        cons_grad[i][grad_dir][1+vel_dir] - // grad (rho u)
+                        cons_grad[i][grad_dir][0]* // grad rho
+                            gcrk_cvars[1+vel_dir][dof_ids[i]]/rho // u
+                    )/rho;
+                }
+            }
+        } // loop over cell dofs
+    } // loop over owned cells
+}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {
