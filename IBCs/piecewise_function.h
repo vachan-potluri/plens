@@ -67,7 +67,8 @@ namespace ICs
 @endverbatim
  * The first line must be a character "p" or "c" denoting primitive and conservative respectively.
  * The variables 1-5 will be treated as primitive/conservative variables accoring to this
- * character. The number of pieces must be at least 1 and the number of interfaces provided
+ * character. @f$\{\rho, u, v, w, p\}@f$ are considered primitive variables.
+ * The number of pieces must be at least 1 and the number of interfaces provided
  * subsequently must be 1 less than the number of pieces. For instance, if nx=1, then the list of
  * x-interfaces will be blank line. Because primitive to conservative conversion is required, this
  * class takes a raw NavierStokes pointer for construction.
