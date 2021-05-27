@@ -1462,6 +1462,18 @@ void PLENS::calc_cell_cons_grad(
  *
  * @note Since division by density is required, an assertion of positivity of density is done.
  * Also, since viscosity and thermal conductivity are calculated, positivity of energy is asserted.
+ *
+ * Algo
+ * - Loop over owned dofs
+ *   - Calculate viscosity and thermal conductivity
+ * - Calculate surface flux for stage 1
+ * - Loop over owned cells
+ *   - Loop over dofs
+ *     - Calculate velocity gradients
+ *     - Set stress auxiliary variables in gcrk_avars (without factor mu)
+ *     - Calculate temperature gradient
+ *     - Set heat flux auxiliary variables in gcrk_avars (without factor -k)
+ * - Multiply appropriate components of gcrk_avars dof-wise with gcrk_mu and (-gcrk_k)
  */
 void PLENS::calc_aux_vars()
 {
@@ -1494,7 +1506,7 @@ void PLENS::calc_aux_vars()
     locly_ord_surf_flux_term_t<double> s1_surf_flux;
     calc_surf_flux(1, s1_surf_flux);
 
-    // now set avars, cell-by-cell
+    // now set (factored) avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
     for(const auto& cell: dof_handler.active_cell_iterators()){
@@ -1506,12 +1518,10 @@ void PLENS::calc_aux_vars()
         cell->get_dof_indices(dof_ids);
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
-            // assert positivity of density
             double rho = gcrk_cvars[0][dof_ids[i]];
 
             // calculate velocity gradient
-            std::array<std::array<double, dim>, dim> vel_grad; // access: cel_grad[vel_dir][grad_dir]
-            std::array<double, dim> e_grad;
+            std::array<std::array<double, dim>, dim> vel_grad; // access: vel_grad[vel_dir][grad_dir]
             for(usi vel_dir=0; vel_dir<dim; vel_dir++){
                 for(usi grad_dir=0; grad_dir<dim; grad_dir++){
                     vel_grad[vel_dir][grad_dir] = (
@@ -1521,6 +1531,39 @@ void PLENS::calc_aux_vars()
                     )/rho;
                 } // loop over gradient directions
             } // loop over velocity directions
+
+            // set (factored) stress components
+            // the loop is set such that it follows the ordering given in var_enums.h
+            usi stress_id = 0;
+            double vel_grad_trace = 0;
+            for(usi d=0; d<dim; d++) vel_grad_trace += vel_grad[d][d];
+            for(usi row=0; row<dim; row++){
+                for(usi col=row; col<dim; col++){
+                    gcrk_avars[stress_id][dof_ids[i]] = vel_avg[row][col] + vel_grad[col][row];
+                    if(col == row){
+                        gcrk_avars[stress_id][dof_ids[i]] -= 2/3*vel_grad_trace;
+                    }
+                    stress_id++;
+                }
+            }
+
+            // calculate temperature gradient
+            std::array<double, dim> e_grad;
+            State cons;
+            for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[i]];
+            e = ns_ptr->get_e(cons);
+            for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+                e_grad[grad_dir] = (cons_grad[i][grad_dir][4] - cons_grad[i][grad_dir][0]*e)/rho;
+                for(usi vel_dir=0; vel_dir<dim; vel_dir++){
+                    e_grad[grad_dir] -= (
+                        0.5*cons_grad[i][grad_dir][0]*std::pow(cons[1+vel_dir]/cons[0],2) +
+                        cons[1+vel_dir]*vel_grad[vel_dir][grad_dir]
+                    )/rho;
+                }
+            }
+
+            // set (factored) heat flux components
+            for(usi d=0; d<dim; d++) gcrk_avars[6+d][dof_ids[i]] = e_grad[d]/cv;
         } // loop over cell dofs
     } // loop over owned cells
 }
