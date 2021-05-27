@@ -262,6 +262,31 @@ class NavierStokes
      * Gives @f$R=R_0/M@f$ value
      */
     inline double get_R() const {return R0/M_;}
+
+    /**
+     * Gives @f$c_v=\frac{R}{\gamma-1}@f$
+     */
+    inline double get_cv() const {return get_R()/(gma_-1);}
+
+    /**
+     * Gives @f$\mu@f$ based on temperature provided. Asserts positivity of temperature, although
+     * there is no issue algebraically.
+     */
+    inline double get_mu(const double T) const
+    {
+        AssertThrow(
+            T>0,
+            dealii::StandardExceptions::ExcMessage(
+                "Negative temperature encountered in NavierStokes::get_mu()"
+            )
+        );
+        return mu0_*std::pow(T/T0_, 1.5)*(T0_+S_)/(T+S_);
+    }
+
+    /**
+     * Gives @f$k@f$ based on viscosity provided. Assertion on positivity of viscosity is not done.
+     */
+    inline double get_k(const double mu) const {return mu*get_R()*gma_/((gma_-1)*Pr_);}
     
     /**
      * Gives the conservative state using density, velocity and pressure

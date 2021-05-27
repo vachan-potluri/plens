@@ -39,7 +39,8 @@ NavierStokes::NavierStokes(
  * @brief Special constructor for air and N2.
  *
  * Internally calls NavierStokes::set_modelling_params(), NavierStokes::set_inv_surf_flux_scheme()
- * and NavierStokes::set_inv_vol_flux_scheme().
+ * and NavierStokes::set_inv_vol_flux_scheme(). If `inviscid==true`, then @f$\mu_0@f$ is set to
+ * zero. This results in zero values of @f$\mu@f$ and @f$k@f$.
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
@@ -689,6 +690,9 @@ void NavierStokes::test()
         t.new_block();
         NavierStokes ns("air");
         ns.print_modelling_params();
+        const double T = 400;
+        std::cout << "Viscosity and thermal conductivity at " << T << " K: "
+            << ns.get_mu(T) << ", " << ns.get_k(mu) << "\n";
     }
     
     {

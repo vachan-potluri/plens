@@ -1486,7 +1486,7 @@ void PLENS::calc_aux_vars()
             AssertThrow(
                 rho > 0,
                 StandardExceptions::ExcMessage(
-                    "Negative density encountered in calc_aux_vars()."
+                    "Negative density encountered in PLENS::calc_aux_vars()."
                 )
             );
 
