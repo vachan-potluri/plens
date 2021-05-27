@@ -49,22 +49,31 @@ using namespace dealii;
  *
  * The conversion from nodal to modal basis happens using the class ChangeOfBasisMatrix. One of the
  * most important aspect is the calculation of trouble (@f$\mathbb{E}@f$). Hennemann et al (2021)
- * provide the formula only for 1D. For multidimensional problems, Perrson & Peraire (2006) have a
- * formula, but it would be ineffictive against one-dimensional variations. See WJ-26-May-2021.
+ * provide the formula only for 1D. For multidimensional problems, the formula of Perrson &
+ * Peraire (2006) is used with a modification. See WJ-26-May-2021, WJ-27-May-2021. Let @f$m@f$
+ * represent the modal coefficients (or modes), then
+ * @f[
+ * \mathbb{E} = \max \left\{
+ * 1-\frac{\sum_{i,j,k=0}^{N-1} m_{i,j,k}}{\sum_{i,j,k=0}^{N} m_{i,j,k}},
+ * 1-\frac{\sum_{i,j,k=0}^{N-2} m_{i,j,k}}{\sum_{i,j,k=0}^{N-1} m_{i,j,k}},
+ * \right\}
+ * @f]
+ * where the second term is the modification by Hennemann et al (2021). Note that the second term
+ * makes sense only when @f$N>2@f$. Otherwise, it would give counter-intuitive results.
  */
 class BlenderCalculator
 {
     private:
 
     /**
-     * The indices in a modes list that indicate modes of order upto @F$N-1@f$. This is required
+     * The indices in a modes list that indicate modes of order upto @f$N-1@f$. This is required
      * because the modes list has to be in 3d index ordering (as against tensorial ordering) to be
      * usable with ChangeOfBasisMatrix. This vector is populated in the ctor.
      */
     std::vector<usi> mode_indices_Nm1;
 
     /**
-     * Similar to BlenderCalculator::mode_indices_Nm1 but for modes of order upto @F$N-2@f$. This
+     * Similar to BlenderCalculator::mode_indices_Nm1 but for modes of order upto @f$N-2@f$. This
      * is also populated in the ctor and is empty if the degree passed in the ctor is 1.
      */
     std::vector<usi> mode_indices_Nm2;

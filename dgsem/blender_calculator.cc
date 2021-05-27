@@ -8,13 +8,13 @@
 
 
 /**
- * Constructor. Parses all blender parameters. Calls `enter_subsection("blender parameters")` and
- * then exits that subsection. Also populates BlenderCalculator::mode_indices_Nm1 and
+ * Constructor. Parses all blender parameters. Calls `prm.enter_subsection("blender parameters")`
+ * and then exits that subsection. Also populates BlenderCalculator::mode_indices_Nm1 and
  * BlenderCalculator::mode_indices_Nm2. These indices are set such that they give tensor product
  * polynomials with uni-directional polynomials of degree at most @f$N-1@f$ and @f$N-2@f$
  * respectively.
  *
- * @note BlenderCalculator::mode_indices_Nm2 are empty if `d=1`. And for `d=2`, even though this
+ * @note BlenderCalculator::mode_indices_Nm2 is empty if `d=1`. And for `d=2`, even though this
  * array is populated, it is not used. See BlenderCalculator::get_trouble()
  */
 BlenderCalculator::BlenderCalculator(
@@ -105,14 +105,9 @@ double BlenderCalculator::get_blender(
 
 
 /**
- * Calculates the troubled based on the modal coefficients provided in `modes`. Currently, there
- * is ambiguity in the choice of algorithm for this function. The approach presented in Perrson &
- * Peraire (2006), I think, will not work for purely one-dimensional variations. An example for
- * this is given in WJ-25-May-2021.
- *
- * However, until a better algorithm is found, this will be implemented as is. The actual algorithm
- * implemented also uses the small modification proposed by Hennemann et al (2021) in section 4.
- * This function will need modification after some testing.
+ * Calculates the troubled based on the modal coefficients provided in `modes`. See the detailed
+ * documentation for the formula used. Basically, it is a modification of Persson & Peraire
+ * (2006)'s formula.
  *
  * @note The modification by Hennemann et al (2021) will be considered only if @f$N>2@f$. Otherwise
  * it doesn't make sense.
