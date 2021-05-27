@@ -44,10 +44,10 @@ int main(int argc, char** argv){
     // ICs::PiecewiseFunction::test();
     // PLENS::test();
     // plens_test pt(); // doesn't work
-    MetricTerms<3>::test();
-    CellDoFInfo::test();
-    ChangeOfBasisMatrix<3>::test(); // template argument doesn't matter for test() as it is static
-    BlenderCalculator::test();
+    // MetricTerms<3>::test();
+    // CellDoFInfo::test();
+    // ChangeOfBasisMatrix<3>::test(); // template argument doesn't matter for test() as it is static
+    // BlenderCalculator::test();
     #endif
 
     plens_test();

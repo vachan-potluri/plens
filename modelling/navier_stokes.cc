@@ -691,8 +691,9 @@ void NavierStokes::test()
         NavierStokes ns("air");
         ns.print_modelling_params();
         const double T = 400;
+        const double mu = ns.get_mu(T);
         std::cout << "Viscosity and thermal conductivity at " << T << " K: "
-            << ns.get_mu(T) << ", " << ns.get_k(mu) << "\n";
+            << mu << ", " << ns.get_k(mu) << "\n";
     }
     
     {
