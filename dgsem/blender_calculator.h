@@ -41,11 +41,12 @@ using namespace dealii;
  * are stored only here, and not in PLENS because this is the only place where they are required.
  * However, the entry 'blender parameters/variable' is ignored and instead, a const reference to
  * the variable vector will also be taken in the constructor. All variables read from the
- * ParameterHandler are kept public in this class. Hence it is suggested to use a const version of
- * this class object.
+ * ParameterHandler are kept private in this class, since these parameters are not generally
+ * required anywhere else. If any such requirement comes up in the future, some getters will be
+ * added.
  *
  * @note It will be assumed that the ParameterHandler is in the outer most scope from where, the
- * relevant section is accessible and is one level down.
+ * relevant section (viz. "blender parameters") is accessible and is one level down.
  *
  * The conversion from nodal to modal basis happens using the class ChangeOfBasisMatrix. One of the
  * most important aspect is the calculation of trouble (@f$\mathbb{E}@f$). Hennemann et al (2021)
@@ -78,17 +79,6 @@ class BlenderCalculator
      */
     std::vector<usi> mode_indices_Nm2;
 
-    double get_trouble(const std::vector<double>&) const;
-
-    public:
-
-    static constexpr usi dim = 3;
-
-    /**
-     * Const reference to the variable vector passed in the ctor
-     */
-    const LA::MPI::Vector& variable;
-
     /**
      * The threshold (pre-)factor
      */
@@ -114,6 +104,23 @@ class BlenderCalculator
      */
     double alpha_max;
 
+    double get_trouble(const std::vector<double>&) const;
+
+    public:
+
+    static constexpr usi dim = 3;
+
+    /**
+     * Const reference to the variable vector passed in the ctor
+     */
+    const LA::MPI::Vector& variable;
+
+    /**
+     * Reference to the ParameterHandler passed in the ctor. This is stored because it is
+     * required in BlenderCalculator::parse_parameters()
+     */
+    ParameterHandler& prm;
+
     /**
      * The change of basis matrix. The also stores the degree, so a separate variable for that is
      * not required.
@@ -125,6 +132,8 @@ class BlenderCalculator
         const LA::MPI::Vector& var,
         ParameterHandler& prm
     );
+
+    void parse_parameters();
 
     double get_blender(
         const DoFHandler<dim>::active_cell_iterator& cell

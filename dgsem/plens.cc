@@ -32,6 +32,7 @@ blender_calc(fe_degree, gcrk_blender_var, prm)
 {
     declare_parameters();
     prm.parse_input("input.prm");
+    blender_calc.parse_parameters(); // completes the construction of blender_calc
 
     AssertThrow(
         mhod > 0,

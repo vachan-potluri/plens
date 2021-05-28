@@ -8,33 +8,28 @@
 
 
 /**
- * Constructor. Parses all blender parameters. Calls `prm.enter_subsection("blender parameters")`
- * and then exits that subsection. Also populates BlenderCalculator::mode_indices_Nm1 and
+ * Constructor. Populates BlenderCalculator::mode_indices_Nm1 and
  * BlenderCalculator::mode_indices_Nm2. These indices are set such that they give tensor product
  * polynomials with uni-directional polynomials of degree at most @f$N-1@f$ and @f$N-2@f$
  * respectively.
  *
  * @note BlenderCalculator::mode_indices_Nm2 is empty if `d=1`. And for `d=2`, even though this
  * array is populated, it is not used. See BlenderCalculator::get_trouble()
+ *
+ * @warning The construction of this object will be incomplete unless
+ * `BlenderCalculator::parse_parameters()` is called. This is where the parameters are actually
+ * read. The reading is not done here itself for a reason. In case the entries of `prm` are not
+ * declared at this point, parsing the parameters will give a run time error.
  */
 BlenderCalculator::BlenderCalculator(
     const usi d,
     const LA::MPI::Vector& var,
-    ParameterHandler& prm
+    ParameterHandler& p
 ):
 variable(var),
+prm(p),
 cbm(d)
 {
-    prm.enter_subsection("blender parameters");
-    {
-        threshold_factor = prm.get_double("threshold factor");
-        threshold_exp_factor = prm.get_double("threshold exponent factor");
-        sharpness_factor = prm.get_double("sharpness factor");
-        alpha_min = prm.get_double("blender min value");
-        alpha_max = prm.get_double("blender max value");
-    }
-    prm.leave_subsection();
-
     // for mode_indices_Nm1
     for(usi k=0; k<d; k++){
         for(usi j=0; j<d; j++){
@@ -57,6 +52,27 @@ cbm(d)
             }
         }
     }
+}
+
+
+
+/**
+ * Parses the "blender parameters" section from the ParameterHandler provided during construction.
+ * See the warning in BlenderCalculator::BlenderCalculator() as to why this function is separately
+ * written. WRT the ParameterHandler, the calls made are
+ * one `prm.enter_subsection("blender parameters")` and `prm.leave_subsection()`. That's all.
+ */
+void BlenderCalculator::parse_parameters()
+{
+    prm.enter_subsection("blender parameters");
+    {
+        threshold_factor = prm.get_double("threshold factor");
+        threshold_exp_factor = prm.get_double("threshold exponent factor");
+        sharpness_factor = prm.get_double("sharpness factor");
+        alpha_min = prm.get_double("blender min value");
+        alpha_max = prm.get_double("blender max value");
+    }
+    prm.leave_subsection();
 }
 
 
@@ -211,6 +227,7 @@ void BlenderCalculator::test()
     t.new_block("testing construction");
     {
         BlenderCalculator bc(fe_degree, var, prm);
+        bc.parse_parameters();
         std::cout << "Parameters read:\n" << bc.threshold_factor << "\n"
             << bc.threshold_exp_factor << "\n" << bc.sharpness_factor << "\n"
             << bc.alpha_min << "\n" << bc.alpha_max << "\n";
@@ -227,6 +244,7 @@ void BlenderCalculator::test()
         }
 
         BlenderCalculator bc(fe_degree, var, prm);
+        bc.parse_parameters();
         std::cout << "step from 0 to 1 in x-direction\n";
         std::cout << "Blender value: " << bc.get_blender(cell) << "\n";
 
