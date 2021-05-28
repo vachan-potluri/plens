@@ -11,6 +11,7 @@
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria.h>
+#include <deal.II/distributed/tria.h>
 
 #include <modelling/state.h>
 #include <modelling/avars.h>
