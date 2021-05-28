@@ -17,17 +17,16 @@
  * array is populated, it is not used. See BlenderCalculator::get_trouble()
  *
  * @warning The construction of this object will be incomplete unless
- * `BlenderCalculator::parse_parameters()` is called. This is where the parameters are actually
- * read. The reading is not done here itself for a reason. In case the entries of `prm` are not
- * declared at this point, parsing the parameters will give a run time error.
+ * BlenderCalculator::parse_parameters() is called. This is where the parameters are actually
+ * read. If BlenderCalculator::get_blender() is called without a call to
+ * BlenderCalculator::parse_parameters(), then an exception will be thrown.
  */
 BlenderCalculator::BlenderCalculator(
     const usi d,
-    const LA::MPI::Vector& var,
-    ParameterHandler& p
+    const LA::MPI::Vector& var
 ):
+parsed_params(false),
 variable(var),
-prm(p),
 cbm(d)
 {
     // for mode_indices_Nm1
@@ -57,13 +56,13 @@ cbm(d)
 
 
 /**
- * Parses the "blender parameters" section from the ParameterHandler provided during construction.
- * See the warning in BlenderCalculator::BlenderCalculator() as to why this function is separately
- * written. WRT the ParameterHandler, the calls made are
+ * Parses the "blender parameters" section from the `prm` object provided. The calls made are
  * one `prm.enter_subsection("blender parameters")` and `prm.leave_subsection()`. That's all.
  */
-void BlenderCalculator::parse_parameters()
+void BlenderCalculator::parse_parameters(ParameterHandler& prm)
 {
+    parsed_params = true;
+
     prm.enter_subsection("blender parameters");
     {
         threshold_factor = prm.get_double("threshold factor");
@@ -81,11 +80,24 @@ void BlenderCalculator::parse_parameters()
  * Calculates blender value for the given cell according to section 4 of Hennemann et al (2021).
  * Calls BlenderCalculator::get_trouble() to calculate the trouble and then returns the modified
  * blender value.
+ *
+ * @note For this function to be available, a call to BlenderCalculator::parse_parameters() is
+ * necessary. Otherwise, the relevant parameters would have garbage value. An exception is thrown
+ * is such a call is not made.
  */
 double BlenderCalculator::get_blender(
     const DoFHandler<dim>::active_cell_iterator& cell
 ) const
 {
+    AssertThrow(
+        parsed_params,
+        StandardExceptions::ExcMessage(
+            "You are trying to call get_blender() from a BlenderCalculator object that is not yet "
+            "completely set. You must first parse the parameters through "
+            "BlenderCalculator::parse_parameters() before calling this function."
+        )
+    );
+
     const usi n_dofs_per_cell = cell->get_fe().dofs_per_cell;
     std::vector<psize> dof_ids(n_dofs_per_cell);
     cell->get_dof_indices(dof_ids);
@@ -226,8 +238,8 @@ void BlenderCalculator::test()
 
     t.new_block("testing construction");
     {
-        BlenderCalculator bc(fe_degree, var, prm);
-        bc.parse_parameters();
+        BlenderCalculator bc(fe_degree, var);
+        bc.parse_parameters(prm);
         std::cout << "Parameters read:\n" << bc.threshold_factor << "\n"
             << bc.threshold_exp_factor << "\n" << bc.sharpness_factor << "\n"
             << bc.alpha_min << "\n" << bc.alpha_max << "\n";
@@ -243,8 +255,8 @@ void BlenderCalculator::test()
             if(dof_locations[i][0]>=0.5) var[i] = 1;
         }
 
-        BlenderCalculator bc(fe_degree, var, prm);
-        bc.parse_parameters();
+        BlenderCalculator bc(fe_degree, var);
+        bc.parse_parameters(prm);
         std::cout << "step from 0 to 1 in x-direction\n";
         std::cout << "Blender value: " << bc.get_blender(cell) << "\n";
 

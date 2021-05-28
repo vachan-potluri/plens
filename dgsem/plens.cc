@@ -28,11 +28,11 @@ w_1d(fe_degree+1),
 ref_D_1d(fe_degree+1),
 ref_Q_1d(fe_degree+1),
 cdi(fe_degree),
-blender_calc(fe_degree, gcrk_blender_var, prm)
+blender_calc(fe_degree, gcrk_blender_var)
 {
     declare_parameters();
     prm.parse_input("input.prm");
-    blender_calc.parse_parameters(); // completes the construction of blender_calc
+    blender_calc.parse_parameters(prm); // completes the construction of blender_calc
 
     AssertThrow(
         mhod > 0,

@@ -36,8 +36,9 @@
 using namespace dealii;
 
 /**
- * Calculates the value of blending parameter, cell-wise. The inputs to this class are from the
- * 'blender parameters' section of the ParameterHandler provided for construction. The parameters
+ * Calculates the value of blending parameter, cell-wise. The construction of this object is
+ * complete only after BlenderCalculator::parse_parameters() is called. This function reads the
+ * parameters under "blender parameters" section of the Parameterhandler provided. The parameters
  * are stored only here, and not in PLENS because this is the only place where they are required.
  * However, the entry 'blender parameters/variable' is ignored and instead, a const reference to
  * the variable vector will also be taken in the constructor. All variables read from the
@@ -65,6 +66,13 @@ using namespace dealii;
 class BlenderCalculator
 {
     private:
+
+    /**
+     * A boolean variable depicting the state of the object. This will be set to true only when
+     * BlenderCalculator::parse_parameters() has been called. BlenderCalculator::get_blender() can
+     * be called only when this variable is `true`.
+     */
+    bool parsed_params;
 
     /**
      * The indices in a modes list that indicate modes of order upto @f$N-1@f$. This is required
@@ -116,12 +124,6 @@ class BlenderCalculator
     const LA::MPI::Vector& variable;
 
     /**
-     * Reference to the ParameterHandler passed in the ctor. This is stored because it is
-     * required in BlenderCalculator::parse_parameters()
-     */
-    ParameterHandler& prm;
-
-    /**
      * The change of basis matrix. The also stores the degree, so a separate variable for that is
      * not required.
      */
@@ -129,11 +131,10 @@ class BlenderCalculator
 
     BlenderCalculator(
         const usi d,
-        const LA::MPI::Vector& var,
-        ParameterHandler& prm
+        const LA::MPI::Vector& var
     );
 
-    void parse_parameters();
+    void parse_parameters(ParameterHandler& prm);
 
     double get_blender(
         const DoFHandler<dim>::active_cell_iterator& cell
