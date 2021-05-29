@@ -1462,8 +1462,9 @@ void PLENS::calc_cell_cons_grad(
  * Since @f$e=c_v T@f$, and @f$c_v@f$ is constant, @f$\nabla T = \frac{\nabla e}{c_v}@f$.
  * All these operations will be done using simple dof-wise multiplication.
  *
- * @note Since division by density is required, an assertion of positivity of density is done.
- * Also, since viscosity and thermal conductivity are calculated, positivity of energy is asserted.
+ * @pre Since division by density is required, positivity of density is required. Also, since
+ * viscosity and thermal conductivity are calculated, positivity of energy is required. One way to
+ * ensure this is to call PLENS::assert_positivity()
  *
  * Algo
  * - Loop over owned dofs
@@ -1485,19 +1486,7 @@ void PLENS::calc_aux_vars()
     State cons;
     for(psize i: locally_owned_dofs){
         for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
-        AssertThrow(
-            cons[0] > 0,
-            StandardExceptions::ExcMessage(
-                "Negative density encountered in PLENS::calc_aux_vars()."
-            )
-        );
         e = ns_ptr->get_e(cons);
-        AssertThrow(
-            e > 0,
-            StandardExceptions::ExcMessage(
-                "Negative energy encountered in PLENS::calc_aux_vars()."
-            )
-        );
         gcrk_mu[i] = ns_ptr->get_mu(e/cv);
         gcrk_k[i] = ns_ptr->get_k(gcrk_mu[i]);
     } // loop over owned dofs
