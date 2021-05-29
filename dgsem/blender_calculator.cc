@@ -57,7 +57,8 @@ cbm(d)
 
 /**
  * Parses the "blender parameters" section from the `prm` object provided. The calls made are
- * one `prm.enter_subsection("blender parameters")` and `prm.leave_subsection()`. That's all.
+ * one `prm.enter_subsection("blender parameters")` and `prm.leave_subsection()` together with
+ * the getters.
  */
 void BlenderCalculator::parse_parameters(ParameterHandler& prm)
 {

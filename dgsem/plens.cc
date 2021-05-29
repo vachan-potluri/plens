@@ -1136,7 +1136,7 @@ void PLENS::calc_metric_terms()
 void PLENS::calc_surf_flux(
     const usi stage,
     locly_ord_surf_flux_term_t<double> &surf_flux_term
-)
+) const
 {
     AssertThrow(
         stage >=1 && stage <= 3,
@@ -1199,7 +1199,7 @@ void PLENS::calc_surf_flux(
                     // first get ghost state
                     CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
                     Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
-                    bc_list[bid]->get_ghost_wrappers[stage_id](ldd, cav, normal,cav_gh);
+                    bc_list.at(bid)->get_ghost_wrappers[stage_id](ldd, cav, normal,cav_gh);
 
                     // now get the flux
                     State flux;
@@ -1221,7 +1221,7 @@ void PLENS::calc_surf_flux(
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
                     psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
-                    usi face_dof_nei = nei_face_matching_dofs[cell->index()][face_id][face_dof];
+                    usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
                     psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
 
                     // use ghosted vectors to get neighbor state information
@@ -1259,7 +1259,7 @@ void PLENS::calc_surf_flux(
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
                     psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
-                    usi face_dof_nei = nei_face_matching_dofs[cell->index()][face_id][face_dof];
+                    usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
                     psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
 
                     // get neighbor state information
@@ -1351,7 +1351,7 @@ void PLENS::calc_cell_cons_grad(
     const DoFHandler<dim>::active_cell_iterator& cell,
     const locly_ord_surf_flux_term_t<double>& s1_surf_flux,
     std::vector<std::array<State, 3>>& cons_grad
-)
+) const
 {
     AssertThrow(
         cons_grad.size() == fe.dofs_per_cell,
@@ -1395,8 +1395,8 @@ void PLENS::calc_cell_cons_grad(
                     }
                     ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
                     double JxContra_avg_comp = 0.5*(
-                        metrics[cell->index()].JxContra_vecs[ldof_this][m_dir][grad_dir] +
-                        metrics[cell->index()].JxContra_vecs[ldof_other][m_dir][grad_dir]
+                        metrics.at(cell->index()).JxContra_vecs[ldof_this][m_dir][grad_dir] +
+                        metrics.at(cell->index()).JxContra_vecs[ldof_other][m_dir][grad_dir]
                     ); // component (of average contravariant vector) in gradient direction
                     for(cvar var: cvar_list){
                         cons_grad[ldof_this][grad_dir][var] +=
@@ -1416,9 +1416,9 @@ void PLENS::calc_cell_cons_grad(
                     State flux_in, flux_surf;
                     for(cvar var: cvar_list){
                         flux_in[var] = gcrk_cvars[var][dof_ids[ldof]]*
-                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
+                            metrics.at(cell->index()).JxContra_vecs[ldof][surf_dir][grad_dir];
                         flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
-                            metrics[cell->index()].JxContra_vecs[ldof][surf_dir][grad_dir];
+                            metrics.at(cell->index()).JxContra_vecs[ldof][surf_dir][grad_dir];
                         // a hack for incorporating contributions from both left and right faces
                         cons_grad[ldof][grad_dir][var] -= std::pow(-1,lr_id)*
                             (flux_surf[var]-flux_in[var])/w_1d[lr_id*fe.degree];
@@ -1430,10 +1430,25 @@ void PLENS::calc_cell_cons_grad(
         // now divide by Jacobian determinant
         for(usi ldof=0; ldof<fe.dofs_per_cell; ldof++){
             for(cvar var: cvar_list){
-                cons_grad[ldof][grad_dir][var] /= metrics[cell->index()].detJ[ldof];
+                cons_grad[ldof][grad_dir][var] /= metrics.at(cell->index()).detJ[ldof];
             }
         } // loop over cell dofs
     } // loop over gradient directions
+}
+
+
+
+/**
+ * Asserts the positivity of PLENS::gcrk_cvars. This is a requirement for using the algo and
+ * NavierStokes functions.
+ */
+void PLENS::assert_positivity() const
+{
+    State cons;
+    for(auto i: locally_owned_dofs){
+        for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+        ns_ptr->assert_positivity(cons);
+    }
 }
 
 
@@ -1462,8 +1477,9 @@ void PLENS::calc_cell_cons_grad(
  * Since @f$e=c_v T@f$, and @f$c_v@f$ is constant, @f$\nabla T = \frac{\nabla e}{c_v}@f$.
  * All these operations will be done using simple dof-wise multiplication.
  *
- * @note Since division by density is required, an assertion of positivity of density is done.
- * Also, since viscosity and thermal conductivity are calculated, positivity of energy is asserted.
+ * @pre Since division by density is required, positivity of density is required. Also, since
+ * viscosity and thermal conductivity are calculated, positivity of energy is required. One way to
+ * ensure this is to call PLENS::assert_positivity()
  *
  * Algo
  * - Loop over owned dofs
@@ -1485,19 +1501,7 @@ void PLENS::calc_aux_vars()
     State cons;
     for(psize i: locally_owned_dofs){
         for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
-        AssertThrow(
-            cons[0] > 0,
-            StandardExceptions::ExcMessage(
-                "Negative density encountered in PLENS::calc_aux_vars()."
-            )
-        );
         e = ns_ptr->get_e(cons);
-        AssertThrow(
-            e > 0,
-            StandardExceptions::ExcMessage(
-                "Negative energy encountered in PLENS::calc_aux_vars()."
-            )
-        );
         gcrk_mu[i] = ns_ptr->get_mu(e/cv);
         gcrk_k[i] = ns_ptr->get_k(gcrk_mu[i]);
     } // loop over owned dofs
