@@ -267,5 +267,12 @@ void BlenderCalculator::test()
         std::cout << "linear variation in x, y and z\n";
         std::cout << "Blender value: " << bc.get_blender(cell) << "\n";
     }
+
+    t.new_block("testing exception handling");
+    {
+        const auto& cell = dof_handler.begin_active();
+        BlenderCalculator bc(fe_degree, var);
+        bc.get_blender(cell); // exception: parse_parameters not called
+    }
 }
 #endif
