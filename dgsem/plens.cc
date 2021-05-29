@@ -1439,6 +1439,21 @@ void PLENS::calc_cell_cons_grad(
 
 
 /**
+ * Asserts the positivity of PLENS::gcrk_cvars. This is a requirement for using the algo and
+ * NavierStokes functions.
+ */
+void PLENS::assert_positivity() const
+{
+    State cons;
+    for(auto i: locally_owned_dofs){
+        for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+        ns_ptr->assert_positivity(cons);
+    }
+}
+
+
+
+/**
  * Calculates the auxiliary variables and populates gcrk_avars. Internally uses calc_surf_flux()
  * and calc_cell_cons_grad(). Obviously, gcrk_cvars are used within these functions to calculate
  * the relevant quantities. The latter function gives the gradients of conservative variables, from
