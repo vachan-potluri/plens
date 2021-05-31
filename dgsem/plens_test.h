@@ -48,6 +48,7 @@ class plens_test
     void calc_surf_flux_test() const;
     void calc_cell_cons_grad_test() const;
     void calc_aux_vars_test() const;
+    void calc_cell_ho_residual_test() const;
 };
 
 #endif

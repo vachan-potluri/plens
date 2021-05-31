@@ -20,7 +20,8 @@ t("PLENS", "class")
     // face_dof_matching_test();
     // calc_surf_flux_test();
     // calc_cell_cons_grad_test();
-    calc_aux_vars_test();
+    // calc_aux_vars_test();
+    calc_cell_ho_residual_test();
 }
 
 
@@ -363,6 +364,64 @@ void plens_test::calc_aux_vars_test() const
                 std::cout << "\t\tAvar " << avar_names[var] << ": "
                     << problem.gcrk_avars[var][dof_ids[i]] << "\n";
             }
+        }
+    }
+}
+
+
+
+/**
+ * Tests the high order residual calculation. See WJ-31-May-2021. The residual is basically some
+ * form of approximating derivatives of flux terms.
+ */
+void plens_test::calc_cell_ho_residual_test() const
+{
+    t.new_block("testing calc_cell_ho_residual() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    // calculate auxiliary variables
+    problem.calc_aux_vars();
+
+    PLENS::locly_ord_surf_flux_term_t<double> s2_surf_flux;
+    problem.calc_surf_flux(2, s2_surf_flux); // stage 2 flux
+
+    // get an internal cell
+    auto cell = problem.dof_handler.begin_active();
+    for(auto c: problem.dof_handler.active_cell_iterators()){
+        if(!(c->at_boundary())){
+            cell = c;
+            break;
+        }
+    }
+
+    std::vector<State> residual(problem.fe.dofs_per_cell);
+    problem.calc_cell_ho_residual(2, cell, s2_surf_flux, residual);
+
+    std::cout << "Cell: " << cell->index() << "\n";
+    for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+        std::cout << "\tDoF: " << i << "\n";
+        for(cvar var: cvar_list){
+            std::cout << "\t\t" << cvar_names[var] << ": " << residual[i][var] << "\n";
         }
     }
 }
