@@ -1763,6 +1763,9 @@ void PLENS::calc_cell_ho_residual(
     } // loop over directions
 
     // multiply by -1 and scale by jacobian
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(cvar var: cvar_list) residual[i][var] /= -metrics.at(cell->index()).detJ[i];
+    }
 }
 
 
