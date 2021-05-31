@@ -521,6 +521,12 @@ class PLENS
     void assert_positivity() const;
     void calc_aux_vars();
     void calc_blender();
+    void calc_cell_ho_residual(
+        const usi stage,
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        const locly_ord_surf_flux_term_t<double>& s_surf_flux,
+        std::vector<State>& residual
+    ) const;
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);

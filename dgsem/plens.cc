@@ -1592,10 +1592,6 @@ void PLENS::calc_aux_vars()
 
 /**
  * Calculates the value of blender (@f$\alpha@f$)
- *
- * @note This function doesn't involve any dangerous operations like taking square root or
- * division. Hence, assertion of positivity is not done here. Moreover, in the logical sequence,
- * assertion would have already been done in PLENS::calc_aux_vars()
  */
 void PLENS::calc_blender()
 {
@@ -1621,6 +1617,88 @@ void PLENS::calc_blender()
         }
     }
     prm.leave_subsection();
+}
+
+
+
+/**
+ * Calculates high order cell residuals for stages 2 or 3 (inviscid and diffusive fluxes) in a
+ * given cell. The algorithm is much similar to PLENS::calc_cell_cons_grad().
+ *
+ * The volumetric constribution is easily calculated by passing the two relevant states with the
+ * average contravariant vector as the "direction" parameter to the volumetric flux functions of
+ * NavierStokes class.
+ *
+ * For the surface contribution, the numerical flux is already held by `s_surf_flux`. One important
+ * note here. The algorithm described in appendix B of Hennemann et al (2021) solves the
+ * transformed equations in a reference cell. The face normals to this cell are assumed there to be
+ * in positive cartesian directions. However, `s_surf_flux` stores normal flux wrt "outward"
+ * normals. This distinction is to be kept in mind.
+ *
+ * The elements of `residual` will be reset here (not added to).
+ *
+ * @pre `stage` must be 2 or 3
+ * @pre `residual` Must have the size `fe.dofs_per_cell`
+ */
+void PLENS::calc_cell_ho_residual(
+    const usi stage,
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    const locly_ord_surf_flux_term_t<double>& s_surf_flux,
+    std::vector<State>& residual
+) const
+{
+    AssertThrow(
+        stage == 2 || stage == 3,
+        StandardExceptions::ExcMessage(
+            "Stage parameter passed to calc_cell_ho_residual() must be 2 or 3."
+        )
+    );
+    AssertThrow(
+        residual.size() == fe.dofs_per_cell,
+        StandardExceptions::ExcMessage(
+            "Residual vector passed to calc_cell_ho_residual() must have the size of dofs per cell"
+        )
+    );
+
+    // get cell dof indices
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+
+    // reset values in residual to 0
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(cvar var: cvar_list) residual[i][var] = 0;
+    }
+
+    // set the residual
+    for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
+        // first volumetric contrib
+        State cons_this;
+        for(cvar var: cvar_list) cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
+        TableIndices<dim> ti_this;
+        for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
+
+        State flux; // flux between 'this' and 'other' states
+        Tensor<1,dim> dir; // dir to be calculated based on avg of contravariant vectors
+        double norm; // norm of the avg contravariant vector
+
+        for(usi m=0; m<=fe.degree; m++){
+            for(usi m_dir=0; m_dir<dim; m_dir++){
+                State cons_other;
+                // strangely TableIndices doesn't have a copy ctor
+                TableIndices<dim> ti_other(ti_this[0], ti_this[1], ti_this[2]);
+                ti_other[m_dir] = m;
+                usi ldof_other = cdi.tensorial_to_local(ti_other);
+
+                for(cvar var: cvar_list) cons_other[var] = gcrk_cvars[var][dof_ids[ldof_other]];
+                dir = 0.5*(
+                    metrics.at(cell->index()).JxContra_vecs[ldof_this][m_dir] +
+                    metrics.at(cell->index()).JxContra_vecs[ldof_other][m_dir]
+                ); // not unit vector yet
+                norm = dir.norm();
+                dir /= norm; // unit vector now
+            }
+        }
+    }
 }
 
 
