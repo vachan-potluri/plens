@@ -1623,11 +1623,14 @@ void PLENS::calc_blender()
 
 /**
  * Calculates high order cell residuals for stages 2 or 3 (inviscid and diffusive fluxes) in a
- * given cell. The algorithm is much similar to PLENS::calc_cell_cons_grad().
+ * given cell. The algorithm is much similar to PLENS::calc_cell_cons_grad() and uses gcrk_cvars
+ * and gcrk_avars.
  *
  * The volumetric constribution is easily calculated by passing the two relevant states with the
  * average contravariant vector as the "direction" parameter to the volumetric flux functions of
- * NavierStokes class.
+ * NavierStokes class. Note that the average contravariant vector need not be a unit vector.
+ * NavierStokes functions require a unit vector. After that, appropriately scale the flux obtained
+ * using the norm of contravariant vector.
  *
  * For the surface contribution, the numerical flux is already held by `s_surf_flux`. One important
  * note here. The algorithm described in appendix B of Hennemann et al (2021) solves the
@@ -1660,6 +1663,8 @@ void PLENS::calc_cell_ho_residual(
         )
     );
 
+    const usi stage_id = stage-1;
+
     // get cell dof indices
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
@@ -1674,6 +1679,8 @@ void PLENS::calc_cell_ho_residual(
         // first volumetric contrib
         State cons_this;
         for(cvar var: cvar_list) cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
+        Avars av_this;
+        for(avar var: avar_list) av_this[var] = gcrk_avars[var][dof_ids[ldof_this]];
         TableIndices<dim> ti_this;
         for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
 
@@ -1684,18 +1691,28 @@ void PLENS::calc_cell_ho_residual(
         for(usi m=0; m<=fe.degree; m++){
             for(usi m_dir=0; m_dir<dim; m_dir++){
                 State cons_other;
+                Avars av_other;
                 // strangely TableIndices doesn't have a copy ctor
                 TableIndices<dim> ti_other(ti_this[0], ti_this[1], ti_this[2]);
                 ti_other[m_dir] = m;
                 usi ldof_other = cdi.tensorial_to_local(ti_other);
 
                 for(cvar var: cvar_list) cons_other[var] = gcrk_cvars[var][dof_ids[ldof_other]];
+                for(avar var: avar_list) av_other[var] = gcrk_avars[var][dof_ids[ldof_other]];
                 dir = 0.5*(
                     metrics.at(cell->index()).JxContra_vecs[ldof_this][m_dir] +
                     metrics.at(cell->index()).JxContra_vecs[ldof_other][m_dir]
                 ); // not unit vector yet
                 norm = dir.norm();
                 dir /= norm; // unit vector now
+                CAvars cav_this(&cons_this, &av_this), cav_other(&cons_other, &av_other);
+                ns_ptr->vol_flux_wrappers[stage_id](cav_this, cav_other, dir, flux);
+
+                // do an addition here, negative sign will be incorporated when scaling with
+                // jacobian
+                for(cvar var: cvar_list){
+                    residual[ldof_this][var] += 2*ref_D_1d(ti_this[m_dir],m)*flux[var]*norm;
+                }
             }
         }
     }
