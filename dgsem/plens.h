@@ -135,7 +135,7 @@ class plens_test; // forward declaration
  * In such cases, the index `cell->global_active_cell_index()` can be used. For its explanation,
  * see Wolfgang's reply here:
  * https://groups.google.com/g/dealii/c/_lmP3VCLBsw/m/f8dAEgdPAAAJ.
- * This was introduced in version 9.2.0. It provides a contiguous cell indexing so that parallel
+ * This is introduced in version 9.3.0. It provides a contiguous cell indexing so that parallel
  * vectors may be constructed using these indices. Only for PLENS::gcrk_alpha, the index returned
  * by this function is used as the "key" (actually, it is not a map, so using the term "key" is
  * not strictly correct).
@@ -245,13 +245,26 @@ class plens_test; // forward declaration
  *
  * @section final_residual_calc Final residual calculation
  *
+ * For residual contribution calculation, there are some functions which calculate residual in a
+ * given cell and then some outer functions which invoke these functions cell-by-cell. The term
+ * "residual" will generally be used for a single cell and the term "rhs" will be used for a vector
+ * holding the residual of all cells/dofs. Unlike in @ref face_assem, different "stages" cannot be
+ * combined into a single loop even though they use the same formula (eq. (B.14) of Hennemann et al
+ * (2021)). Instead, the calculation of conservative variable gradients is kept separate and the
+ * calculation of high order inviscid and diffusive contributions is combined in a single function.
+ * Low order inviscid contribution is done through a separate function. This separation of inviscid
+ * and diffusive contributions allows for any future changes in the algorithm being used for
+ * incorporating diffusive terms.
+ *
  * This is generally done in the following steps
  * - PLENS::calc_aux_vars()
+ *   - Calculates the auxiliary variables (using eq. (B.14) of Hennemann et al (2021))
  *   - Invokes PLENS::calc_surf_flux() and PLENS::calc_cell_cons_grad() cell-by-cell
  * - PLENS::calc_blender()
  *   - Calculates the value of @f$\alpha@f$. This will subsequently be used for calculating
  * inviscid contribution
- * - so on...
+ *   - This function may even be called before PLENS::calc_aux_vars()
+ * - so on ...
  */
 class PLENS
 {
