@@ -1636,9 +1636,19 @@ void PLENS::calc_blender()
  * note here. The algorithm described in appendix B of Hennemann et al (2021) solves the
  * transformed equations in a reference cell. The face normals to this cell are assumed there to be
  * in positive cartesian directions. However, `s_surf_flux` stores normal flux wrt "outward"
- * normals. This distinction is to be kept in mind.
+ * normals. This distinction is to be kept in mind. So for faces 1, 3 and 5, the numerical flux
+ * stored in `s_surf_flux` can be used without sign change (scaling by norm of contravariant
+ * vector would be required). For faces 0, 2 and 4, a sign change will also be required. Now for
+ * the internal flux, we simply need to get the inviscid flux in the direction of contravariant
+ * vector followed by a scaling with its norm.
  *
- * The elements of `residual` will be reset here (not added to).
+ * @remark Simply put, the contravariant vectors for dofs on faces give the face normal direction
+ * such that it is outward for faces 1, 3 and 5, and inward for faces 0, 2 and 4. The sign changing
+ * is required because contravariant and "outward" normal vectors don't match at the latter faces.
+ *
+ * The elements of `residual` will be reset here (not added to). The residual will be treated as
+ * the "restriction" of global rhs to a cell, meaning its sign will be set such that it can be
+ * treated as a rhs quantity.
  *
  * @pre `stage` must be 2 or 3
  * @pre `residual` Must have the size `fe.dofs_per_cell`
@@ -1675,8 +1685,8 @@ void PLENS::calc_cell_ho_residual(
     }
 
     // set the residual
+    // first volumetric contrib
     for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
-        // first volumetric contrib
         State cons_this;
         for(cvar var: cvar_list) cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
         Avars av_this;
@@ -1713,9 +1723,46 @@ void PLENS::calc_cell_ho_residual(
                 for(cvar var: cvar_list){
                     residual[ldof_this][var] += 2*ref_D_1d(ti_this[m_dir],m)*flux[var]*norm;
                 }
-            }
-        }
-    }
+            } // loop over m dir
+        } // loop over m
+    } // loop over cell dofs
+
+    // now surface contribution
+    for(usi surf_dir=0; surf_dir<dim; surf_dir++){
+        // loop over 'l'eft and 'r'ight faces
+        for(usi lr_id=0; lr_id<=1; lr_id++){
+            usi face_id = 2*surf_dir + lr_id; // the face id
+            for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                usi ldof = fdi.maps[face_id][face_dof_id];
+                Tensor<1,dim> dir =
+                    metrics.at(cell->index()).JxContra_vecs[ldof][surf_dir]; // not yet unit vector
+                double norm = dir.norm();
+                dir /= norm; // unit vector
+                State flux_in, flux_surf;
+                // surface flux
+                for(cvar var: cvar_list){
+                    // s_surf_flux assumes outward normal: true for right and false for left faces
+                    // thus a sign changes is required for left faces since the algorithm assumes
+                    // all face normals in positive cartesian directions (that's what the
+                    // contravariant vectors give)
+                    flux_surf[var] = -std::pow(-1, lr_id)* // -ve for left and +ve for right faces
+                        s_surf_flux[var].at(cell->index())[face_id][face_dof_id];
+                }
+                // inner flux
+                State cons;
+                for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[ldof]];
+                ns_ptr->get_inv_flux(cons, dir, flux_in);
+
+                for(cvar var: cvar_list){
+                    residual[ldof][var] += -std::pow(-1,lr_id)*
+                        (flux_surf[var]-flux_in[var])*norm/
+                        w_1d[lr_id*fe.degree];
+                }
+            } // loop over face dofs
+        } // loop over left/right faces
+    } // loop over directions
+
+    // multiply by -1 and scale by jacobian
 }
 
 
