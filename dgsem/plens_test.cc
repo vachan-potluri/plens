@@ -410,6 +410,39 @@ void plens_test::calc_cell_ho_residual_test() const
     for(auto c: problem.dof_handler.active_cell_iterators()){
         if(!(c->at_boundary())){
             cell = c;
+            const usi direction = 2;
+            std::vector<psize> dof_ids(problem.fe.dofs_per_cell), dof_ids_nei(problem.fe.dofs_per_cell);
+            for(usi lr_id=0; lr_id<2; lr_id++){
+                usi face_id = 2*direction + lr_id;
+                std::cout << "Face id: " << face_id
+                    << "Neighbor cell index: " << cell->neighbor_index(face_id) << "\n";
+                for(usi face_dof_id=0; face_dof_id<problem.fe_face.dofs_per_face; face_dof_id++){
+                    const auto &neighbor = cell->neighbor(face_id);
+                    usi face_id_nei = cell->neighbor_of_neighbor(face_id);
+                    cell->get_dof_indices(dof_ids);
+                    neighbor->get_dof_indices(dof_ids_nei);
+
+                    psize gdof_id = dof_ids[problem.fdi.maps[face_id].at(face_dof_id)];
+                    usi face_dof_nei = problem.nei_face_matching_dofs.at(cell->index())[face_id][face_dof_id];
+                    psize gdof_id_nei = dof_ids_nei[problem.fdi.maps[face_id_nei].at(face_dof_nei)];
+
+                    std::cout << "\tOwner dof: " << gdof_id << "\n"
+                        << "\tOwner dof location: " << problem.dof_locations[gdof_id]
+                        << "\tNeighbor dof location: " << problem.dof_locations[gdof_id_nei]
+                        << "\n";
+                    
+                    State cons, cons_nei;
+                    for(cvar var: cvar_list){
+                        cons[var] = problem.gcrk_cvars[var][gdof_id];
+                        cons_nei[var] = problem.gh_gcrk_cvars[var][gdof_id_nei];
+                    }
+
+                    std::cout << "\tOwner state: ";
+                    utilities::print_state(cons);
+                    std::cout << "\tNeighbor state: ";
+                    utilities::print_state(cons_nei);
+                }
+            }
             break;
         }
     }
@@ -418,6 +451,10 @@ void plens_test::calc_cell_ho_residual_test() const
     problem.calc_cell_ho_residual(2, cell, s2_surf_flux, residual);
 
     std::cout << "Cell: " << cell->index() << "\n";
+    std::cout << "Cell center: " << cell->center() << "\n";
+    std::cout << "Cell diameter: " << cell->diameter() << "\n";
+    std::cout << "Cell jacobian (at dof 13): "
+        << problem.metrics.at(cell->index()).detJ[13] << "\n";
     for(usi i=0; i<problem.fe.dofs_per_cell; i++){
         std::cout << "\tDoF: " << i << "\n";
         for(cvar var: cvar_list){
