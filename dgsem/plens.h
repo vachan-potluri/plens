@@ -60,6 +60,7 @@
 #include <IBCs/symmetry.h>
 #include <IBCs/periodic.h>
 
+#include <utilities/printing.h>
 #ifdef DEBUG
 #include <utilities/testing.h>
 #endif

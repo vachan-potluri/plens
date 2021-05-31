@@ -1287,6 +1287,25 @@ void PLENS::calc_surf_flux(
                         surf_flux_term[var][neighbor->index()][face_id_nei][face_dof_nei]
                             = reverse_flux_sign[stage_id][var]*flux[var];
                     }
+
+                    if(cell->index() == 71 && neighbor->index() == 81){
+                        std::cout << "in calc surf flux function\n";
+                        std::cout << "71 to 81:\n owner: ";
+                        utilities::print_state(cons);
+                        std::cout << "neighbor: ";
+                        utilities::print_state(cons_nei);
+                        std::cout << "flux: ";
+                        utilities::print_state(flux);
+                    }
+                    if(cell->index() == 61 && neighbor->index() == 71){
+                        std::cout << "in calc surf flux function\n";
+                        std::cout << "61 to 71:\n owner: ";
+                        utilities::print_state(cons);
+                        std::cout << "neighbor: ";
+                        utilities::print_state(cons_nei);
+                        std::cout << "flux: ";
+                        utilities::print_state(flux);
+                    }
                 } // loop over face dofs
             } // processor internal face
 
@@ -1718,6 +1737,8 @@ void PLENS::calc_cell_ho_residual(
                 CAvars cav_this(&cons_this, &av_this), cav_other(&cons_other, &av_other);
                 ns_ptr->vol_flux_wrappers[stage_id](cav_this, cav_other, dir, flux);
 
+                // for(cvar var: cvar_list) std::cout << "flux: " << flux[var] << "\n";
+
                 // do an addition here, negative sign will be incorporated when scaling with
                 // jacobian
                 for(cvar var: cvar_list){
@@ -1725,11 +1746,20 @@ void PLENS::calc_cell_ho_residual(
                 }
             } // loop over m dir
         } // loop over m
+
+        std::cout << "DoF volumetric: " << ldof_this << "\n";
+        for(cvar var: cvar_list){
+            std::cout << -residual[ldof_this][var]/
+                metrics.at(cell->index()).detJ[ldof_this] << "\n";
+        }
+
     } // loop over cell dofs
 
     // now surface contribution
     for(usi surf_dir=0; surf_dir<dim; surf_dir++){
         // loop over 'l'eft and 'r'ight faces
+        std::cout << "Direction: " << surf_dir << " Surface connector: "
+            << cell->face(2*surf_dir+1)->center() - cell->face(2*surf_dir)->center() << "\n";
         for(usi lr_id=0; lr_id<=1; lr_id++){
             usi face_id = 2*surf_dir + lr_id; // the face id
             for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
@@ -1752,6 +1782,11 @@ void PLENS::calc_cell_ho_residual(
                 State cons;
                 for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[ldof]];
                 ns_ptr->get_inv_flux(cons, dir, flux_in);
+
+                std::cout << "DoF: " << ldof << "\n" << "Inner:\n";
+                for(cvar var: cvar_list) std::cout << "\t" << flux_in[var] << "\n";
+                std::cout << "Surface\n";
+                for(cvar var: cvar_list) std::cout << "\t" << flux_surf[var] << "\n";
 
                 for(cvar var: cvar_list){
                     residual[ldof][var] += -std::pow(-1,lr_id)*
