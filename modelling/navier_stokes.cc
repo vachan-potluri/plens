@@ -226,6 +226,21 @@ void NavierStokes::set_wrappers()
     }; // inv
     
     surf_flux_wrappers[2] = get_dif_surf_flux; // dif, directly equate function objects
+
+    // volume flux wrappers
+    vol_flux_wrappers[0] = [=](
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
+    ){
+        this->get_aux_vol_flux(cav1.get_state(), cav2.get_state(), dir, f);
+    }; // aux
+    
+    vol_flux_wrappers[1] = [=](
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
+    ){
+        this->get_inv_vol_flux(cav1.get_state(), cav2.get_state(), dir, f);
+    }; // inv
+    
+    vol_flux_wrappers[2] = get_dif_vol_flux; // dif, directly equate function objects
 }
 
 

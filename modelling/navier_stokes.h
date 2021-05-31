@@ -204,7 +204,7 @@ class NavierStokes
     std::array<
         std::function< void (const CAvars&, const CAvars&, const dealii::Tensor<1,dim>&, State&) >,
         3
-    > surf_flux_wrappers;
+    > surf_flux_wrappers, vol_flux_wrappers;
     
     NavierStokes(
         const double gma, const double M, const double Pr,
