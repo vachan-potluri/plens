@@ -618,6 +618,11 @@ void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) c
  *
  * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016).
  *
+ * On later testing, it was identified that the quantities @f$\rho^{\text{ln}}@f$ and
+ * @f$\beta^\text{ln}@f$ can cause problem if both the states have same values
+ * (see WJ-31-May-2021). So for such "ln" quantities, if the denominators are less that 1e-8, the
+ * "ln" quantities are set directly based on state 1.
+ *
  * @pre @p dir has to be a unit vector
  * @pre @p cs1 and @p cs2 must pass the test of NavierStokes::assert_positivity()
  */
@@ -627,10 +632,14 @@ void NavierStokes::chandrashekhar_flux(
 {
     double p1 = get_p(cs1), p2 = get_p(cs2);
     double beta1 = 0.5*cs1[0]/p1, beta2 = 0.5*cs2[0]/p2;
-    double beta_ln = (beta1-beta2)/(log(beta1) - log(beta2));
+    double beta_ln(beta1);
+    double denom = log(beta1) - log(beta2);
+    if(fabs(denom) > 1e-8) beta_ln = (beta1-beta2)/(denom);
     
     double p_hat = 0.5*(cs1[0]+cs2[0])/(beta1+beta2);
-    double rho_ln = (cs1[0]-cs2[0])/(log(cs1[0]) - log(cs2[0]));
+    double rho_ln(cs1[0]);
+    denom = log(cs1[0]) - log(cs2[0]);
+    if(fabs(denom) > 1e-8) rho_ln = (cs1[0]-cs2[0])/(denom);
     
     dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
     double v1, v2; // temporary quantities
