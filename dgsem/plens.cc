@@ -1752,8 +1752,11 @@ void PLENS::calc_cell_ho_residual(
                 }
                 // inner flux
                 State cons;
+                Avars av;
                 for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[ldof]];
-                ns_ptr->get_inv_flux(cons, dir, flux_in);
+                for(avar var: avar_list) av[var] = gcrk_avars[var][dof_ids[ldof]];
+                CAvars cav(&cons, &av);
+                ns_ptr->flux_wrappers[stage_id](cav, dir, flux_in);
 
                 for(cvar var: cvar_list){
                     residual[ldof][var] += -std::pow(-1,lr_id)*
