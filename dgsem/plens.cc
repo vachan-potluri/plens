@@ -1648,7 +1648,7 @@ void PLENS::calc_blender()
  *
  * The elements of `residual` will be reset here (not added to). The residual will be treated as
  * the "restriction" of global rhs to a cell, meaning its sign will be set such that it can be
- * treated as a rhs quantity.
+ * treated as a rhs quantity. See for ref, chapter 2 of APS 1 report.
  *
  * @pre `stage` must be 2 or 3
  * @pre `residual` Must have the size `fe.dofs_per_cell`
@@ -1674,6 +1674,8 @@ void PLENS::calc_cell_ho_residual(
     );
 
     const usi stage_id = stage-1;
+    // -1 for stage 2 (stage id 1) and +1 for stage 3 (stage id 2)
+    const double stage_sign = std::pow(-1, stage_id);
 
     // get cell dof indices
     std::vector<psize> dof_ids(fe.dofs_per_cell);
@@ -1767,9 +1769,10 @@ void PLENS::calc_cell_ho_residual(
         } // loop over left/right faces
     } // loop over directions
 
-    // multiply by -1 and scale by jacobian
+    // multiply by sign and scale by jacobian
     for(usi i=0; i<fe.dofs_per_cell; i++){
-        for(cvar var: cvar_list) residual[i][var] /= -metrics.at(cell->index()).detJ[i];
+        for(cvar var: cvar_list) residual[i][var] /= stage_sign*
+            metrics.at(cell->index()).detJ[i];
     }
 }
 
