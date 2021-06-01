@@ -530,7 +530,7 @@ void NavierStokes::get_dif_flux(
     for(int d=0; d<dim; d++){
         v = cons[1+d]/cons[0];
         f[1+d] = mom_flux[d];
-        f[4] += av[6+d]*dir[d] + v*mom_flux[d];
+        f[4] += -av[6+d]*dir[d] + v*mom_flux[d];
     }
     
 }
