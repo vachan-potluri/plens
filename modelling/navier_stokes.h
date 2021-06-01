@@ -131,7 +131,7 @@
  * @note Prefixes 'get' and 'set' are used only for public functions. Private functions don't have
  * them.
  *
- * 
+ * For all the theoretical functions (inviscid/diffusive), see chapter 2 of APS 1 report.
  */
 class NavierStokes
 {
