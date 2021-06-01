@@ -370,7 +370,8 @@ void NavierStokes::get_inv_flux(
  *
  * This function uses NavierStokes::inv_surf_xflux (one of NavierStokes::hllc_xflux() and
  * NavierStokes::rusanov_xflux() based on the argument provided in constructor). The algorithm
- * for this function is described in detail in WJ-23-Feb-2021.
+ * for this function is described in detail in WJ-23-Feb-2021 and WJ-01-Jun-2021. Only the outline
+ * is noted here.
  *
  * 1. Rotate the coordinate system such that x-direction aligned with @p normal. Store the rotation
  * matrix.
@@ -381,6 +382,15 @@ void NavierStokes::get_inv_flux(
  * The adjective rotated here is for the coordinate system, and not the state itself.
  * 4. Rotate back the coordinate system and get the momentum flux components in actual coordinate
  * system using the above calculated flux.
+ *
+ * See also WJ-01-Jun-2021 and WJ-31-May-2021. Initially, `asin` of the cross product was used to
+ * calculate the angle between vectors. However, the return range of `asin` is
+ * @f$[-\pi/2,\pi/2]@f$ which is not enough. We require angle to lie in @f$[0,\pi]@f$. The angle
+ * cannot be greated than @f$\pi@f$ because in that case, the axis of rotation
+ * (@f$\hat{x} \times \hat{n}@f$) would also reverse its direction. So when viewed from the axis of
+ * rotation so computed, the rotation is always anti-cloclwise and the rotation angle is always in
+ * the range @f$[0,\pi]@f$. So keeping all this in mind, `acos` of the dot product is the best
+ * option.
  *
  * @param[in] ocs 'Owner' conservative state
  * @param[in] ncs 'Neighbor' conservative state
@@ -405,7 +415,9 @@ void NavierStokes::get_inv_surf_flux(
     if(M > 1e-3){
         // this tolerance corrsponds to an angle of ~0.06 degrees between x and n
         m /= M; // now m is a unit vector <-- rotation axis
-        double theta = asin(M); // <-- rotation angle
+        double theta = acos(
+            dealii::scalar_product(xdir, normal)
+        ); // <-- rotation angle (both xdir and normal are unit vectors)
         
         R.copy_from(
             dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
