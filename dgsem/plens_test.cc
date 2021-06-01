@@ -377,7 +377,7 @@ void plens_test::calc_aux_vars_test() const
 void plens_test::calc_cell_ho_residual_test() const
 {
     t.new_block("testing calc_cell_ho_residual() function");
-    PLENS problem(2,2);
+    PLENS problem(2,4);
     problem.read_mesh();
     problem.set_NS();
     problem.set_dof_handler();
@@ -398,12 +398,6 @@ void plens_test::calc_cell_ho_residual_test() const
         problem.gcrk_cvars[var].compress(VectorOperation::insert);
         problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
     }
-
-    // calculate auxiliary variables
-    problem.calc_aux_vars();
-
-    PLENS::locly_ord_surf_flux_term_t<double> s2_surf_flux;
-    problem.calc_surf_flux(2, s2_surf_flux); // stage 2 flux
 
     // get an internal cell
     auto cell = problem.dof_handler.begin_active();
@@ -450,18 +444,39 @@ void plens_test::calc_cell_ho_residual_test() const
         }
     }
 
-    std::vector<State> residual(problem.fe.dofs_per_cell);
-    problem.calc_cell_ho_residual(2, cell, s2_surf_flux, residual);
-
     problem.pcout << "Cell: " << cell->index() << "\n";
     problem.pcout << "Cell center: " << cell->center() << "\n";
     problem.pcout << "Cell diameter: " << cell->diameter() << "\n";
     problem.pcout << "Cell jacobian (at dof 13): "
         << problem.metrics.at(cell->index()).detJ[13] << "\n";
+    
+    std::vector<psize> dof_ids(problem.fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+
+    // calculate auxiliary variables
+    problem.calc_aux_vars();
+    problem.pcout << "Auxiliary variables calculated:\n";
     for(usi i=0; i<problem.fe.dofs_per_cell; i++){
         problem.pcout << "\tDoF: " << i << "\n";
-        for(cvar var: cvar_list){
-            problem.pcout << "\t\t" << cvar_names[var] << ": " << residual[i][var] << "\n";
+        for(avar var: avar_list){
+            problem.pcout << "\t\tAvar " << avar_names[var] << ": "
+                << problem.gcrk_avars[var][dof_ids[i]] << "\n";
+        }
+    }
+
+    for(usi stage=2; stage<=3; stage++){
+        problem.pcout << "Stage " << stage << "\n";
+        PLENS::locly_ord_surf_flux_term_t<double> s_surf_flux;
+        problem.calc_surf_flux(stage, s_surf_flux); // stage flux
+
+        std::vector<State> residual(problem.fe.dofs_per_cell);
+        problem.calc_cell_ho_residual(stage, cell, s_surf_flux, residual);
+        
+        for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+            problem.pcout << "\tDoF: " << i << "\n";
+            for(cvar var: cvar_list){
+                problem.pcout << "\t\t" << cvar_names[var] << ": " << residual[i][var] << "\n";
+            }
         }
     }
 }
