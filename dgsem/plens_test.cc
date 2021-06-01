@@ -408,8 +408,10 @@ void plens_test::calc_cell_ho_residual_test() const
     // get an internal cell
     auto cell = problem.dof_handler.begin_active();
     for(auto c: problem.dof_handler.active_cell_iterators()){
+        if(!c->is_locally_owned()) continue;
         if(!(c->at_boundary())){
             cell = c;
+            /*
             const usi direction = 2;
             std::vector<psize> dof_ids(problem.fe.dofs_per_cell), dof_ids_nei(problem.fe.dofs_per_cell);
             for(usi lr_id=0; lr_id<2; lr_id++){
@@ -443,6 +445,7 @@ void plens_test::calc_cell_ho_residual_test() const
                     utilities::print_state(cons_nei);
                 }
             }
+            */
             break;
         }
     }
@@ -450,15 +453,15 @@ void plens_test::calc_cell_ho_residual_test() const
     std::vector<State> residual(problem.fe.dofs_per_cell);
     problem.calc_cell_ho_residual(2, cell, s2_surf_flux, residual);
 
-    std::cout << "Cell: " << cell->index() << "\n";
-    std::cout << "Cell center: " << cell->center() << "\n";
-    std::cout << "Cell diameter: " << cell->diameter() << "\n";
-    std::cout << "Cell jacobian (at dof 13): "
+    problem.pcout << "Cell: " << cell->index() << "\n";
+    problem.pcout << "Cell center: " << cell->center() << "\n";
+    problem.pcout << "Cell diameter: " << cell->diameter() << "\n";
+    problem.pcout << "Cell jacobian (at dof 13): "
         << problem.metrics.at(cell->index()).detJ[13] << "\n";
     for(usi i=0; i<problem.fe.dofs_per_cell; i++){
-        std::cout << "\tDoF: " << i << "\n";
+        problem.pcout << "\tDoF: " << i << "\n";
         for(cvar var: cvar_list){
-            std::cout << "\t\t" << cvar_names[var] << ": " << residual[i][var] << "\n";
+            problem.pcout << "\t\t" << cvar_names[var] << ": " << residual[i][var] << "\n";
         }
     }
 }
