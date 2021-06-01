@@ -204,9 +204,11 @@ void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
 
 
 /**
- * @brief Sets surface flux wrappers
+ * @brief Sets surface, volume and internal flux wrappers. Surface flux wrappers are used in
+ * assembling surface flux for the 3 stages. Volume and internal flux wrappers are used for
+ * calculating residual (or, RHS) for stages 2 and 3. See PLENS class documentation for details.
  *
- * See the class documentation for more details
+ * See the class documentation for more details.
  *
  * @pre All the surf/vol setters must be called before invoking this function
  */
@@ -241,6 +243,21 @@ void NavierStokes::set_wrappers()
     }; // inv
     
     vol_flux_wrappers[2] = get_dif_vol_flux; // dif, directly equate function objects
+
+    // internal flux wrappers
+    flux_wrappers[0] = [=](
+        const CAvars &cav, const dealii::Tensor<1,dim>& dir, State& flux
+    ){
+        flux = cav.get_state();
+    }; // aux
+
+    flux_wrappers[1] = [=](
+        const CAvars &cav, const dealii::Tensor<1,dim>& dir, State& flux
+    ){
+        this->get_inv_flux(cav.get_state(), dir, flux);
+    }; // inv
+
+    flux_wrappers[2] = get_dif_flux; // dif, equate functions directly
 }
 
 
