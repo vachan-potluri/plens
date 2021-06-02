@@ -1858,7 +1858,6 @@ void PLENS::calc_cell_lo_inv_residual(
         for(usi id1=0; id1<=fe.degree; id1++){
             for(usi id2=0; id2<fe.degree; id2++){
                 for(usi id=1; id<=fe.degree; id++){
-                    State cons_left, cons_right, flux;
                     TableIndices<dim> ti_left, ti_right;
                     ti_left[dir] = id-1;
                     ti_left[dir1] = id1;
@@ -1870,6 +1869,7 @@ void PLENS::calc_cell_lo_inv_residual(
                         ldof_right = cdi.tensorial_to_local(ti_right);
                     
                     // set the "left" and "right" states
+                    State cons_left, cons_right, flux;
                     for(cvar var: cvar_list){
                         cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
                         cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
@@ -1906,10 +1906,10 @@ void PLENS::calc_cell_lo_inv_residual(
 
             // flux sign: to align the flux provided by s2_surf_flux in the contravariant dir
             // s2_surf_flux provides flux on cell faces assuming outward normals
-            // for "left" faces, contravariant vector points inwards ==> flux sign must be -ve
+            // for "left" faces, contravariant vector points inwards ==> sign change required
             // for "right" faces, no sign change required
             float flux_sign = -std::pow(-1, lr_id);
-            
+
             for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
                 usi ldof = fdi.maps[face_id].at(face_dof_id);
 
