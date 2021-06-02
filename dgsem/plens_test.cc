@@ -22,7 +22,8 @@ t("PLENS", "class")
     // calc_cell_cons_grad_test();
     // calc_aux_vars_test();
     // calc_cell_ho_residual_test();
-    plens_test::mapping_ho_metrics_test();
+    // plens_test::mapping_ho_metrics_test();
+    plens_test::calc_cell_lo_inv_residual_test();
 }
 
 
@@ -548,6 +549,65 @@ void plens_test::mapping_ho_metrics_test() const
                 std::cout << cons_grad[i][dir][var] << " ";
             }
             std::cout << "\n";
+        }
+    }
+}
+
+
+
+/**
+ * Tests the calculation of low order inviscid residual
+ */
+void plens_test::calc_cell_lo_inv_residual_test() const
+{
+    t.new_block("testing calc_cell_lo_inv_residual() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    // get an internal cell
+    auto cell = problem.dof_handler.begin_active();
+    for(auto c: problem.dof_handler.active_cell_iterators()){
+        if(!c->is_locally_owned()) continue;
+        if(!(c->at_boundary())){
+            cell = c;
+            break;
+        }
+    }
+
+    PLENS::locly_ord_surf_flux_term_t<double> s2_surf_flux;
+    problem.calc_surf_flux(2, s2_surf_flux); // stage flux
+
+    std::vector<State> ho_residual(problem.fe.dofs_per_cell),
+        lo_residual(problem.fe.dofs_per_cell);
+    problem.calc_cell_ho_residual(2, cell, s2_surf_flux, ho_residual);
+    problem.calc_cell_lo_inv_residual(cell, s2_surf_flux, lo_residual);
+
+    problem.pcout << "Cell: " << cell->index() << "\n";
+    for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+        problem.pcout << "\tDoF: " << i << "\n";
+        for(cvar var: cvar_list){
+            problem.pcout << "\t\t" << cvar_names[var] << ":\n"
+                << "\t\t\tHigh order: " << ho_residual[i][var] << "\n"
+                << "\t\t\tLow order: " << lo_residual[i][var] << "\n";
         }
     }
 }
