@@ -1778,6 +1778,61 @@ void PLENS::calc_cell_ho_residual(
 
 
 
+/**
+ * Calculates the low order inviscid residual based on subcell update. This is the only place where
+ * the subcell normals of metric terms are relevant. The algorithm used is slightly complicated.
+ *
+ * First, an outer loop of directions is followed by loops over complementary directions. Then, a
+ * loop over the subcell normals of the direction (corresponding to outer loop) is done where the
+ * required inter-subcell flux is calculated and its contributions are appropriately added to the
+ * residuals. For each subcell interface, two dofs get the flux contribution. The number of such
+ * subcell normals (in each direction) will be @f$N+2@f$: one more than the number of dofs. This is
+ * obvious because each dof is treated as a subcell and each subcell will have two faces. The
+ * indexing of these subcell faces will follow the convention of MetricTerms. See the member
+ * documentation of MetricTerms::subcell_normals for more details. Note the boundary cases: when
+ * `i=0`, the subcell normal @f$\vec{n}_{(L,0)jk}@f$ is obtained, and when `i=N+1` the subcell
+ * normal @f$\vec{n}_{(N,R)jk}@f$ is obtained.
+ *
+ * For the boundary cases, the numerical flux will be obtained from `s2_surf_flux`. Again, remember
+ * that `s2_surf_flux` stores fluxes assuming outward normals at all faces of a cell. These
+ * directions match with the subcell normals (for those subcells lying on cell face) for faces 1, 3
+ * and 5, while they will be opposite to subcell normals for the remaining faces (0, 2 and 4).
+ *
+ * Algo:
+ * - Loop over direction
+ *   - Loop over id in the direction (id=0 to id=N+1)
+ *     - Loop over ids in complementary direction 1 (id1=0 to id1=N)
+ *       - Loop over ids in complementary direction 2 (id2=0 to id2=N)
+ *         - Evaluate flux between states (id-1, id1, id2) and (id, id1, id2) [the indices have to
+ *           be ordered properly, the case for direction=0 is taken as example here]
+ *         - Add the contribution to dofs (id-1, id1, id2) and (id, id1, id2) [again, ordering must
+ *           be modified appropriately]
+ *         - If id1==0 or id1==N+1, use the surface flux from `s2_surf_flux`
+ *
+ * The elements of `residual` will be reset here (not added to). The residual will be treated as
+ * the "restriction" of global rhs to a cell, meaning its sign will be set such that it can be
+ * treated as a rhs quantity.
+ *
+ * @pre `s2_surf_flux` must be stage 2's surface flux
+ * @pre `residual` Must have the size `fe.dofs_per_cell`
+ */
+void PLENS::calc_cell_lo_inv_residual(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    const locly_ord_surf_flux_term_t<double>& s2_surf_flux,
+    std::vector<State>& residual
+) const
+{
+    AssertThrow(
+        residual.size() == fe.dofs_per_cell,
+        StandardExceptions::ExcMessage(
+            "Residual vector passed to calc_cell_lo_inv_residual() must have the size of dofs per "
+            "cell."
+        )
+    );
+} // calc_cell_lo_inv_residual
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {
