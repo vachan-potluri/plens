@@ -1800,14 +1800,25 @@ void PLENS::calc_cell_ho_residual(
  *
  * Algo:
  * - Loop over direction
- *   - Loop over ids in complementary direction 2 (id2=0 to id2=N)
+ *   - Loop over ids in complementary direction 2 (id2=0 to id2=N) [start of internal contributions
+ *     loop]
  *     - Loop over ids in complementary direction 1 (id1=0 to id1=N)
  *       - Loop over id in the direction (id=1 to id=N)
  *         - Evaluate flux between states (id-1, id1, id2) and (id, id1, id2) [the indices have to
  *           be ordered properly, the case for direction=0 is taken as example here]
  *         - Add the contribution to dofs (id-1, id1, id2) and (id, id1, id2) [again, ordering must
  *           be modified appropriately]
- *       - For id1==0 and id1==N+1, use the surface flux from `s2_surf_flux`
+ *   - For id1==0 and id1==N+1, use the surface flux from `s2_surf_flux` [surface contrib loop]
+ *     - Loop over face dofs
+ *       - Obtain the flux from `s2_surf_flux` and scale it appropriately with contravariant vector
+ *         - Also, appropriate sign change is required because `s2_surf_flux` gives flux assuming
+ *           outward pointing normal on cell faces, while contravariant vector points along
+ *           reference cell axis
+ *       - Add the contiribution to surface dof
+ *         - The sign of contribution depends on whether the dof is on "left" face of "right" face
+ * - Loop over all dofs
+ *   - Scale residual by -jacobian (negative sign because above loops calculate divergence of flux
+ *      but the RHS contains negative of the flux divergence)
  *
  * The elements of `residual` will be reset here (not added to). The residual will be treated as
  * the "restriction" of global rhs to a cell, meaning its sign will be set such that it can be
@@ -1839,7 +1850,9 @@ void PLENS::calc_cell_lo_inv_residual(
     cell->get_dof_indices(dof_ids);
 
     for(usi dir=0; dir<dim; dir++){
-        // complementary directions
+        // First the internal contributions
+
+        // complementary directions (required for internal contributions)
         usi dir1 = (dir+1)%dim;
         usi dir2 = (dir+2)%dim;
         for(usi id1=0; id1<=fe.degree; id1++){
@@ -1880,8 +1893,45 @@ void PLENS::calc_cell_lo_inv_residual(
                     }
                 } // loop over internal ids in dir
             } // loop over ids in complementary dir 2
-        } // loop over ids in complementary dir 1
+        } // loop over ids in complementary dir 1 (internal contributions loop)
+
+        // Now surface contributions
+        for(usi lr_id=0; lr_id<=1; lr_id++){
+            usi face_id = 2*dir + lr_id;
+            for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                usi ldof = fdi.maps[face_id].at(face_dof_id);
+
+                // sign of contribution (for subcell flux divergence)
+                // negative for "left" faces (corresponding to (L,0) flux)
+                // positive for "right" faces (corresponding to (N,R) flux)
+                float contrib_sign = -std::pow(-1, lr_id);
+
+                // flux sign: to align the flux provided by s2_surf_flux in the contravariant dir
+                // s2_surf_flux provides flux on cell faces assuming outward normals
+                // for "left" faces, contravariant vector points inwards ==> flux sign must be -ve
+                // for "right" faces, no sign change required
+                float flux_sign = -std::pow(-1, lr_id);
+
+                // norm of contravariant vector
+                double normal_norm = metrics.at(cell->index()).JxContra_vecs[ldof][dir].norm();
+
+                State flux; // flux wrt contravariant vector direction
+                for(cvar var: cvar_list){
+                    flux[var] = flux_sign*
+                        s2_surf_flux[var].at(cell->index())[face_id][face_dof_id];
+                    residual[var][ldof] += contrib_sign*flux[var]*normal_norm/
+                        w_1d[lr_id*fe.degree];
+                }
+            } // loop over face dofs
+        } // loop over "left" and "right" cell surfaces in dir
     } // loop over directions
+
+    // Scale by negative jacobian (-ve because divergence of flux has -ve sign on RHS)
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(cvar var: cvar_list){
+            residual[var][i] /= -metrics.at(cell->index()).detJ[i];
+        }
+    }
 } // calc_cell_lo_inv_residual
 
 
