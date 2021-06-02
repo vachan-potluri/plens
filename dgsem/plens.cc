@@ -409,7 +409,7 @@ void PLENS::declare_parameters()
     pcout << "Sample input file named 'sample_input_file.prm' written\n";
 
     MPI_Barrier(mpi_comm);
-}
+} // declare_parameters
 
 
 
@@ -556,7 +556,7 @@ void PLENS::read_mesh()
     pcout << "Completed\n";
 
     MPI_Barrier(mpi_comm);
-}
+} // read_mesh
 
 
 
@@ -735,7 +735,7 @@ void PLENS::set_dof_handler()
     calc_metric_terms();
 
     MPI_Barrier(mpi_comm);
-}
+} // set_dof_handler
 
 
 
@@ -988,7 +988,7 @@ void PLENS::set_BC()
     } // loop over bid_list
 
     MPI_Barrier(mpi_comm);
-}
+} // set_BC
 
 
 
@@ -1051,7 +1051,7 @@ void PLENS::form_neighbor_face_matchings(const double tol)
         } // loop over internal faces
     } // loop over owned cells
     pcout << "Completed\n";
-}
+} // form_neighbor_face_matchings
 
 
 
@@ -1100,7 +1100,7 @@ void PLENS::calc_metric_terms()
         ));
     } // loop over owned cells
     pcout << "Completed\n";
-}
+} // calc_metric_terms
 
 
 
@@ -1293,7 +1293,7 @@ void PLENS::calc_surf_flux(
             else continue;
         } // loop over faces
     } // loop over owned cells
-}
+} // calc_surf_flux
 
 
 
@@ -1434,7 +1434,7 @@ void PLENS::calc_cell_cons_grad(
             }
         } // loop over cell dofs
     } // loop over gradient directions
-}
+} // calc_cell_cons_grad
 
 
 
@@ -1586,7 +1586,7 @@ void PLENS::calc_aux_vars()
     for(usi i=0; i<6; i++) gcrk_avars[i].scale(gcrk_mu);
     for(usi i=6; i<9; i++) gcrk_avars[i].scale(gcrk_k);
     for(avar var: avar_list) gh_gcrk_avars[var] = gcrk_avars[var];
-}
+} // calc_aux_vars
 
 
 
@@ -1617,7 +1617,7 @@ void PLENS::calc_blender()
         }
     }
     prm.leave_subsection();
-}
+} // calc_blender
 
 
 
@@ -1774,7 +1774,7 @@ void PLENS::calc_cell_ho_residual(
         for(cvar var: cvar_list) residual[i][var] /= stage_sign*
             metrics.at(cell->index()).detJ[i];
     }
-}
+} // calc_cell_ho_residual
 
 
 
