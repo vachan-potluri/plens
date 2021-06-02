@@ -1919,7 +1919,7 @@ void PLENS::calc_cell_lo_inv_residual(
                 for(cvar var: cvar_list){
                     flux[var] = flux_sign*
                         s2_surf_flux[var].at(cell->index())[face_id][face_dof_id];
-                    residual[var][ldof] += contrib_sign*flux[var]*normal_norm/
+                    residual[ldof][var] += contrib_sign*flux[var]*normal_norm/
                         w_1d[lr_id*fe.degree];
                 }
             } // loop over face dofs
@@ -1929,7 +1929,7 @@ void PLENS::calc_cell_lo_inv_residual(
     // Scale by negative jacobian (-ve because divergence of flux has -ve sign on RHS)
     for(usi i=0; i<fe.dofs_per_cell; i++){
         for(cvar var: cvar_list){
-            residual[var][i] /= -metrics.at(cell->index()).detJ[i];
+            residual[i][var] /= -metrics.at(cell->index()).detJ[i];
         }
     }
 } // calc_cell_lo_inv_residual
