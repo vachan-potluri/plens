@@ -21,7 +21,8 @@ t("PLENS", "class")
     // calc_surf_flux_test();
     // calc_cell_cons_grad_test();
     // calc_aux_vars_test();
-    calc_cell_ho_residual_test();
+    // calc_cell_ho_residual_test();
+    plens_test::mapping_ho_metrics_test();
 }
 
 
@@ -477,6 +478,76 @@ void plens_test::calc_cell_ho_residual_test() const
             for(cvar var: cvar_list){
                 problem.pcout << "\t\t" << cvar_names[var] << ": " << residual[i][var] << "\n";
             }
+        }
+    }
+}
+
+
+
+/**
+ * Tests the metric terms using high order mapping on a single cell. For using this function, set
+ * mesh in input.prm to one_cylindrical_cell.msh and type to "curved" and subtype to
+ * "cylinder flare" (this will set cylindrical manifold). Also set all BCs to free.
+ */
+void plens_test::mapping_ho_metrics_test() const
+{
+    t.new_block("testing metric terms using high order mapping");
+    PLENS problem(1,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    const auto& cell = problem.dof_handler.begin_active();
+    std::cout << "Face connectors (to match physical and references axes):\n";
+    for(usi dir=0; dir<3; dir++){
+        std::cout << cell->face(2*dir+1)->center() - cell->face(2*dir)->center() << "\n";
+    }
+
+    std::cout << "Contravariant vectors\n";
+    for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+        std::cout << "\tDoF " << i << ": Jacobian: "
+            << problem.metrics.at(0).detJ[i] << "\n";
+        for(usi dir=0; dir<3; dir++){
+            std::cout << "\t\tDirection " << dir << ": "
+                << problem.metrics.at(0).JxContra_vecs[i][dir] << "\n";
+        }
+    }
+
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    PLENS::locly_ord_surf_flux_term_t<double> s1_surf_flux;
+    problem.calc_surf_flux(1, s1_surf_flux); // stage 1 flux
+    std::vector<std::array<State, 3>> cons_grad(problem.fe.dofs_per_cell);
+    problem.calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
+
+    std::vector<psize> dof_ids(problem.fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+
+    std::cout << "Cell " << cell->index() << " conservative gradients:\n";
+    for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+        std::cout << "\tDoF " << i << " location: "
+            << problem.dof_locations[dof_ids[i]] << "\n";
+        for(usi dir=0; dir<PLENS::dim; dir++){
+            std::cout << "\t\tDirection " << dir << ": ";
+            for(cvar var: cvar_list){
+                std::cout << cons_grad[i][dir][var] << " ";
+            }
+            std::cout << "\n";
         }
     }
 }

@@ -49,6 +49,7 @@ class plens_test
     void calc_cell_cons_grad_test() const;
     void calc_aux_vars_test() const;
     void calc_cell_ho_residual_test() const;
+    void mapping_ho_metrics_test() const;
 };
 
 #endif
