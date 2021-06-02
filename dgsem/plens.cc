@@ -1800,14 +1800,14 @@ void PLENS::calc_cell_ho_residual(
  *
  * Algo:
  * - Loop over direction
- *   - Loop over id in the direction (id=0 to id=N+1)
+ *   - Loop over ids in complementary direction 2 (id2=0 to id2=N)
  *     - Loop over ids in complementary direction 1 (id1=0 to id1=N)
- *       - Loop over ids in complementary direction 2 (id2=0 to id2=N)
+ *       - Loop over id in the direction (id=1 to id=N)
  *         - Evaluate flux between states (id-1, id1, id2) and (id, id1, id2) [the indices have to
  *           be ordered properly, the case for direction=0 is taken as example here]
  *         - Add the contribution to dofs (id-1, id1, id2) and (id, id1, id2) [again, ordering must
  *           be modified appropriately]
- *         - If id1==0 or id1==N+1, use the surface flux from `s2_surf_flux`
+ *       - For id1==0 and id1==N+1, use the surface flux from `s2_surf_flux`
  *
  * The elements of `residual` will be reset here (not added to). The residual will be treated as
  * the "restriction" of global rhs to a cell, meaning its sign will be set such that it can be
@@ -1829,6 +1829,59 @@ void PLENS::calc_cell_lo_inv_residual(
             "cell."
         )
     );
+
+    // reset values in residual to 0
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(cvar var: cvar_list) residual[i][var] = 0;
+    }
+
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+
+    for(usi dir=0; dir<dim; dir++){
+        // complementary directions
+        usi dir1 = (dir+1)%dim;
+        usi dir2 = (dir+2)%dim;
+        for(usi id1=0; id1<=fe.degree; id1++){
+            for(usi id2=0; id2<fe.degree; id2++){
+                for(usi id=1; id<=fe.degree; id++){
+                    State cons_left, cons_right, flux;
+                    TableIndices<dim> ti_left, ti_right;
+                    ti_left[dir] = id-1;
+                    ti_left[dir1] = id1;
+                    ti_left[dir2] = id2;
+                    ti_right[dir] = ti_left[dir]+1;
+                    ti_right[dir1] = ti_left[dir1];
+                    ti_right[dir2] = ti_left[dir2];
+                    usi ldof_left = cdi.tensorial_to_local(ti_left),
+                        ldof_right = cdi.tensorial_to_local(ti_right);
+                    
+                    // set the "left" and "right" states
+                    for(cvar var: cvar_list){
+                        cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
+                        cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
+                    }
+
+                    // get normal between id-1 and id
+                    Tensor<1,dim> normal_dir =
+                        metrics.at(cell->index()).subcell_normals[dir](ti_right); // not unit vector yet
+                    double normal_norm = normal_dir.norm();
+                    normal_dir /= normal_norm; // unit vector now
+
+                    // get the flux
+                    ns_ptr->get_inv_surf_flux(cons_left, cons_right, normal_dir, flux);
+
+                    // add the contribution to residual (eq. B.47 of Hennemann et al (2021))
+                    // the negative sign for the surface divergence term will be assigned later,
+                    // when dividing by jacobian
+                    for(cvar var: cvar_list){
+                        residual[ldof_left][var] += flux[var]*normal_norm/w_1d[id-1];
+                        residual[ldof_right][var] -= flux[var]*normal_norm/w_1d[id];
+                    }
+                } // loop over internal ids in dir
+            } // loop over ids in complementary dir 2
+        } // loop over ids in complementary dir 1
+    } // loop over directions
 } // calc_cell_lo_inv_residual
 
 
