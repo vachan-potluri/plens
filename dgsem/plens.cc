@@ -1863,7 +1863,7 @@ void PLENS::calc_cell_lo_inv_residual(
                     ti_left[dir] = id-1;
                     ti_left[dir1] = id1;
                     ti_left[dir2] = id2;
-                    ti_right[dir] = ti_left[dir]+1;
+                    ti_right[dir] = ti_left[dir]+1; // equals "id"
                     ti_right[dir1] = ti_left[dir1];
                     ti_right[dir2] = ti_left[dir2];
                     usi ldof_left = cdi.tensorial_to_local(ti_left),
@@ -1898,21 +1898,23 @@ void PLENS::calc_cell_lo_inv_residual(
         // Now surface contributions
         for(usi lr_id=0; lr_id<=1; lr_id++){
             usi face_id = 2*dir + lr_id;
+
+            // sign of contribution (for subcell flux divergence)
+            // negative for "left" faces (corresponding to (L,0) flux)
+            // positive for "right" faces (corresponding to (N,R) flux)
+            float contrib_sign = -std::pow(-1, lr_id);
+
+            // flux sign: to align the flux provided by s2_surf_flux in the contravariant dir
+            // s2_surf_flux provides flux on cell faces assuming outward normals
+            // for "left" faces, contravariant vector points inwards ==> flux sign must be -ve
+            // for "right" faces, no sign change required
+            float flux_sign = -std::pow(-1, lr_id);
+            
             for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
                 usi ldof = fdi.maps[face_id].at(face_dof_id);
 
-                // sign of contribution (for subcell flux divergence)
-                // negative for "left" faces (corresponding to (L,0) flux)
-                // positive for "right" faces (corresponding to (N,R) flux)
-                float contrib_sign = -std::pow(-1, lr_id);
-
-                // flux sign: to align the flux provided by s2_surf_flux in the contravariant dir
-                // s2_surf_flux provides flux on cell faces assuming outward normals
-                // for "left" faces, contravariant vector points inwards ==> flux sign must be -ve
-                // for "right" faces, no sign change required
-                float flux_sign = -std::pow(-1, lr_id);
-
                 // norm of contravariant vector
+                // at end points, subcell normals equal contravariant vectors
                 double normal_norm = metrics.at(cell->index()).JxContra_vecs[ldof][dir].norm();
 
                 State flux; // flux wrt contravariant vector direction
