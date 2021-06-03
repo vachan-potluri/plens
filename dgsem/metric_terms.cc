@@ -121,9 +121,9 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
                     for(usi l=0; l<=id-1; l++){
                         for(usi m=0; m<=degree; m++){
                             TableIndices<dim> tim;
-                            ti0[dir] = m;
-                            ti0[dir1] = id1;
-                            ti0[dir2] = id2;
+                            tim[dir] = m;
+                            tim[dir1] = id1;
+                            tim[dir2] = id2;
                             subcell_normals[dir](ti) += Q(l,m)*
                                 JxContra_vecs[cdi.tensorial_to_local(tim)][dir];
                         }
