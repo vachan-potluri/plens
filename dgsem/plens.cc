@@ -1782,16 +1782,16 @@ void PLENS::calc_cell_ho_residual(
  * Calculates the low order inviscid residual based on subcell update. This is the only place where
  * the subcell normals of metric terms are relevant. The algorithm used is slightly complicated.
  *
- * First, an outer loop of directions is followed by loops over complementary directions. Then, a
- * loop over the subcell normals of the direction (corresponding to outer loop) is done where the
- * required inter-subcell flux is calculated and its contributions are appropriately added to the
- * residuals. For each subcell interface, two dofs get the flux contribution. The number of such
- * subcell normals (in each direction) will be @f$N+2@f$: one more than the number of dofs. This is
- * obvious because each dof is treated as a subcell and each subcell will have two faces. The
- * indexing of these subcell faces will follow the convention of MetricTerms. See the member
- * documentation of MetricTerms::subcell_normals for more details. Note the boundary cases: when
- * `i=0`, the subcell normal @f$\vec{n}_{(L,0)jk}@f$ is obtained, and when `i=N+1` the subcell
- * normal @f$\vec{n}_{(N,R)jk}@f$ is obtained.
+ * First, an outer loop of directions is followed by loops over dofs in complementary directions.
+ * Then, a loop over the subcell interfaces of the direction (corresponding to outer loop) is done
+ * where the required inter-subcell flux is calculated and its contributions are appropriately
+ * added to the residuals. For each subcell interface, two dofs (subcells) get the flux
+ * contribution. The number of such subcell normals (in each direction) will be @f$N+2@f$: one more
+ * than the number of dofs. This is obvious because each dof is treated as a subcell and each
+ * subcell will have two faces. The indexing of these subcell faces will follow the convention of
+ * MetricTerms. See the member documentation of MetricTerms::subcell_normals for more details. Note
+ * the boundary cases: when `i=0`, the subcell normal @f$\vec{n}_{(L,0)jk}@f$ is obtained, and when
+ * `i=N+1` the subcell normal @f$\vec{n}_{(N,R)jk}@f$ is obtained when accessing subcell normals.
  *
  * For the boundary cases, the numerical flux will be obtained from `s2_surf_flux`. Again, remember
  * that `s2_surf_flux` stores fluxes assuming outward normals at all faces of a cell. These
