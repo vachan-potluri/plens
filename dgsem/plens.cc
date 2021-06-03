@@ -1849,9 +1849,8 @@ void PLENS::calc_cell_lo_inv_residual(
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
 
+    // First the internal contributions
     for(usi dir=0; dir<dim; dir++){
-        // First the internal contributions
-
         // complementary directions (required for internal contributions)
         usi dir1 = (dir+1)%dim;
         usi dir2 = (dir+2)%dim;
@@ -1894,8 +1893,10 @@ void PLENS::calc_cell_lo_inv_residual(
                 } // loop over internal ids in dir
             } // loop over ids in complementary dir 2
         } // loop over ids in complementary dir 1 (internal contributions loop)
+    } // loop over directions
 
-        // Now surface contributions
+    // Now surface contributions
+    for(usi dir=0; dir<dim; dir++){
         for(usi lr_id=0; lr_id<=1; lr_id++){
             usi face_id = 2*dir + lr_id;
 
