@@ -602,6 +602,42 @@ void plens_test::calc_cell_lo_inv_residual_test() const
     problem.calc_cell_lo_inv_residual(cell, s2_surf_flux, lo_residual);
 
     problem.pcout << "Cell: " << cell->index() << "\n";
+    problem.pcout << "center: " << cell->center() << "\n";
+
+    problem.pcout << "Face connectors:\n";
+    for(usi dir=0; dir<3; dir++){
+        problem.pcout << "Direction " << dir << ": "
+            << cell->face(2*dir+1)->center() - cell->face(2*dir)->center() << "\n";
+    }
+
+    problem.pcout << "Contravariant vectors:\n";
+    for(usi dir=0; dir<3; dir++){
+        problem.pcout << "\tDirection: " << dir << "\n";
+        for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+            problem.pcout << "\t\tDoF " << i << " : "
+                << problem.metrics.at(cell->index()).JxContra_vecs[i][dir] << "\n";
+        }
+    }
+    problem.pcout << "Subcell normals:\n";
+    for(usi dir=0; dir<3; dir++){
+        problem.pcout << "\tDirection: " << dir << "\n";
+
+        usi dir1 = (dir+1)%3;
+        usi dir2 = (dir+2)%3;
+        for(usi id=0; id<=problem.fe.degree+1; id++){
+            for(usi id1=0; id1<=problem.fe.degree; id1++){
+                for(usi id2=0; id2<=problem.fe.degree; id2++){
+                    TableIndices<3> ti;
+                    ti[dir] = id;
+                    ti[dir1] = id1;
+                    ti[dir2] = id2;
+
+                    problem.pcout << "\t\t" << ti << ": "
+                        << problem.metrics.at(cell->index()).subcell_normals[dir](ti) << "\n";
+                }
+            }
+        }
+    }
     for(usi i=0; i<problem.fe.dofs_per_cell; i++){
         problem.pcout << "\tDoF: " << i << "\n";
         for(cvar var: cvar_list){
