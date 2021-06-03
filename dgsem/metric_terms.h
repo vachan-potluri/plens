@@ -88,9 +88,11 @@ class MetricTerms
      * normals as used in PLENS. The subcell normals are uni-directional: their doesn't change
      * depending on the subcell. This implies that the normal will point _into_ the subcell on the
      * "left" subcell face and will point _outward_ the subcell on the "right" subcell face.
-     * There is one more point to note: these vectors are not unit vectors. These are actually the
-     * area vectors, scaled by some weight factor. See TW1 notes 20-May-2021 or WJ-20-May-2021. So,
-     * if a subcell shares the cell's face, then the normal given by this variable will point in
+     * There is one more point to note: these vectors are not unit vectors. These are actually like
+     * the contravariant vectors on subcell surfaces. Just that the algorithm used to calculate
+     * them is not straightforward. See TW1 notes 20-May-2021 or WJ-20-May-2021.
+     *
+     * If a subcell shares the cell's face, then the normal given by this variable will point in
      * the direction of outward face normal if the face index is 1, 3 or 5. If the face index is 0,
      * 2 or 4, then the subcell normal and the face outward normal point in opposite directions.
      * Because this deals with the subcell, the ordering has to be tensorial. Access:
