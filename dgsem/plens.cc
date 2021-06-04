@@ -1855,7 +1855,7 @@ void PLENS::calc_cell_lo_inv_residual(
         usi dir1 = (dir+1)%dim;
         usi dir2 = (dir+2)%dim;
         for(usi id1=0; id1<=fe.degree; id1++){
-            for(usi id2=0; id2<fe.degree; id2++){
+            for(usi id2=0; id2<=fe.degree; id2++){
                 for(usi id=1; id<=fe.degree; id++){
                     TableIndices<dim> ti_left, ti_right;
                     ti_left[dir] = id-1;
