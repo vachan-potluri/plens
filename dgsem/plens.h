@@ -450,7 +450,7 @@ class PLENS
     /**
      * Ghosted version of PLENS::gcrk_alpha.
      */
-    LA::MPI::Vector gcrk_gh_alpha;
+    LA::MPI::Vector gh_gcrk_alpha;
 
     /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty

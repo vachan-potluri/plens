@@ -744,7 +744,7 @@ void PLENS::set_dof_handler()
  * dofs are set directly to what dealii's functions return. So all dofs of neighboring and periodic
  * cells are added instead of just those lying on common face.
  *
- * For initialising PLENS::gcrk_alpha and PLENS::gcrk_gh_alpha, the functions of
+ * For initialising PLENS::gcrk_alpha and PLENS::gh_gcrk_alpha, the functions of
  * `Utilities::MPI::Partitioner` are used. See the documentation of these variables and also
  * @ref cell_indices.
  *
@@ -777,7 +777,7 @@ void PLENS::set_sol_vecs()
         triang.global_active_cell_index_partitioner().lock();
     
     gcrk_alpha.reinit(cell_partitioner->locally_owned_range(), mpi_comm);
-    gcrk_gh_alpha.reinit(
+    gh_gcrk_alpha.reinit(
         cell_partitioner->locally_owned_range(),
         cell_partitioner->ghost_indices(),
         mpi_comm
@@ -1634,6 +1634,16 @@ void PLENS::calc_blender()
         }
     }
     prm.leave_subsection();
+
+    // now populate gcrk_alpha
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        gcrk_alpha[cell->global_active_cell_index()] = blender_calc.get_blender(cell);
+    } // loop over owned cells
+    gh_gcrk_alpha = gcrk_alpha; // communicate
+
+    // now diffuse
 } // calc_blender
 
 
