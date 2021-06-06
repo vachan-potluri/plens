@@ -23,7 +23,8 @@ t("PLENS", "class")
     // calc_aux_vars_test();
     // calc_cell_ho_residual_test();
     // plens_test::mapping_ho_metrics_test();
-    plens_test::calc_cell_lo_inv_residual_test();
+    // plens_test::calc_cell_lo_inv_residual_test();
+    plens_test::calc_blender_test();
 }
 
 
@@ -645,5 +646,31 @@ void plens_test::calc_cell_lo_inv_residual_test() const
                 << "\t\t\tHigh order: " << ho_residual[i][var] << "\n"
                 << "\t\t\tLow order: " << lo_residual[i][var] << "\n";
         }
+    }
+}
+
+
+
+/**
+ * Tests the calculation of blender
+ */
+void plens_test::calc_blender_test() const
+{
+    t.new_block("testing calc_cell_lo_inv_residual() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    problem.calc_blender();
+
+    for(auto cell: problem.dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        problem.pcout << "Global cell index: " << cell->global_active_cell_index()
+            << ", alpha: " << problem.gcrk_alpha[cell->global_active_cell_index()] << "\n";
     }
 }

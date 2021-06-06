@@ -51,6 +51,7 @@ class plens_test
     void calc_cell_ho_residual_test() const;
     void mapping_ho_metrics_test() const;
     void calc_cell_lo_inv_residual_test() const;
+    void calc_blender_test() const;
 };
 
 #endif
