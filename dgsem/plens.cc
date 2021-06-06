@@ -760,6 +760,7 @@ void PLENS::set_sol_vecs()
         g_cvars[var].reinit(locally_owned_dofs, mpi_comm);
         gold_cvars[var].reinit(locally_owned_dofs, mpi_comm);
         gcrk_cvars[var].reinit(locally_owned_dofs, mpi_comm);
+        gcrk_rhs[var].reinit(locally_owned_dofs, mpi_comm);
         gh_gcrk_cvars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
 
@@ -2053,7 +2054,7 @@ void PLENS::calc_rhs()
             }
         } // loop over dofs
     } // loop over owned cells
-}
+} // calc_rhs()
 
 
 
