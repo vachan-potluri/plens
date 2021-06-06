@@ -665,6 +665,20 @@ void plens_test::calc_blender_test() const
     problem.set_IC();
     problem.set_BC();
 
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
     problem.calc_blender();
 
     for(auto cell: problem.dof_handler.active_cell_iterators()){
