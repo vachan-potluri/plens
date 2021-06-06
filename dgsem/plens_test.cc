@@ -24,7 +24,8 @@ t("PLENS", "class")
     // calc_cell_ho_residual_test();
     // plens_test::mapping_ho_metrics_test();
     // plens_test::calc_cell_lo_inv_residual_test();
-    plens_test::calc_blender_test();
+    // plens_test::calc_blender_test();
+    plens_test::calc_rhs_test();
 }
 
 
@@ -656,7 +657,7 @@ void plens_test::calc_cell_lo_inv_residual_test() const
  */
 void plens_test::calc_blender_test() const
 {
-    t.new_block("testing calc_cell_lo_inv_residual() function");
+    t.new_block("testing calc_blender() function");
     PLENS problem(2,2);
     problem.read_mesh();
     problem.set_NS();
@@ -687,4 +688,54 @@ void plens_test::calc_blender_test() const
         problem.pcout << "Global cell index: " << cell->global_active_cell_index()
             << ", alpha: " << problem.gcrk_alpha[cell->global_active_cell_index()] << "\n";
     }
+}
+
+
+
+/**
+ * Tests PLENS::calc_rhs()
+ */
+void plens_test::calc_rhs_test() const
+{
+    t.new_block("testing calc_rhs() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    problem.calc_aux_vars();
+    problem.calc_blender();
+    problem.calc_rhs();
+
+    std::vector<psize> dof_ids(problem.fe.dofs_per_cell);
+    for(const auto& cell: problem.dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        cell->get_dof_indices(dof_ids);
+        problem.pcout << "Cell " << cell->index() << "\n";
+        for(usi i=0; i<problem.fe.dofs_per_cell; i++){
+            problem.pcout << "\tDoF: " << i << "\n";
+            for(cvar var: cvar_list){
+                problem.pcout << "\t\t" << cvar_names[var] << " "
+                    << problem.gcrk_rhs[var][dof_ids[i]] << "\n";
+            }
+        }
+    } // loop over owned cells
 }
