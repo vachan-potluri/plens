@@ -401,7 +401,7 @@ class PLENS
 
     /**
      * Global conservative variable vectors of 'c'urrent 'RK' solution. These are the main vectors
-     * which are updated in every time step
+     * which are updated in every (sub) time step
      */
     std::array<LA::MPI::Vector, 5> gcrk_cvars;
 
@@ -419,6 +419,12 @@ class PLENS
      * Like PLENS::gh_gcrk_avars, but for auxiliary variables
      */
     std::array<LA::MPI::Vector, 9> gh_gcrk_avars;
+
+    /**
+     * The vector containing "right hand side" or residual for all dofs globally. Will be used to
+     * update PLENS::gcrk_cvars.
+     */
+    std::array<LA::MPI::Vector, 5> gcrk_rhs;
 
     /**
      * Vector holding dof-wise viscosity for current RK solution.
@@ -551,6 +557,7 @@ class PLENS
         const locly_ord_surf_flux_term_t<double>& s_surf_flux,
         std::vector<State>& residual
     ) const;
+    void calc_rhs();
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);

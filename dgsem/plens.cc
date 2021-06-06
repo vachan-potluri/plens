@@ -1992,6 +1992,71 @@ void PLENS::calc_cell_lo_inv_residual(
 
 
 
+/**
+ * Calculates the rhs for all dofs and populates PLENS::gcrk_rhs. This function doesn't take
+ * ownership of the entire update process. The residual for conservative variables is set here
+ * using this simple algorithm
+ * - Loop over owned cells
+ *   - Calculate surface fluxes for stages 2 and 3
+ *   - Get high order inviscid and viscous residual
+ *   - Get low order inviscid residual
+ *   - Get the complete residual
+ *   - Set the residual in gcrk_rhs
+ *
+ * @pre This function assumes that PLENS::calc_aux_vars() and PLENS::calc_blender() are already
+ * called. Meaning, (gh_)gcrk_avars and gcrk_alpha are assumed to be ready to use
+ */
+void PLENS::calc_rhs()
+{
+    // calculate stages 2 & 3 flux
+    locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux;
+    calc_surf_flux(2, s2_surf_flux);
+    calc_surf_flux(3, s3_surf_flux);
+
+    // initialise variables
+    std::vector<State> ho_inv_residual(fe.dofs_per_cell),
+        ho_dif_residual(fe.dofs_per_cell),
+        lo_inv_residual(fe.dofs_per_cell);
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        calc_cell_ho_residual(
+            2,
+            cell,
+            s2_surf_flux,
+            ho_inv_residual
+        ); // high order inviscid
+
+        calc_cell_ho_residual(
+            3,
+            cell,
+            s3_surf_flux,
+            ho_dif_residual
+        ); // high order viscous
+
+        calc_cell_lo_inv_residual(
+            cell,
+            s2_surf_flux,
+            lo_inv_residual
+        );
+
+        cell->get_dof_indices(dof_ids);
+        const double alpha = gcrk_alpha[cell->global_active_cell_index()];
+
+        for(usi i=0; i<fe.dofs_per_cell; i++){
+            for(cvar var: cvar_list){
+                gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
+                    alpha*lo_inv_residual[i][var] +
+                    (1-alpha)*ho_inv_residual[i][var];
+            }
+        } // loop over dofs
+    } // loop over owned cells
+}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {
