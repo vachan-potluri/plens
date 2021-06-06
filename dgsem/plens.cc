@@ -770,6 +770,7 @@ void PLENS::set_sol_vecs()
 
     gcrk_mu.reinit(locally_owned_dofs, mpi_comm);
     gcrk_k.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_blender_var.reinit(locally_owned_dofs, mpi_comm);
 
     // the return type is a weak ptr, it must be converted to shared ptr for usage
     // see https://en.cppreference.com/w/cpp/memory/weak_ptr
@@ -1004,6 +1005,7 @@ void PLENS::set_BC()
         prm.leave_subsection(); // BCs
     } // loop over bid_list
 
+    pcout << "Completed setting BCs\n";
     MPI_Barrier(mpi_comm);
 } // set_BC
 
@@ -1616,6 +1618,9 @@ void PLENS::calc_aux_vars()
  * @note gh_gcrk_alpha is only used in this function. Its sole purpose is to enable the diffusion
  * operation. Once that is done, of course gcrk_alpha would have changed. But gh_gcrk_alpha is not
  * updated because it is never used beyond this function.
+ *
+ * The blender variable used in this function is simply based on gcrk_cvars. No fluxes/boundary
+ * conditions are required.
  */
 void PLENS::calc_blender()
 {
