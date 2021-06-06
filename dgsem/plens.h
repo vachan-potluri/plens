@@ -13,6 +13,7 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <algorithm>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/conditional_ostream.h>
@@ -60,8 +61,8 @@
 #include <IBCs/symmetry.h>
 #include <IBCs/periodic.h>
 
-#include <utilities/printing.h>
 #ifdef DEBUG
+#include <utilities/printing.h>
 #include <utilities/testing.h>
 #endif
 

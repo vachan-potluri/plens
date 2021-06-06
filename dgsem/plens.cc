@@ -1608,7 +1608,14 @@ void PLENS::calc_aux_vars()
 
 
 /**
- * Calculates the value of blender (@f$\alpha@f$)
+ * Calculates the value of blender (@f$\alpha@f$). First gcrk_blender_var is set according to
+ * "blender parameters/variable" entry of prm file. Then, the blender value is calculated in each
+ * cell using BlenderCalculator::get_blender() and populated in gcrk_alpha. Then, gh_gcrk_alpha is
+ * set for diffusing the value of alpha in each cell.
+ *
+ * @note gh_gcrk_alpha is only used in this function. Its sole purpose is to enable the diffusion
+ * operation. Once that is done, of course gcrk_alpha would have changed. But gh_gcrk_alpha is not
+ * updated because it is never used beyond this function.
  */
 void PLENS::calc_blender()
 {
@@ -1641,9 +1648,23 @@ void PLENS::calc_blender()
 
         gcrk_alpha[cell->global_active_cell_index()] = blender_calc.get_blender(cell);
     } // loop over owned cells
+    gcrk_alpha.compress(VectorOperation::insert);
     gh_gcrk_alpha = gcrk_alpha; // communicate
 
     // now diffuse
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
+            if(cell->face(face_id)->at_boundary()) continue;
+
+            const double cur_alpha = gcrk_alpha[cell->global_active_cell_index()];
+            const double nei_alpha =
+                gh_gcrk_alpha[cell->neighbor(face_id)->global_active_cell_index()];
+            gcrk_alpha[cell->global_active_cell_index()] = std::max(cur_alpha, 0.5*nei_alpha);
+        }
+    }
+    gcrk_alpha.compress(VectorOperation::insert);
 } // calc_blender
 
 
