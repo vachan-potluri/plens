@@ -436,6 +436,23 @@ class PLENS
     LA::MPI::Vector gcrk_blender_var;
 
     /**
+     * An array that stores the value of blender itself ($\alpha$). The elements of this vector
+     * are to be accessed using `CellAccessor::global_active_cell_index()` which is introduced in
+     * dealii-9.3.0. The construction of this vector is done using
+     * `Triangulation::global_active_cell_index_partitioner()` which returns (pointer to) an object
+     * of type `Utilities::MPI::Partitioner`. The functions
+     * `Utilities::MPI::Partitioner::locally_owned_range()` and
+     * `Utilities::MPI::Partitioner::ghost_indices()` are used to "reinit" this vector and its
+     * ghosted version (see gcrk_gh_alpha). See @ref cell_indices.
+     */
+    LA::MPI::Vector gcrk_alpha;
+
+    /**
+     * Ghosted version of PLENS::gcrk_alpha.
+     */
+    LA::MPI::Vector gcrk_gh_alpha;
+
+    /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
      * too. This list is populated by looping over all faces held by this process. This is then
      * used to form the boundary condition objects. This list enables construction of BC object

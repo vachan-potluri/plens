@@ -744,6 +744,10 @@ void PLENS::set_dof_handler()
  * dofs are set directly to what dealii's functions return. So all dofs of neighboring and periodic
  * cells are added instead of just those lying on common face.
  *
+ * For initialising PLENS::gcrk_alpha and PLENS::gcrk_gh_alpha, the functions of
+ * `Utilities::MPI::Partitioner` are used. See the documentation of these variables and also
+ * @ref cell_indices.
+ *
  * @pre read_mesh() and set_dof_handler() must be called before this
  */
 void PLENS::set_sol_vecs()
@@ -766,6 +770,19 @@ void PLENS::set_sol_vecs()
 
     gcrk_mu.reinit(locally_owned_dofs, mpi_comm);
     gcrk_k.reinit(locally_owned_dofs, mpi_comm);
+
+    // the return type is a weak ptr, it must be converted to shared ptr for usage
+    // see https://en.cppreference.com/w/cpp/memory/weak_ptr
+    const std::shared_ptr<const Utilities::MPI::Partitioner> cell_partitioner =
+        triang.global_active_cell_index_partitioner().lock();
+    
+    gcrk_alpha.reinit(cell_partitioner->locally_owned_range(), mpi_comm);
+    gcrk_gh_alpha.reinit(
+        cell_partitioner->locally_owned_range(),
+        cell_partitioner->ghost_indices(),
+        mpi_comm
+    );
+
     pcout << "Completed\n";
 
     MPI_Barrier(mpi_comm);
