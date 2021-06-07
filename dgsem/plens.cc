@@ -451,7 +451,7 @@ void PLENS::declare_parameters()
             "named <base file name>.pvtu.<output counter>."
         );
         prm.declare_entry(
-            "processor digits",
+            "processor id digits",
             "2",
             Patterns::Integer(1),
             "The number of digits to be used for processor id. For instance, if this entry is set "
@@ -2214,10 +2214,120 @@ void PLENS::calc_time_step()
 
 
 /**
- * Writes the data.
+ * Writes the data. The following variables are written:
+ * - gcrk_cvars
+ * - gcrk_avars
+ * - gcrk_mu and gcrk_k
+ * - gcrk_alpha
+ * - Subdomain id (processor id)
+ * - Cell indices (cell->global_active_cell_index())
+ *
+ * Since current RK solution is being written, it is expected that this, like
+ * PLENS::calc_time_step() will be called during the first RK step, after calculation of blender,
+ * and before the first update.
+ *
+ * The location and naming of files is described in PLENS::declare_parameters(). Additionally, to
+ * keep a log of data output time, a file "<base file name>.times" is written. This file contains
+ * the output counter and the current time so that one can know at what times did the data output
+ * happen.
  */
 void PLENS::write()
-{}
+{
+    std::string op_dir, base_filename;
+    usi proc_id_digits;
+    prm.enter_subsection("data output");
+    {
+        op_dir = prm.get("directory");
+        base_filename = prm.get("base file name");
+        proc_id_digits = prm.get_integer("processor id digits");
+    }
+    prm.leave_subsection();
+
+    DataOut<dim> data_out;
+    DataOutBase::VtkFlags flags;
+    flags.write_higher_order_cells = true;
+    data_out.set_flags(flags);
+
+    data_out.attach_dof_handler(dof_handler);
+    for(cvar var: cvar_list) data_out.add_data_vector(gcrk_cvars[var], cvar_names[var]);
+    for(avar var: avar_list) data_out.add_data_vector(gcrk_avars[var], avar_names[var]);
+    data_out.add_data_vector(gcrk_mu, "mu");
+    data_out.add_data_vector(gcrk_k, "k");
+    data_out.add_data_vector(gcrk_alpha, "alpha");
+
+    // subdomain id
+    // Vector<float> subdom(triang.n_active_cells());
+    // for(float &x: subdom) x = triang.locally_owned_subdomain();
+    // data_out.add_data_vector(subdom, "Subdomain");
+
+    // cell indices
+    // Vector<float> cell_ids(triang.n_active_cells());
+    // for(const auto &cell: dof_handler.active_cell_iterators()){
+    //     if(!(cell->is_locally_owned())) continue;
+    //     const psize id = cell->global_active_cell_index();
+    //     cell_ids[id] = id;
+    // }
+    // data_out.add_data_vector(cell_ids, "Cell_indices");
+
+    data_out.build_patches(
+        *mapping_ptr,
+        mapping_ptr->get_degree(),
+        DataOut<dim>::CurvedCellRegion::curved_inner_cells
+    );
+
+    // processor file
+    std::ofstream proc_file(
+        op_dir + "/" + base_filename +
+        Utilities::int_to_string(
+            Utilities::MPI::this_mpi_process(mpi_comm),
+            proc_id_digits
+        ) + ".vtu." + std::to_string(output_counter)
+    );
+    AssertThrow(
+        proc_file.good(),
+        StandardExceptions::ExcMessage(
+            "Unable to open processor files. Make sure the specified output directory exists."
+        )
+    );
+    data_out.write_vtu(proc_file);
+
+    // master file
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
+        std::vector<std::string> filenames;
+        for(usi i=0; i<Utilities::MPI::n_mpi_processes(mpi_comm); i++){
+            // The filenames of processor data files in pvtu record will be treated relative to
+            // the path of pvtu record itself. Since both the pvtu record and processor files exist
+            // in the same directory, prepending output directory is not required
+            filenames.emplace_back(
+                base_filename + Utilities::int_to_string(i, proc_id_digits) + ".vtu." +
+                std::to_string(output_counter)
+            );
+        } // loop over processes
+
+        std::ofstream master_file(
+            op_dir + "/" + base_filename + ".pvtu." + std::to_string(output_counter)
+        );
+        AssertThrow(
+            master_file.good(),
+            StandardExceptions::ExcMessage(
+                "Unable to open master file. Make sure the specified output directory exists."
+            )
+        );
+        data_out.write_pvtu_record(master_file, filenames);
+    } // root process
+
+    // append current time and output counter in <base file name>.times
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
+        std::ofstream time_file(op_dir + "/" + base_filename + ".times", std::ios::app);
+        AssertThrow(
+            time_file.good(),
+            StandardExceptions::ExcMessage("Unable to open times file.")
+        );
+        time_file << output_counter << " " << cur_time << "\n";
+        time_file.close();
+    }
+    output_counter++;
+} // write()
 
 
 

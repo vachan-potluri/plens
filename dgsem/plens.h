@@ -40,6 +40,7 @@
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/lac/full_matrix.h>
+#include <deal.II/numerics/data_out.h>
 
 #include "dtype_aliases.h"
 #include "LA.h"
