@@ -56,17 +56,27 @@ class RKCoeffs
     public:
 
     /**
-     * The order/degree of RK update.
+     * The order/degree of RK update. This is kept public and non-const because it is not used in
+     * any functions other than RKCoeffs::reinit(). Its value is set based on the argument passed
+     * to RKCoeffs::reinit().
      */
-    const usi degree;
+    usi degree;
 
 
 
     /**
-     * Constructor. Based on the order, sets the number of stages. Currently, only upto 3rd degree
+     * Default constructor. Idle, does nothing. The class itself is not fully constructed unless
+     * RKCoeffs::reinit() is called.
+     */
+    RKCoeffs() = default;
+
+
+
+    /**
+     * Initialiser. Based on the order, sets the number of stages. Currently, only upto 3rd degree
      * are supported.
      */
-    RKCoeffs(const usi d): degree(d)
+    void reinit(const usi d)
     {
         AssertThrow(
             d >= 1 && d <= 3,
@@ -74,6 +84,8 @@ class RKCoeffs
                 "Currently only upto 3rd order RK updates are supported."
             )
         );
+
+        degree = d;
 
         // Number of stages is equal to degree for upto 3rd order
         n_stages_ = d;
@@ -102,7 +114,9 @@ class RKCoeffs
 
 
     /**
-     * Returns the number of stages
+     * Returns the number of stages.
+     *
+     * @warning Assumes RKCoeffs::reinit() has already been called
      */
     usi n_stages() const {return n_stages_;}
 
@@ -115,6 +129,7 @@ class RKCoeffs
      *
      * @warning No assertion on the ranges of `stage` and `id` are done. Thus if this function is
      * called with out of range values, then errors will show-up.
+     * @warning Assumes RKCoeffs::reinit() has already been called
      */
     double get(const usi stage, const usi id) const {return coeffs_[stage][id];}
 
@@ -124,7 +139,8 @@ class RKCoeffs
     static void test()
     {
         utilities::Testing t("RKCoeffs", "class");
-        RKCoeffs rkc(3);
+        RKCoeffs rkc;
+        rkc.reinit(3);
         for(usi stage_id=0; stage_id<rkc.n_stages(); stage_id++){
             std::cout << "Stage " << stage_id << " ";
             for(usi i=0; i<3; i++) std::cout << rkc.get(stage_id, i) << " ";
