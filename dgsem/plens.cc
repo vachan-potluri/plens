@@ -397,6 +397,43 @@ void PLENS::declare_parameters()
     }
     prm.leave_subsection(); // blender parameters
 
+    prm.enter_subsection("time integration");
+    {
+        prm.declare_entry(
+            "RK order",
+            "1",
+            Patterns::Integer(1,3),
+            "Order of RK time integration. Currently only upto 3rd order is supported."
+        );
+        prm.declare_entry(
+            "Courant number",
+            "0.1",
+            Patterns::Double(1e-8,1),
+            "Courant number. Range: [1e-8, 1]."
+        );
+        prm.declare_entry(
+            "start time",
+            "0",
+            Patterns::Double(),
+            "Simulation start time."
+        );
+        prm.declare_entry(
+            "starting output counter",
+            "0",
+            Patterns::Integer(),
+            "The value of output counter at the beginning of simulation. Each time step will "
+            "increment this counter by 1."
+        );
+        prm.declare_entry(
+            "end time",
+            "1",
+            Patterns::Double(),
+            "Simulation end time. If 'start time' is non-zero, then the end time provided here is "
+            "treated as the absolute end time, and not relative to start time."
+        );
+    }
+    prm.leave_subsection(); // time integration
+
     std::ofstream sample_file("sample_input_file.prm");
     AssertThrow(
         sample_file.good(),
