@@ -2113,6 +2113,8 @@ void PLENS::calc_rhs()
             }
         } // loop over dofs
     } // loop over owned cells
+
+    for(cvar var: cvar_list) gcrk_rhs[var].compress(VectorOperation::insert);
 } // calc_rhs()
 
 
@@ -2194,7 +2196,7 @@ void PLENS::calc_time_step()
  * - Set g_cvars to gcrk_cvars (at the end)
  */
 void update()
-{}
+{} // update()
 
 
 
