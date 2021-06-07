@@ -24,8 +24,9 @@ t("PLENS", "class")
     // calc_cell_ho_residual_test();
     // plens_test::mapping_ho_metrics_test();
     // plens_test::calc_cell_lo_inv_residual_test();
-    plens_test::calc_blender_test();
+    // plens_test::calc_blender_test();
     // plens_test::calc_rhs_test();
+    plens_test::calc_time_step_test();
 }
 
 
@@ -739,4 +740,42 @@ void plens_test::calc_rhs_test() const
             }
         }
     } // loop over owned cells
+}
+
+
+
+/**
+ * Tests PLENS::calc_time_step()
+ */
+void plens_test::calc_time_step_test() const
+{
+    t.new_block("testing calc_time_step() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+    problem.read_time_settings();
+
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    problem.assert_positivity();
+    problem.calc_aux_vars();
+    problem.calc_time_step();
+
+    problem.pcout << "Time step: " << problem.time_step << "\n";
 }
