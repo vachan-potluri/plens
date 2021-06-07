@@ -537,6 +537,41 @@ class PLENS
      */
     BlenderCalculator blender_calc;
 
+    /**
+     * The object containing RK update coefficients.
+     */
+    RKCoeffs rk_coeffs;
+
+    /**
+     * Current simulation time.
+     */
+    double cur_time;
+
+    /**
+     * Simulation end time.
+     */
+    double end_time;
+
+    /**
+     * Current time step.
+     */
+    double time_step;
+
+    /**
+     * Courant number for the simulation.
+     */
+    double Co;
+
+    /**
+     * Output counter.
+     */
+    unsigned int output_counter;
+
+    /**
+     * Number of time steps taken to reach current time from start time.
+     */
+    unsigned int n_time_steps;
+
 
 
     void form_neighbor_face_matchings(const double tol = 1e-4);
@@ -577,6 +612,7 @@ class PLENS
     void set_sol_vecs();
     void set_IC();
     void set_BC();
+    void read_time_settings();
 
 
 

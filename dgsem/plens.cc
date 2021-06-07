@@ -420,9 +420,9 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "starting output counter",
             "0",
-            Patterns::Integer(),
-            "The value of output counter at the beginning of simulation. Each time step will "
-            "increment this counter by 1."
+            Patterns::Integer(0),
+            "The value of output counter at the beginning of simulation. Every time data output "
+            "is done, this counter will be incremented by 1."
         );
         prm.declare_entry(
             "end time",
@@ -1046,6 +1046,28 @@ void PLENS::set_BC()
     pcout << "Completed setting BCs\n";
     MPI_Barrier(mpi_comm);
 } // set_BC
+
+
+
+/**
+ * Reads all the time integration settings and stores them in appropriate variables.
+ */
+void PLENS::read_time_settings()
+{
+    prm.enter_subsection("time integration");
+    {
+        usi rk_order = prm.get_integer("RK order");
+        rk_coeffs.reinit(rk_order);
+
+        cur_time = prm.get_double("start time");
+        end_time = prm.get_double("end time");
+        Co = prm.get_double("Courant number");
+        output_counter = prm.get_integer("starting output counter");
+    }
+    prm.leave_subsection();
+
+    n_time_steps = 0;
+}
 
 
 
