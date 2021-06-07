@@ -2179,6 +2179,25 @@ void PLENS::calc_time_step()
 
 
 
+/**
+ * The update function: updates the solution by one time step. The algorithm is as follows:
+ * - Set gcrk_cvars and gold_cvars to g_cvars
+ * - Start loop over RK stages
+ *   - Call assert_positivity()
+ *   - Call calc_aux_vars()
+ *   - If in first stage:
+ *     - Calculate time step
+ *   - Call calc_blender()
+ *   - Call calc_rhs()
+ *   - Update gcrk_cvars based on gold_cvars, gcrk_rhs and time_step
+ * - Increment cur_time and n_time_steps
+ * - Set g_cvars to gcrk_cvars (at the end)
+ */
+void update()
+{}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {
