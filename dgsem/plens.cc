@@ -2136,10 +2136,46 @@ void PLENS::calc_rhs()
  * function is called during the first RK step, before the first update and after calling
  * calc_aux_vars() because that is where gcrk_mu will be set.
  *
- * @pre This function assumes gcrk_mu is already set.
+ * @pre This function assumes gcrk_mu is already set. Also assumes positivity of density.
  */
 void PLENS::calc_time_step()
-{}
+{    
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+
+    double this_proc_step = 1e6; // stable time step (factored) for this process
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        cell->get_dof_indices(dof_ids);
+        double radius = 0.5*cell->diameter();
+
+        for(psize i: dof_ids){
+            State cons;
+            for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+            double a = ns_ptr->get_a(cons);
+            double max_vel = std::max({
+                fabs(cons[1]/cons[0]),
+                fabs(cons[2]/cons[0]),
+                fabs(cons[3]/cons[0])
+            });
+            // factoring out 1/N^2
+            double cur_step = radius/(max_vel + a +
+                fe.degree*fe.degree*gcrk_mu[i]/(radius*cons[0])
+            );
+            if(cur_step < this_proc_step) this_proc_step = cur_step;
+        }
+    } // loop over owned cells
+    MPI_Barrier(mpi_comm);
+
+    // first perform reduction (into "time_step" of 0-th process)
+    MPI_Reduce(&this_proc_step, &time_step, 1, MPI_DOUBLE, MPI_MIN, 0, mpi_comm);
+
+    // now multiply by Co/N^2 and broadcast
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
+        time_step *= Co/(fe.degree*fe.degree);
+    }
+    MPI_Bcast(&time_step, 1, MPI_DOUBLE, 0, mpi_comm);
+} // calc_time_step
 
 
 
