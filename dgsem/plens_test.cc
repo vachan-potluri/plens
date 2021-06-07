@@ -24,8 +24,8 @@ t("PLENS", "class")
     // calc_cell_ho_residual_test();
     // plens_test::mapping_ho_metrics_test();
     // plens_test::calc_cell_lo_inv_residual_test();
-    // plens_test::calc_blender_test();
-    plens_test::calc_rhs_test();
+    plens_test::calc_blender_test();
+    // plens_test::calc_rhs_test();
 }
 
 
@@ -687,6 +687,7 @@ void plens_test::calc_blender_test() const
 
         problem.pcout << "Global cell index: " << cell->global_active_cell_index()
             << ", alpha: " << problem.gcrk_alpha[cell->global_active_cell_index()] << "\n";
+        problem.pcout << "\tCell center: " << cell->center() << "\n";
     }
 }
 
