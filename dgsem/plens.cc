@@ -2182,6 +2182,14 @@ void PLENS::calc_time_step()
 
 
 /**
+ * Writes the data.
+ */
+void PLENS::write()
+{}
+
+
+
+/**
  * The update function: updates the solution by one time step. The algorithm is as follows:
  * - Set gcrk_cvars and gold_cvars to g_cvars
  * - Start loop over RK stages

@@ -601,6 +601,7 @@ class PLENS
     ) const;
     void calc_rhs();
     void calc_time_step();
+    void write();
     void update();
 
     public:
