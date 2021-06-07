@@ -21,6 +21,7 @@
 #include "dgsem/cell_dof_info.h"
 #include "dgsem/change_of_basis_matrix.h"
 #include "dgsem/blender_calculator.h"
+#include "dgsem/rk_coeffs.h"
 #include <iostream>
 
 int main(int argc, char** argv){
@@ -48,6 +49,7 @@ int main(int argc, char** argv){
     // CellDoFInfo::test();
     // ChangeOfBasisMatrix<3>::test(); // template argument doesn't matter for test() as it is static
     // BlenderCalculator::test();
+    RKCoeffs::test();
     #endif
 
     plens_test();

@@ -14,6 +14,11 @@
 
 #include "dtype_aliases.h"
 
+#ifdef DEBUG
+#include <iostream>
+#include <utilities/testing.h>
+#endif
+
 using namespace dealii;
 
 /**
@@ -29,7 +34,7 @@ using namespace dealii;
  * 1. The coefficient of previous RK stage solution
  * 1. The coefficient of the product of time step and residual
  *
- * These coefficients can be accessed using RKCoeffs::get().
+ * These coefficients can be accessed using RKCoeffs::get(). See Gottlieb and Shu (1998).
  */
 class RKCoeffs
 {
@@ -112,6 +117,21 @@ class RKCoeffs
      * called with out of range values, then errors will show-up.
      */
     double get(const usi stage, const usi id) const {return coeffs_[stage][id];}
+
+
+
+    #ifdef DEBUG
+    static void test()
+    {
+        utilities::Testing t("RKCoeffs", "class");
+        RKCoeffs rkc(3);
+        for(usi stage_id=0; stage_id<rkc.n_stages(); stage_id++){
+            std::cout << "Stage " << stage_id << " ";
+            for(usi i=0; i<3; i++) std::cout << rkc.get(stage_id, i) << " ";
+            std::cout << "\n";
+        }
+    }
+    #endif
 };
 
 #endif
