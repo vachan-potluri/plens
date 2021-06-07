@@ -260,14 +260,20 @@ class plens_test; // forward declaration
  * incorporating diffusive terms.
  *
  * This is generally done in the following steps
+ * - PLENS::assert_positivity()
  * - PLENS::calc_aux_vars()
  *   - Calculates the auxiliary variables (using eq. (B.14) of Hennemann et al (2021))
  *   - Invokes PLENS::calc_surf_flux() and PLENS::calc_cell_cons_grad() cell-by-cell
  * - PLENS::calc_blender()
  *   - Calculates the value of @f$\alpha@f$. This will subsequently be used for calculating
- * inviscid contribution
+ *     inviscid contribution
  *   - This function may even be called before PLENS::calc_aux_vars()
- * - so on ...
+ * - PLENS::calc_rhs()
+ *   - Calculates the complete residual.
+ *   - Internally invokes PLENS::calc_surf_flux(), PLENS::calc_cell_ho_residual() and
+ *     PLENS::calc_cell_lo_inv_residual()
+ *
+ * Then, all these steps are put in a time loop to complete the simulation.
  */
 class PLENS
 {
