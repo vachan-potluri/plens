@@ -2095,6 +2095,32 @@ void PLENS::calc_rhs()
 
 
 
+/**
+ * Calculates time step based on gcrk_cvars. The minimum of stable time step over all cells (across
+ * all processes) is taken as the time step. The stable time step formula is taken from Hesthaven's
+ * book.
+ * @f[
+ * \Delta t = \frac{h}{N^2} \frac{C}{ \left( |u|+|a| \right) + N^2\nu/h }
+ * @f]
+ * where @f$C@f$ is a constant and @f$h@f$ is the cell size.
+ *
+ * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the cell radius.
+ *
+ * @remark It was noted during pens2D project that the actual expression of Hethaven which uses
+ * $\mu$ in place of $\nu$ in the above formula is dimensionally incorrect.
+ *
+ * @note Although time step calculation is required only once during an update, this function uses
+ * gcrk_cvars and not g_cvars because gcrk_mu will also be required. Thus, it is expected that this
+ * function is called during the first RK step, before the first update and after calling
+ * calc_aux_vars() because that is where gcrk_mu will be set.
+ *
+ * @pre This function assumes gcrk_mu is already set.
+ */
+void PLENS::calc_time_step()
+{}
+
+
+
 #ifdef DEBUG
 void PLENS::test()
 {

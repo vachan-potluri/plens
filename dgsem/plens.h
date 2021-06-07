@@ -565,6 +565,7 @@ class PLENS
         std::vector<State>& residual
     ) const;
     void calc_rhs();
+    void calc_time_step();
 
     public:
     PLENS(const usi mhod = 2, const usi fe_degree = 1);
