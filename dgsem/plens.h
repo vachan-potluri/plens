@@ -60,6 +60,7 @@
 #include <IBCs/uniform_temp_wall.h>
 #include <IBCs/symmetry.h>
 #include <IBCs/periodic.h>
+#include "rk_coeffs.h"
 
 #ifdef DEBUG
 #include <utilities/printing.h>
