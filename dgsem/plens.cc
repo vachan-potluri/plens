@@ -434,6 +434,38 @@ void PLENS::declare_parameters()
     }
     prm.leave_subsection(); // time integration
 
+    prm.enter_subsection("data output");
+    {
+        prm.declare_entry(
+            "directory",
+            "result",
+            Patterns::DirectoryName(),
+            "The directory into which all results will be put."
+        );
+        prm.declare_entry(
+            "base file name",
+            "output",
+            Patterns::Anything(),
+            "The base name to be used for output files. The individual processor files will be "
+            "named <base file name><proc id>.vtu.<output counter> and the master file will be "
+            "named <base file name>.pvtu.<output counter>."
+        );
+        prm.declare_entry(
+            "processor digits",
+            "2",
+            Patterns::Integer(1),
+            "The number of digits to be used for processor id. For instance, if this entry is set "
+            "to 3, then processor id 4 will be represented as '004' in the output files."
+        );
+        prm.declare_entry(
+            "write frequency",
+            "100",
+            Patterns::Integer(1),
+            "The solution will be written after these many time steps."
+        );
+    }
+    prm.leave_subsection(); // data output
+
     std::ofstream sample_file("sample_input_file.prm");
     AssertThrow(
         sample_file.good(),
