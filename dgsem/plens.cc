@@ -2085,21 +2085,26 @@ void PLENS::calc_cell_lo_inv_residual(
 
 
 /**
- * Calculates the rhs for all dofs and populates PLENS::gcrk_rhs. This function doesn't take
- * ownership of the entire update process. The residual for conservative variables is set here
- * using this simple algorithm
+ * Calculates the rhs for all dofs and populates PLENS::gcrk_rhs. This function takes ownership of
+ * the entire update residual calculation process. In other words, this function calculates the
+ * residual using gcrk_cvars right from asserting positivity to calculating low order inviscid
+ * contribution. The residual for conservative variables is set here using this simple algorithm
+ * - Assert positivity
+ * - Calculate auxiliary variables
+ * - Calculate blender
  * - Loop over owned cells
  *   - Calculate surface fluxes for stages 2 and 3
  *   - Get high order inviscid and viscous residual
  *   - Get low order inviscid residual
  *   - Get the complete residual
  *   - Set the residual in gcrk_rhs
- *
- * @pre This function assumes that PLENS::calc_aux_vars() and PLENS::calc_blender() are already
- * called. Meaning, (gh_)gcrk_avars and gcrk_alpha are assumed to be ready to use
  */
 void PLENS::calc_rhs()
 {
+    assert_positivity();
+    calc_aux_vars();
+    calc_blender();
+    
     // calculate stages 2 & 3 flux
     locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux;
     calc_surf_flux(2, s2_surf_flux);

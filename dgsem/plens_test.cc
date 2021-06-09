@@ -25,9 +25,9 @@ t("PLENS", "class")
     // mapping_ho_metrics_test();
     // calc_cell_lo_inv_residual_test();
     // calc_blender_test();
-    // calc_rhs_test();
+    calc_rhs_test();
     // calc_time_step_test();
-    write_test();
+    // write_test();
 }
 
 
@@ -723,8 +723,6 @@ void plens_test::calc_rhs_test() const
         problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
     }
 
-    problem.calc_aux_vars();
-    problem.calc_blender();
     problem.calc_rhs();
 
     std::vector<psize> dof_ids(problem.fe.dofs_per_cell);
