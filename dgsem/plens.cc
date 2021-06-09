@@ -2256,9 +2256,9 @@ void PLENS::write()
     data_out.add_data_vector(gcrk_alpha, "alpha");
 
     // subdomain id
-    // Vector<float> subdom(triang.n_active_cells());
-    // for(float &x: subdom) x = triang.locally_owned_subdomain();
-    // data_out.add_data_vector(subdom, "Subdomain");
+    Vector<float> subdom(triang.n_active_cells());
+    for(float &x: subdom) x = triang.locally_owned_subdomain();
+    data_out.add_data_vector(subdom, "Subdomain");
 
     // cell indices
     // Vector<float> cell_ids(triang.n_active_cells());
