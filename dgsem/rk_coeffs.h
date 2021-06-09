@@ -32,7 +32,8 @@ using namespace dealii;
  * In each step, 3 coefficients are required:
  * 1. The coefficient of old time step solution
  * 1. The coefficient of previous RK stage solution
- * 1. The coefficient of the product of time step and residual
+ * 1. The coefficient of the product of time step and residual calculated based on previous RK
+ *    stage solution
  *
  * These coefficients can be accessed using RKCoeffs::get(). See Gottlieb and Shu (1998).
  */
