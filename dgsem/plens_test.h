@@ -54,6 +54,7 @@ class plens_test
     void calc_blender_test() const;
     void calc_rhs_test() const;
     void calc_time_step_test() const;
+    void write_test() const;
 };
 
 #endif

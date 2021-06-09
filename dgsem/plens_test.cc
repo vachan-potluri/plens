@@ -22,11 +22,12 @@ t("PLENS", "class")
     // calc_cell_cons_grad_test();
     // calc_aux_vars_test();
     // calc_cell_ho_residual_test();
-    // plens_test::mapping_ho_metrics_test();
-    // plens_test::calc_cell_lo_inv_residual_test();
-    // plens_test::calc_blender_test();
-    // plens_test::calc_rhs_test();
-    plens_test::calc_time_step_test();
+    // mapping_ho_metrics_test();
+    // calc_cell_lo_inv_residual_test();
+    // calc_blender_test();
+    // calc_rhs_test();
+    // calc_time_step_test();
+    write_test();
 }
 
 
@@ -778,4 +779,42 @@ void plens_test::calc_time_step_test() const
     problem.calc_time_step();
 
     problem.pcout << "Time step: " << problem.time_step << "\n";
+}
+
+
+
+/**
+ * Tests PLENS::write()
+ */
+void plens_test::write_test() const
+{
+    t.new_block("testing write() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+
+    // set gcrk_cvars to g_cvars
+    // since time loop is not started, this is manually done
+    for(cvar var: cvar_list){
+        // std::cout << "\tVar: " << cvar_names[var] << "\n";
+        for(auto i: problem.locally_owned_dofs){
+            problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+            // std::cout << "\t\tDoF " << i << ": " << problem.gcrk_cvars[var][i] << "\n";
+        }
+    }
+    for(cvar var: cvar_list){
+        problem.gcrk_cvars[var].compress(VectorOperation::insert);
+        problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+    }
+
+    problem.assert_positivity();
+    problem.calc_aux_vars();
+    problem.calc_blender();
+    problem.write();
+
+    problem.pcout << "Written solution. Check!\n";
 }
