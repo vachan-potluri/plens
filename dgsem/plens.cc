@@ -2220,7 +2220,6 @@ void PLENS::calc_time_step()
  * - gcrk_mu and gcrk_k
  * - gcrk_alpha
  * - Subdomain id (processor id)
- * - Cell indices (cell->global_active_cell_index())
  *
  * Since current RK solution is being written, it is expected that this, like
  * PLENS::calc_time_step() will be called during the first RK step, after calculation of blender,
