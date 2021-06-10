@@ -401,9 +401,9 @@ void PLENS::declare_parameters()
     {
         prm.declare_entry(
             "RK order",
-            "1",
-            Patterns::Integer(1,3),
-            "Order of RK time integration. Currently only upto 3rd order is supported."
+            "4",
+            Patterns::Integer(4),
+            "Order of RK time integration. Currently only 4th order is supported."
         );
         prm.declare_entry(
             "Courant number",
