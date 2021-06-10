@@ -2366,10 +2366,62 @@ void PLENS::update()
     calc_time_step();
     if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
     pcout << "Current time: " << cur_time << " time step: " << time_step << "\n";
+    if(n_time_steps%write_freq == 0){
+        write();
+        pcout << "Writing solution\n";
+    }
+    pcout << "\tRK stage 1\n";
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            gcrk_cvars[var][i] = gcrk_cvars[var][i] +
+                time_step*rk4_coeffs.a_outer[0]*gcrk_rhs[var][i];
+            gprk_rhs[var][i] = gcrk_rhs[var][i];
+        }
+        gcrk_cvars[var].compress(VectorOperation::insert);
+        gh_gcrk_cvars[var] = gcrk_cvars[var];
+    }
 
     // stage 2
+    calc_rhs();
+    pcout << "\tRK stage 2\n";
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            gcrk_cvars[var][i] = gcrk_cvars[var][i] + time_step*(
+                (rk4_coeffs.a_inner[0]-rk4_coeffs.a_outer[0])*gprk_rhs[var][i] +
+                rk4_coeffs.a_outer[1]*gcrk_rhs[var][i]
+            );
+            gpprk_rhs[var][i] = gprk_rhs[var][i];
+            gprk_rhs[var][i] = gcrk_rhs[var][i];
+        }
+        gcrk_cvars[var].compress(VectorOperation::insert);
+        gh_gcrk_cvars[var] = gcrk_cvars[var];
+    }
 
     // stages 3-5
+    for(usi rk_stage=3; rk_stage<=5; rk_stage++){
+        calc_rhs();
+        pcout << "\tRK stage " << rk_stage << "\n";
+        for(cvar var: cvar_list){
+            for(psize i: locally_owned_dofs){
+                gcrk_cvars[var][i] = gcrk_cvars[var][i] + time_step*(
+                    (rk4_coeffs.b[rk_stage-3]-rk4_coeffs.a_inner[rk_stage-3])*gpprk_rhs[var][i] +
+                    (rk4_coeffs.a_inner[rk_stage-2]-rk4_coeffs.a_outer[rk_stage-2])*
+                        gprk_rhs[var][i] +
+                    rk4_coeffs.a_outer[rk_stage-1]*gcrk_rhs[var][i]
+                );
+                gpprk_rhs[var][i] = gprk_rhs[var][i];
+                gprk_rhs[var][i] = gcrk_rhs[var][i];
+            }
+            gcrk_cvars[var].compress(VectorOperation::insert);
+            gh_gcrk_cvars[var] = gcrk_cvars[var];
+        }
+    }
+
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            g_cvars[var][i] = gcrk_cvars[var][i];
+        }
+    }
 
     cur_time += time_step;
     n_time_steps++;
