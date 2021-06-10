@@ -2334,11 +2334,26 @@ void PLENS::write()
 
 
 /**
- * 
+ * Updates the solution for one time step. Currently, only 5 stage 3 register RK4 algorithm is
+ * used. See RK4Stage5Register3 class documentation for details. PLENS::g_cvars is used like a
+ * buffer before and after the update. Although the algorithm is a 3 register one, since the
+ * solution data variable is not being overwritten here, the implementation will be done like a
+ * 3N scheme: one register for solution and 3 registers for residuals.
+ *
+ * See also WJ-09-Jun-2021
  */
 void PLENS::update()
 {
-    //
+    // initialise
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            gcrk_rhs[var][i] = g_cvars[var][i];
+        }
+        gcrk_cvars[var].compress(VectorOperation::insert);
+        gh_gcrk_cvars[var] = gcrk_cvars[var];
+    }
+
+    // stage 1
 } // update()
 
 

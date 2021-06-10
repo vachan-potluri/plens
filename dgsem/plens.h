@@ -547,7 +547,7 @@ class PLENS
     /**
      * The class instance containing RK4 coefficients.
      */
-    RK4Stage5Register3 rk4_coeffs;
+    const RK4Stage5Register3 rk4_coeffs;
 
     /**
      * Current simulation time.
