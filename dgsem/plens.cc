@@ -1096,6 +1096,12 @@ void PLENS::read_time_settings()
     }
     prm.leave_subsection();
 
+    prm.enter_subsection("data output");
+    {
+        write_freq = prm.get_integer("write frequency");
+    }
+    prm.leave_subsection();
+
     n_time_steps = 0;
 }
 
@@ -2354,6 +2360,19 @@ void PLENS::update()
     }
 
     // stage 1
+    calc_rhs();
+    // time step must be calculated after calling calc_rhs(), otherwise gcrk_mu would be unset and
+    // positivity would be unasserted
+    calc_time_step();
+    if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
+    pcout << "Current time: " << cur_time << " time step: " << time_step << "\n";
+
+    // stage 2
+
+    // stages 3-5
+
+    cur_time += time_step;
+    n_time_steps++;
 } // update()
 
 

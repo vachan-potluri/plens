@@ -579,6 +579,11 @@ class PLENS
      */
     unsigned int n_time_steps;
 
+    /**
+     * The write frequency
+     */
+    usi write_freq;
+
 
 
     void form_neighbor_face_matchings(const double tol = 1e-4);
