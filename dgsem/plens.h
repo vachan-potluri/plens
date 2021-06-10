@@ -49,6 +49,7 @@
 #include "cell_dof_info.h"
 #include "change_of_basis_matrix.h"
 #include "blender_calculator.h"
+#include "rk4_stage5_register3.h"
 #include <utilities/split_string.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
@@ -542,6 +543,11 @@ class PLENS
      * The blender calculator object
      */
     BlenderCalculator blender_calc;
+
+    /**
+     * The class instance containing RK4 coefficients.
+     */
+    RK4Stage5Register3 rk4_coeffs;
 
     /**
      * Current simulation time.
