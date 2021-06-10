@@ -25,9 +25,10 @@ t("PLENS", "class")
     // mapping_ho_metrics_test();
     // calc_cell_lo_inv_residual_test();
     // calc_blender_test();
-    calc_rhs_test();
+    // calc_rhs_test();
     // calc_time_step_test();
     // write_test();
+    update_test();
 }
 
 
@@ -815,4 +816,25 @@ void plens_test::write_test() const
     problem.write();
 
     problem.pcout << "Written solution. Check!\n";
+}
+
+
+
+/**
+ * Tests PLENS::update()
+ */
+void plens_test::update_test() const
+{
+    t.new_block("testing update() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+    problem.read_time_settings();
+
+    problem.update();
+    problem.update();
 }

@@ -55,6 +55,7 @@ class plens_test
     void calc_rhs_test() const;
     void calc_time_step_test() const;
     void write_test() const;
+    void update_test() const;
 };
 
 #endif
