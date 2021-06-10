@@ -827,9 +827,10 @@ void PLENS::set_sol_vecs()
 
     for(cvar var: cvar_list){
         g_cvars[var].reinit(locally_owned_dofs, mpi_comm);
-        gold_cvars[var].reinit(locally_owned_dofs, mpi_comm);
         gcrk_cvars[var].reinit(locally_owned_dofs, mpi_comm);
         gcrk_rhs[var].reinit(locally_owned_dofs, mpi_comm);
+        gprk_rhs[var].reinit(locally_owned_dofs, mpi_comm);
+        gpprk_rhs[var].reinit(locally_owned_dofs, mpi_comm);
         gh_gcrk_cvars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
 

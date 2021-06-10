@@ -401,12 +401,6 @@ class PLENS
     std::array<LA::MPI::Vector, 5> g_cvars;
 
     /**
-     * Global conservative variable vectors of previous time step. These are required in RK
-     * updates
-     */
-    std::array<LA::MPI::Vector, 5> gold_cvars;
-
-    /**
      * Global conservative variable vectors of 'c'urrent 'RK' solution. These are the main vectors
      * which are updated in every (sub) time step
      */
@@ -432,6 +426,18 @@ class PLENS
      * update PLENS::gcrk_cvars.
      */
     std::array<LA::MPI::Vector, 5> gcrk_rhs;
+
+    /**
+     * Like PLENS::gcrk_rhs, but for previous stage RK solution. Used in the last three stages of
+     * RK4 update.
+     */
+    std::array<LA::MPI::Vector, 5> gprk_rhs;
+
+    /**
+     * Like PLENS::gprk_rhs, but for previous-of-previous stage RK solution. Used in the last three
+     * stages of RK4 update.
+     */
+    std::array<LA::MPI::Vector, 5> gpprk_rhs;
 
     /**
      * Vector holding dof-wise viscosity for current RK solution.
