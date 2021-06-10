@@ -1088,9 +1088,6 @@ void PLENS::read_time_settings()
 {
     prm.enter_subsection("time integration");
     {
-        usi rk_order = prm.get_integer("RK order");
-        rk_coeffs.reinit(rk_order);
-
         cur_time = prm.get_double("start time");
         end_time = prm.get_double("end time");
         Co = prm.get_double("Courant number");
@@ -2336,69 +2333,11 @@ void PLENS::write()
 
 
 /**
- * The update function: updates the solution by one time step. The algorithm is as follows:
- * - Set gcrk_cvars and gold_cvars to g_cvars
- * - Start loop over RK stages
- *   - Call assert_positivity()
- *   - Call calc_aux_vars()
- *   - If in first stage:
- *     - Calculate time step
- *   - Call calc_blender()
- *   - Call calc_rhs()
- *   - Update gcrk_cvars based on gold_cvars, gcrk_cvars, gcrk_rhs and time_step
- * - Increment cur_time and n_time_steps
- * - Set g_cvars to gcrk_cvars (at the end)
+ * 
  */
 void PLENS::update()
 {
-    // initialise gold_cvars and gcrk_cvars
-    for(cvar var: cvar_list){
-        for(psize i: locally_owned_dofs){
-            gcrk_cvars[var][i] = g_cvars[var][i];
-            gold_cvars[var][i] = g_cvars[var][i];
-        }
-    }
-    for(cvar var: cvar_list){
-        gold_cvars[var].compress(VectorOperation::insert);
-        gcrk_cvars[var].compress(VectorOperation::insert);
-        gh_gcrk_cvars[var] = gcrk_cvars[var];
-    }
-
-    // start loop over RK stages
-    for(usi rk_stage=0; rk_stage<rk_coeffs.n_stages(); rk_stage++){
-        assert_positivity();
-        calc_aux_vars();
-        if(rk_stage==0){
-            calc_time_step();
-            if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
-            pcout << "Current time: " << cur_time << " time step: " << time_step << "\n";
-        }
-        pcout << "\tRK stage " << rk_stage << "\n";
-
-        calc_blender();
-        calc_rhs();
-
-        for(cvar var: cvar_list){
-            for(psize i: locally_owned_dofs){
-                gcrk_cvars[var][i] = rk_coeffs.get(rk_stage, 0)*gold_cvars[var][i] +
-                    rk_coeffs.get(rk_stage, 1)*gcrk_cvars[var][i] +
-                    rk_coeffs.get(rk_stage, 2)*time_step*gcrk_rhs[var][i];
-            } // loop over owned dofs
-            gcrk_cvars[var].compress(VectorOperation::insert);
-            gh_gcrk_cvars[var] = gcrk_cvars[var];
-        } // loop over cvars
-    } // loop over rk stages
-    pcout << "\n";
-
-    cur_time += time_step;
-    n_time_steps++;
-
-    for(cvar var: cvar_list){
-        for(psize i: locally_owned_dofs){
-            g_cvars[var][i] = gcrk_cvars[var][i];
-        }
-        g_cvars[var].compress(VectorOperation::insert);
-    }
+    //
 } // update()
 
 
