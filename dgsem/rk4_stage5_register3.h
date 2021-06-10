@@ -56,10 +56,13 @@
  *
  * The coefficients are stored as
  * - `b` (size 5) such that `b[i]` gives $b_i,\ i=0,\ldots,4$
- * - `a_outer` (size 5) such that `a_outer[i]` gives $a_{(i+1)i},\ i=0,\ldots,3$ and $a_{54}:=b_4$
- * - `a_inner` (size 3) such that `a_innder[i]` gives $a_{(i+2)i},\ i=0,1,2$
+ * - `a_outer` (size 5) such that `a_outer[i]` gives $a_{(i+1)i},\ i=0,\ldots,3$ and `a_outer[4]`
+ *    gives $a_{54}:=b_4$
+ * - `a_inner` (size 4) such that `a_inner[i]` gives $a_{(i+2)i},\ i=0,1,2$ and `a_inner[3]` gives
+ *   $a_{53}:=b_3$
  *
- * The introduction of $a_{54}$ is to facilitate a loop over $Q^{(3-5)}$
+ * The introduction of $a_{54}$ and $a_{53}$ is to facilitate a loop over stages 3-5 which
+ * calculate $Q^{(3-5)}$
  */
 class RK4Stage5Register3
 {
@@ -78,7 +81,7 @@ class RK4Stage5Register3
     /**
      * Inner line of "a" array. See class documentation for details
      */
-    std::array<double, 3> a_inner;
+    std::array<double, 4> a_inner;
 
     RK4Stage5Register3();
 };
