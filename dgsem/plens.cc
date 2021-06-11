@@ -2353,7 +2353,7 @@ void PLENS::update()
     // initialise
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
-            gcrk_rhs[var][i] = g_cvars[var][i];
+            gcrk_cvars[var][i] = g_cvars[var][i];
         }
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
