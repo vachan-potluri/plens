@@ -841,6 +841,7 @@ void PLENS::set_sol_vecs()
 
     gcrk_mu.reinit(locally_owned_dofs, mpi_comm);
     gcrk_k.reinit(locally_owned_dofs, mpi_comm);
+    gh_temp_dof_vec.reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     gcrk_blender_var.reinit(locally_owned_dofs, mpi_comm);
 
     // the return type is a weak ptr, it must be converted to shared ptr for usage
@@ -1766,6 +1767,7 @@ void PLENS::calc_blender()
         }
     }
     gcrk_alpha.compress(VectorOperation::insert);
+    gh_gcrk_alpha = gcrk_alpha; // for data output in write()
 } // calc_blender
 
 
@@ -2224,8 +2226,8 @@ void PLENS::calc_time_step()
 
 /**
  * Writes the data. The following variables are written:
- * - gcrk_cvars
- * - gcrk_avars
+ * - gh_gcrk_cvars
+ * - gh_gcrk_avars
  * - gcrk_mu and gcrk_k
  * - gcrk_alpha
  * - Subdomain id (processor id)
@@ -2238,6 +2240,10 @@ void PLENS::calc_time_step()
  * keep a log of data output time, a file "<base file name>.times" is written. This file contains
  * the output counter and the current time so that one can know at what times did the data output
  * happen.
+ *
+ * @note `DataOut::add_data_vector()` requires a ghosted vector. For conservative and auxiliary
+ * variables, this is not an issue. For alpha, `gh_gcrk_alpha` is available, and will be used here. The same variable will also be used as a temporary variable to write
+ * For `gcrk_mu` and `gcrk_k`, `gh_temp_dof_vec` is used.
  */
 void PLENS::write()
 {
@@ -2257,11 +2263,14 @@ void PLENS::write()
     data_out.set_flags(flags);
 
     data_out.attach_dof_handler(dof_handler);
-    for(cvar var: cvar_list) data_out.add_data_vector(gcrk_cvars[var], cvar_names[var]);
-    for(avar var: avar_list) data_out.add_data_vector(gcrk_avars[var], avar_names[var]);
-    data_out.add_data_vector(gcrk_mu, "mu");
-    data_out.add_data_vector(gcrk_k, "k");
-    data_out.add_data_vector(gcrk_alpha, "alpha");
+    for(cvar var: cvar_list) data_out.add_data_vector(gh_gcrk_cvars[var], cvar_names[var]);
+    for(avar var: avar_list) data_out.add_data_vector(gh_gcrk_avars[var], avar_names[var]);
+
+    gh_temp_dof_vec = gcrk_mu; // compressed in calc_aux_vars()
+    data_out.add_data_vector(gh_temp_dof_vec, "mu");
+    gh_temp_dof_vec = gcrk_k; // compressed in calc_aux_vars()
+    data_out.add_data_vector(gh_temp_dof_vec, "k");
+    data_out.add_data_vector(gh_gcrk_alpha, "alpha");
 
     // subdomain id
     Vector<float> subdom(triang.n_active_cells());

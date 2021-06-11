@@ -451,6 +451,12 @@ class PLENS
     LA::MPI::Vector gcrk_k;
 
     /**
+     * A ghosted temporary dof data vector, used in PLENS::write() for adding gcrK_mu and gcrk_k
+     * to data output.
+     */
+    LA::MPI::Vector gh_temp_dof_vec;
+
+    /**
      * Variable used for calculating blender (@f$\apha@f$) value. This need not be ghosted. Its
      * value will be set in PLENS::calc_blender() based on the parameters provided.
      */
