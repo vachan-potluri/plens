@@ -473,7 +473,7 @@ void PLENS::declare_parameters()
             "Unable to open file for writing sample input parameters settings."
         )
     );
-    prm.print_parameters(sample_file, ParameterHandler::Text);
+    prm.print_parameters(sample_file, ParameterHandler::KeepDeclarationOrder);
     sample_file.close();
     pcout << "Sample input file named 'sample_input_file.prm' written\n";
 
@@ -1104,6 +1104,33 @@ void PLENS::read_time_settings()
     prm.leave_subsection();
 
     n_time_steps = 0;
+}
+
+
+
+/**
+ * Runs the entire simulation. A copy of the prm file along with fe degree and mapping degree is
+ * written to the output directory at the beginning. The fe and mapping degrees are added as
+ * comments in the copy printed. The copy will be printed at
+ * <output directory>/simulation_parameters.prm.
+ */
+void PLENS::run()
+{
+    std::string op_dir, filename;
+    prm.enter_subsection("data output");
+    {
+        op_dir = prm.get("directory");
+    }
+    prm.leave_subsection();
+    filename = op_dir + "/simulation_parameters.prm";
+    pcout << "Writing read parameters to " << filename << "\n";
+    prm.print_parameters(filename, ParameterHandler::KeepDeclarationOrder);
+    std::ofstream file(filename, std::ios::app);
+    file << "\n# FE degree " << fe.degree << "\n# Mapping degree "
+        << mapping_ptr->get_degree() << "\n";
+    file.close();
+    
+    pcout << "\n\nStarting simulation\n";
 }
 
 
