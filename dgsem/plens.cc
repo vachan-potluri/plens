@@ -2337,6 +2337,7 @@ void PLENS::write()
         )
     );
     data_out.write_vtu(proc_file);
+    proc_file.close();
 
     // master file
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
@@ -2361,6 +2362,7 @@ void PLENS::write()
             )
         );
         data_out.write_pvtu_record(master_file, filenames);
+        master_file.close();
     } // root process
 
     // append current time and output counter in <base file name>.times
