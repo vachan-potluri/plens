@@ -1117,10 +1117,12 @@ void PLENS::run()
     filename = op_dir + "/simulation_parameters.prm";
     pcout << "Writing read parameters to " << filename << "\n";
     prm.print_parameters(filename, ParameterHandler::KeepDeclarationOrder);
-    std::ofstream file(filename, std::ios::app);
-    file << "\n# FE degree " << fe.degree << "\n# Mapping degree "
-        << mapping_ptr->get_degree() << "\n";
-    file.close();
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
+        std::ofstream file(filename, std::ios::app);
+        file << "\n# FE degree " << fe.degree
+            << "\n# Mapping degree " << mapping_ptr->get_degree() << "\n";
+        file.close();
+    }
 
     pcout << "\n\nStarting simulation\n";
 }
