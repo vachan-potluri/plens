@@ -28,7 +28,8 @@ t("PLENS", "class")
     // calc_rhs_test();
     // calc_time_step_test();
     // write_test();
-    update_test();
+    // update_test();
+    run_test();
 }
 
 
@@ -837,4 +838,24 @@ void plens_test::update_test() const
 
     problem.update();
     problem.update();
+}
+
+
+
+/**
+ * Tests PLENS::run()
+ */
+void plens_test::run_test() const
+{
+    t.new_block("testing run() function");
+    PLENS problem(2,2);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+    problem.read_time_settings();
+
+    problem.run();
 }
