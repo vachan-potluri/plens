@@ -466,15 +466,7 @@ void PLENS::declare_parameters()
     }
     prm.leave_subsection(); // data output
 
-    std::ofstream sample_file("sample_input_file.prm");
-    AssertThrow(
-        sample_file.good(),
-        StandardExceptions::ExcMessage(
-            "Unable to open file for writing sample input parameters settings."
-        )
-    );
-    prm.print_parameters(sample_file, ParameterHandler::KeepDeclarationOrder);
-    sample_file.close();
+    prm.print_parameters("sample_input_file.prm", ParameterHandler::KeepDeclarationOrder);
     pcout << "Sample input file named 'sample_input_file.prm' written\n";
 
     MPI_Barrier(mpi_comm);
@@ -1129,7 +1121,7 @@ void PLENS::run()
     file << "\n# FE degree " << fe.degree << "\n# Mapping degree "
         << mapping_ptr->get_degree() << "\n";
     file.close();
-    
+
     pcout << "\n\nStarting simulation\n";
 }
 
