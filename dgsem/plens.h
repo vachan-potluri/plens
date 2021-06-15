@@ -27,6 +27,7 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/table.h>
 #include <deal.II/base/table_indices.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/manifold_lib.h>
@@ -589,6 +590,11 @@ class PLENS
      * The write frequency
      */
     usi write_freq;
+
+    /**
+     * A timer for the simulation. Used in print statements
+     */
+    Timer clk;
 
 
 

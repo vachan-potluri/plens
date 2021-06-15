@@ -28,7 +28,8 @@ w_1d(fe_degree+1),
 ref_D_1d(fe_degree+1),
 ref_Q_1d(fe_degree+1),
 cdi(fe_degree),
-blender_calc(fe_degree, gcrk_blender_var)
+blender_calc(fe_degree, gcrk_blender_var),
+clk(mpi_comm)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -1125,6 +1126,9 @@ void PLENS::run()
     }
 
     pcout << "\n\nStarting simulation\n";
+    clk.start();
+    while(cur_time < end_time) update();
+    clk.stop();
 }
 
 
@@ -2400,7 +2404,9 @@ void PLENS::update()
     // positivity would be unasserted
     calc_time_step();
     if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
-    pcout << "Current time: " << cur_time << " time step: " << time_step << "\n";
+    pcout << "Current time: " << cur_time
+        << ", time step: " << time_step
+        << ", elapsed wall time: " << clk.wall_time() << "\n";
     if(n_time_steps%write_freq == 0){
         write();
         pcout << "Writing solution\n";
