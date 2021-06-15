@@ -2270,12 +2270,17 @@ void PLENS::write()
     data_out.add_data_vector(gh_temp_dof_vec, "mu");
     gh_temp_dof_vec = gcrk_k; // compressed in calc_aux_vars()
     data_out.add_data_vector(gh_temp_dof_vec, "k");
-    data_out.add_data_vector(gh_gcrk_alpha, "alpha");
 
     // subdomain id
     Vector<float> subdom(triang.n_active_cells());
     for(float &x: subdom) x = triang.locally_owned_subdomain();
     data_out.add_data_vector(subdom, "Subdomain");
+
+    // for alpha, direct addition not possible, see WJ-15-Jun-2021 and
+    // https://groups.google.com/g/dealii/c/_lmP3VCLBsw
+    // instead, use subdom again
+    subdom = gh_gcrk_alpha;
+    data_out.add_data_vector(subdom, "alpha");
 
     // cell indices
     // Vector<float> cell_ids(triang.n_active_cells());
