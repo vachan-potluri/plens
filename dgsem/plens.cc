@@ -2303,9 +2303,9 @@ void PLENS::write()
 
     // for alpha, direct addition not possible, see WJ-15-Jun-2021 and
     // https://groups.google.com/g/dealii/c/_lmP3VCLBsw
-    // instead, use subdom again
-    subdom = gh_gcrk_alpha;
-    data_out.add_data_vector(subdom, "alpha");
+    // instead, use a vector like done for subdomain
+    Vector<float> alpha(gh_gcrk_alpha);
+    data_out.add_data_vector(alpha, "alpha");
 
     // cell indices
     // Vector<float> cell_ids(triang.n_active_cells());
