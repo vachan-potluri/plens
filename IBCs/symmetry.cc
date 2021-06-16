@@ -51,10 +51,10 @@ void Symmetry::get_ghost_stage2(
     cons_gh[0] = cons[0];
     cons_gh[4] = cons[4];
     
-    Tensor<1,dim> smom_in, smom_gh; // specific momentum
+    Tensor<1,dim> smom_in; // specific momentum
     for(int d=0; d<dim; d++) smom_in[d] = cons[1+d];
     double normal_smom = scalar_product(smom_in, normal); // smom_in dot normal
-    for(int d=0; d<dim; d++) smom_gh[d] = smom_in[d] - 2*normal_smom*normal[d];
+    for(int d=0; d<dim; d++) cons_gh[1+d] = smom_in[d] - 2*normal_smom*normal[d];
 }
 
 
