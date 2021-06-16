@@ -1128,6 +1128,7 @@ void PLENS::run()
     pcout << "\n\nStarting simulation\n";
     clk.start();
     while(cur_time < end_time) update();
+    write();
     clk.stop();
 }
 
