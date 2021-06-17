@@ -267,10 +267,11 @@ void PLENS::declare_parameters()
                     "type",
                     "none",
                     Patterns::Selection(
-                        "none|free|outflow|uniform inflow|uniform temp wall|symmetry|periodic"
+                        "none|free|outflow|uniform inflow|uniform temp wall|symmetry|empty|"
+                        "periodic"
                     ),
                     "Type of BC. Options: 'none|free|outflow|uniform inflow|uniform temp wall"
-                    "|symmetry|periodic'. 'none' type cannot be specified for a physical "
+                    "|symmetry|empty|periodic'. 'none' type cannot be specified for a physical "
                     "boundary. For a periodic boundary, separate entries for both surfaces "
                     "have to be made"
                 );
@@ -982,6 +983,14 @@ void PLENS::set_BC()
                 }
                 else if(type == "symmetry"){
                     bc_list[cur_bid] = new BCs::Symmetry(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        ns_ptr.get()
+                    );
+                }
+                else if(type == "empty"){
+                    bc_list[cur_bid] = new BCs::Empty(
                         dof_handler,
                         gcrk_cvars,
                         gcrk_avars,

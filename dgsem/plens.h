@@ -62,6 +62,7 @@
 #include <IBCs/uniform_inflow.h>
 #include <IBCs/uniform_temp_wall.h>
 #include <IBCs/symmetry.h>
+#include <IBCs/empty.h>
 #include <IBCs/periodic.h>
 
 #ifdef DEBUG
