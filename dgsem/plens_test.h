@@ -12,6 +12,7 @@
 #include <string>
 
 #include <deal.II/base/exceptions.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/fe/mapping_q_generic.h>
 #include <deal.II/numerics/data_out.h>
@@ -57,6 +58,7 @@ class plens_test
     void write_test() const;
     void update_test() const;
     void run_test() const;
+    void time() const;
 };
 
 #endif

@@ -29,7 +29,8 @@ t("PLENS", "class")
     // calc_time_step_test();
     // write_test();
     // update_test();
-    run_test();
+    // run_test();
+    time();
 }
 
 
@@ -858,4 +859,142 @@ void plens_test::run_test() const
     problem.read_time_settings();
 
     problem.run();
+}
+
+
+
+/**
+ * Does a mock simulation and prints the time spent in each function. Useful for optimisation.
+ */
+void plens_test::time() const
+{
+    t.new_block("Timing!");
+
+    PLENS problem(2,4);
+    TimerOutput timer(
+        problem.pcout, TimerOutput::never, TimerOutput::wall_times
+    );
+
+    {
+        TimerOutput::Scope timer_section(timer, "Setup");
+        problem.read_mesh();
+        problem.set_NS();
+        problem.set_dof_handler();
+        problem.set_sol_vecs();
+        problem.set_IC();
+        problem.set_BC();
+        problem.read_time_settings();
+    }
+
+    for(int iter=0; iter<5; iter++){
+        problem.pcout << "Iteration " << iter << "\n";
+        {
+            TimerOutput::Scope timer_section(timer, "Before update");
+            for(cvar var: cvar_list){
+                for(psize i: problem.locally_owned_dofs){
+                    problem.gcrk_cvars[var][i] = problem.g_cvars[var][i];
+                }
+                problem.gcrk_cvars[var].compress(VectorOperation::insert);
+                problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+            }
+        }
+
+        {
+            TimerOutput::Scope timer_section(timer, "Calculating rhs");
+            {
+                TimerOutput::Scope timer_section(timer, "Assert positivity");
+                problem.assert_positivity();
+            }
+            {
+                TimerOutput::Scope timer_section(timer, "Calculate aux vars");
+                problem.calc_aux_vars();
+            }
+            {
+                TimerOutput::Scope timer_section(timer, "Calculate blender");
+                problem.calc_blender();
+            }
+
+            PLENS::locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux;
+            {
+                TimerOutput::Scope timer_section(timer, "Calculate surface fluxes");
+                problem.calc_surf_flux(2, s2_surf_flux);
+                problem.calc_surf_flux(3, s3_surf_flux);
+            }
+
+            {
+                TimerOutput::Scope timer_section(timer, "Set rhs");
+                std::vector<State> ho_inv_residual(problem.fe.dofs_per_cell),
+                    ho_dif_residual(problem.fe.dofs_per_cell),
+                    lo_inv_residual(problem.fe.dofs_per_cell);
+                
+                for(const auto& cell: problem.dof_handler.active_cell_iterators()){
+                    if(!(cell->is_locally_owned())) continue;
+
+                    {
+                        TimerOutput::Scope timer_section(timer, "ho inv residual");
+                        problem.calc_cell_ho_residual(
+                            2,
+                            cell,
+                            s2_surf_flux,
+                            ho_inv_residual
+                        ); // high order inviscid
+                    }
+
+                    {
+                        TimerOutput::Scope timer_section(timer, "ho dif residual");
+                        problem.calc_cell_ho_residual(
+                            3,
+                            cell,
+                            s3_surf_flux,
+                            ho_dif_residual
+                        ); // high order viscous
+                    }
+
+                    {
+                        TimerOutput::Scope timer_section(timer, "lo inv residual");
+                        problem.calc_cell_lo_inv_residual(
+                            cell,
+                            s2_surf_flux,
+                            lo_inv_residual
+                        );
+                    }
+
+                    // reorder loop
+                    for(cvar var: cvar_list){
+                        for(psize i: problem.locally_owned_dofs){
+                            problem.gcrk_rhs[var][i] = 0;
+                        }
+                    }
+                }
+                for(cvar var: cvar_list) problem.gcrk_rhs[var].compress(VectorOperation::insert);
+            }
+        }
+        {
+            TimerOutput::Scope timer_section(timer, "Calculating time step");
+            problem.calc_time_step();
+        }
+
+        {
+            TimerOutput::Scope timer_section(timer, "Updating cvars");
+            for(cvar var: cvar_list){
+                for(psize i: problem.locally_owned_dofs){
+                    problem.gcrk_cvars[var][i] = problem.gcrk_cvars[var][i];
+                    problem.gpprk_rhs[var][i] = problem.gprk_rhs[var][i];
+                    problem.gprk_rhs[var][i] = problem.gcrk_rhs[var][i];
+                }
+                problem.gcrk_cvars[var].compress(VectorOperation::insert);
+                problem.gh_gcrk_cvars[var] = problem.gcrk_cvars[var];
+            }
+        }
+
+        {
+            TimerOutput::Scope timer_section(timer, "After update");
+            for(cvar var: cvar_list){
+                for(psize i: problem.locally_owned_dofs){
+                    problem.g_cvars[var][i] = problem.gcrk_cvars[var][i];
+                }
+            }
+        }
+    }
+    timer.print_wall_time_statistics(problem.mpi_comm);
 }
