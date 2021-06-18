@@ -5,6 +5,7 @@ ADD_LIBRARY(IBCs SHARED
     uniform_inflow.cc
     uniform_temp_wall.cc
     symmetry.cc
+    empty.cc
     periodic.cc
     IC.cc
     piecewise_function.cc

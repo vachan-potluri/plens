@@ -5,18 +5,16 @@
 
 #include "printing.h"
 
-
-
 void utilities::print_state(const State &cons)
 {
-    print_array1<5>(cons, "\n", "\n", ", ");
+    print_array1<5>(cons, "", "\n", ", ");
 }
 
 
 
 void utilities::print_avars(const Avars &a)
 {
-    print_array1<9>(a, "\n", "\n", ", ");
+    print_array1<9>(a, "", "\n", ", ");
 }
 
 

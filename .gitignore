@@ -3,3 +3,7 @@ build/*
 
 # Testing dir
 testing/*
+
+# Validation dir
+validation/*
+

@@ -22,13 +22,12 @@ using namespace BCs;
  */
 void UniformInflow::get_ghost_stage1(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
 {
-    State cons_in;
-    get_state(ldd, cons_in);
-    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr_[var] - cons_in[var];
+    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr_[var] - cons[var];
 }
 
 
@@ -40,6 +39,7 @@ void UniformInflow::get_ghost_stage1(
  */
 void UniformInflow::get_ghost_stage2(
     const FaceLocalDoFData &ldd,
+    const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
 ) const
@@ -57,18 +57,18 @@ void UniformInflow::get_ghost_stage2(
  */
 void UniformInflow::get_ghost_stage3(
     const FaceLocalDoFData &ldd,
+    const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
 ) const
 {
-    State cons_in;
-    get_state(ldd, cons_in);
-    
+    const State& cons = cav.get_state();
     State& cons_gh = cav_gh.get_state();
-    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr_[var] - cons_in[var];
+    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr_[var] - cons[var];
     
+    const Avars& av = cav.get_avars();
     Avars& av_gh = cav_gh.get_avars();
-    get_avars(ldd, av_gh);
+    av_gh = av;
 }
 
 
@@ -91,18 +91,19 @@ void UniformInflow::test()
         
         // modify bctd.g_cvars to get subsonic/supersonic state
         // State cons({1,1,1,2,53}); // p=20, subsonic
-        State cons({1,1,1,2,13}); // p=4, supersonic
+        State cons({1,1,1,2,13}), cons_gh; // p=4, supersonic
         psize gdof_id = bc_p->get_global_dof_id(ldd);
         for(cvar var: cvar_list) bctd.g_cvars[var][gdof_id] = cons[var];
         
-        Avars av;
-        CAvars cav(&cons, &av);
+        Avars av, av_gh;
+        bc_p->get_avars(ldd, av);
+        CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
         
         for(int i=0; i<3; i++){
             std::cout << "Stage " << i << "\n";
-            bc_p->get_ghost_wrappers[i](ldd, normal, cav);
-            utilities::print_state(cav.get_state());
-            utilities::print_avars(cav.get_avars());
+            bc_p->get_ghost_wrappers[i](ldd, cav, normal, cav_gh);
+            utilities::print_state(cav_gh.get_state());
+            utilities::print_avars(cav_gh.get_avars());
         }
     }
 }

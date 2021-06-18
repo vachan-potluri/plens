@@ -36,6 +36,8 @@ for(auto &cell: dof_handler.active_cell_iterators()){
 @endcode
  * The maps themselves are easy to construct. See the note <b>pens2D to plens</b> and also see
  * [FE_DGQ](https://www.dealii.org/current/doxygen/deal.II/classFE__DGQ.html) class.
+ *
+ * @todo Use `dealii::Table<N,T>` instead of nested arrays. CellDoFInfo does this. 22-May-2021.
  */
 class FaceDoFInfo
 {
@@ -51,6 +53,10 @@ class FaceDoFInfo
     /**
      * @brief Inverse maps. Access: `maps[face id][cell-local dof id]`. The result is face-local dof
      * id.
+     *
+     * @warning This is a non-const public variable. Hence it is recommended that entries of this
+     * map are accessed using `std::map::at()` rather than `std::map::operator[]` because the
+     * latter can accidentally insert elements is used carelessly
      */
     std::array<std::map<usi, usi>, 2*dim> inverse_maps;
     

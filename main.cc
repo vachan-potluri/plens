@@ -15,11 +15,29 @@
 #include "IBCs/periodic.h"
 #include "utilities/split_string.h"
 #include "IBCs/piecewise_function.h"
+#include "dgsem/plens.h"
+#include "dgsem/plens_test.h"
+#include "dgsem/metric_terms.h"
+#include "dgsem/cell_dof_info.h"
+#include "dgsem/change_of_basis_matrix.h"
+#include "dgsem/blender_calculator.h"
+#include "dgsem/rk_coeffs.h"
+#include "dgsem/dtype_aliases.h"
+
 #include <iostream>
 
-int main(int argc, char** argv){
-    std::cout << "Hello, World!\n";
-    
+
+
+using namespace dealii;
+/**
+ * The main function. Constructs the relevant PLENS object and runs it. Takes two mandatory command
+ * line arguments:
+ * - The high order mapping degree
+ * - The fe degree
+ *
+ * Both these are required for the construction of PLENS object.
+ */
+int main(int argc, char** argv){    
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
     #ifdef DEBUG
@@ -35,7 +53,38 @@ int main(int argc, char** argv){
     // BCs::Symmetry::test();
     // BCs::Periodic::test();
     // utilities::split_string_test();
-    ICs::PiecewiseFunction::test();
+    // ICs::PiecewiseFunction::test();
+    // PLENS::test();
+    // plens_test pt(); // doesn't work
+    // MetricTerms<3>::test();
+    // CellDoFInfo::test();
+    // ChangeOfBasisMatrix<3>::test(); // template argument doesn't matter for test() as it is static
+    // BlenderCalculator::test();
+    RKCoeffs::test();
     #endif
+
+    // plens_test();
+    const usi n_args = argc-1;
+    AssertThrow(
+        n_args == 2,
+        StandardExceptions::ExcMessage(
+            "Exactly two command line (mandatory) arguments are expected for mapping high order "
+            "degree and FE degree."
+        )
+    );
+
+    const usi mhod = std::atoi(argv[1]);
+    const usi fe_degree = std::atoi(argv[2]);
+
+    PLENS problem(mhod, fe_degree);
+    problem.read_mesh();
+    problem.set_NS();
+    problem.set_dof_handler();
+    problem.set_sol_vecs();
+    problem.set_IC();
+    problem.set_BC();
+    problem.read_time_settings();
+
+    problem.run();
     return 0;
 }

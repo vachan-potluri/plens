@@ -131,7 +131,8 @@
  * @note Prefixes 'get' and 'set' are used only for public functions. Private functions don't have
  * them.
  *
- * 
+ * For all the theoretical functions (inviscid/diffusive flux fns etc.), see chapter 2 of APS 1
+ * report.
  */
 class NavierStokes
 {
@@ -204,7 +205,12 @@ class NavierStokes
     std::array<
         std::function< void (const CAvars&, const CAvars&, const dealii::Tensor<1,dim>&, State&) >,
         3
-    > surf_flux_wrappers;
+    > surf_flux_wrappers, vol_flux_wrappers;
+
+    std::array<
+        std::function<void(const CAvars&, const dealii::Tensor<1,dim>&, State&)>,
+        3
+    > flux_wrappers;
     
     NavierStokes(
         const double gma, const double M, const double Pr,
@@ -218,6 +224,7 @@ class NavierStokes
     );
     NavierStokes(
         const std::string gas_name,
+        const bool inviscid = false,
         const aux_surf_flux_scheme asfs = aux_surf_flux_scheme::BR1,
         const aux_vol_flux_scheme avfs = aux_vol_flux_scheme::BR1,
         const inv_surf_flux_scheme isfs = inv_surf_flux_scheme::hllc,
@@ -261,6 +268,25 @@ class NavierStokes
      * Gives @f$R=R_0/M@f$ value
      */
     inline double get_R() const {return R0/M_;}
+
+    /**
+     * Gives @f$c_v=\frac{R}{\gamma-1}@f$
+     */
+    inline double get_cv() const {return get_R()/(gma_-1);}
+
+    /**
+     * Gives @f$\mu@f$ based on temperature provided. Blindly calculates the value based on
+     * Sutherland's formula, without any assertion on `T`.
+     */
+    inline double get_mu(const double T) const
+    {
+        return mu0_*std::pow(T/T0_, 1.5)*(T0_+S_)/(T+S_);
+    }
+
+    /**
+     * Gives @f$k@f$ based on viscosity provided. Assertion on positivity of viscosity is not done.
+     */
+    inline double get_k(const double mu) const {return mu*get_R()*gma_/((gma_-1)*Pr_);}
     
     /**
      * Gives the conservative state using density, velocity and pressure

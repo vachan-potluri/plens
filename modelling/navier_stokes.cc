@@ -39,10 +39,12 @@ NavierStokes::NavierStokes(
  * @brief Special constructor for air and N2.
  *
  * Internally calls NavierStokes::set_modelling_params(), NavierStokes::set_inv_surf_flux_scheme()
- * and NavierStokes::set_inv_vol_flux_scheme().
+ * and NavierStokes::set_inv_vol_flux_scheme(). If `inviscid==true`, then @f$\mu_0@f$ is set to
+ * zero. This results in zero values of @f$\mu@f$ and @f$k@f$.
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
+    const bool inviscid,
     const aux_surf_flux_scheme asfs,
     const aux_vol_flux_scheme avfs,
     const inv_surf_flux_scheme isfs,
@@ -51,24 +53,24 @@ NavierStokes::NavierStokes(
     const dif_vol_flux_scheme dvfs
 )
 {
-    bool gas_supported = (gas_name=="air" || gas_name=="N2");
+    bool gas_supported = (gas_name=="air" || gas_name=="N2" || gas_name=="nitrogen");
     AssertThrow(
         gas_supported,
         dealii::StandardExceptions::ExcMessage(
-            "Unsupported gas name. Only 'air' and 'N2' are currently supported"
+            "Unsupported gas name. Only 'air' and 'N2' (or 'nitrogen') are currently supported"
         )
     );
     
-    double gma=1.4, M, Pr=0.69, mu0, T0=273, S;
+    double gma=1.4, M, Pr=0.69, mu0(0), T0=273, S;
     if(gas_name == "air"){
         M = 0.029;
-        mu0 = 1.716e-5;
+        if(!inviscid) mu0 = 1.716e-5;
         S = 111;
     }
     else{
         // guaranteed to be nitrogen
         M = 0.028;
-        mu0 = 1.663e-5;
+        if(!inviscid) mu0 = 1.663e-5;
         S = 107;
     }
     
@@ -202,9 +204,11 @@ void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
 
 
 /**
- * @brief Sets surface flux wrappers
+ * @brief Sets surface, volume and internal flux wrappers. Surface flux wrappers are used in
+ * assembling surface flux for the 3 stages. Volume and internal flux wrappers are used for
+ * calculating residual (or, RHS) for stages 2 and 3. See PLENS class documentation for details.
  *
- * See the class documentation for more details
+ * See the class documentation for more details.
  *
  * @pre All the surf/vol setters must be called before invoking this function
  */
@@ -224,6 +228,36 @@ void NavierStokes::set_wrappers()
     }; // inv
     
     surf_flux_wrappers[2] = get_dif_surf_flux; // dif, directly equate function objects
+
+    // volume flux wrappers
+    vol_flux_wrappers[0] = [=](
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
+    ){
+        this->get_aux_vol_flux(cav1.get_state(), cav2.get_state(), dir, f);
+    }; // aux
+    
+    vol_flux_wrappers[1] = [=](
+        const CAvars &cav1, const CAvars cav2, const dealii::Tensor<1,dim> &dir, State &f
+    ){
+        this->get_inv_vol_flux(cav1.get_state(), cav2.get_state(), dir, f);
+    }; // inv
+    
+    vol_flux_wrappers[2] = get_dif_vol_flux; // dif, directly equate function objects
+
+    // internal flux wrappers
+    flux_wrappers[0] = [=](
+        const CAvars &cav, const dealii::Tensor<1,dim>& dir, State& flux
+    ){
+        flux = cav.get_state();
+    }; // aux
+
+    flux_wrappers[1] = [=](
+        const CAvars &cav, const dealii::Tensor<1,dim>& dir, State& flux
+    ){
+        this->get_inv_flux(cav.get_state(), dir, flux);
+    }; // inv
+
+    flux_wrappers[2] = get_dif_flux; // dif, equate functions directly
 }
 
 
@@ -353,7 +387,8 @@ void NavierStokes::get_inv_flux(
  *
  * This function uses NavierStokes::inv_surf_xflux (one of NavierStokes::hllc_xflux() and
  * NavierStokes::rusanov_xflux() based on the argument provided in constructor). The algorithm
- * for this function is described in detail in WJ-23-Feb-2021.
+ * for this function is described in detail in WJ-23-Feb-2021 and WJ-01-Jun-2021. Only the outline
+ * is noted here.
  *
  * 1. Rotate the coordinate system such that x-direction aligned with @p normal. Store the rotation
  * matrix.
@@ -364,6 +399,15 @@ void NavierStokes::get_inv_flux(
  * The adjective rotated here is for the coordinate system, and not the state itself.
  * 4. Rotate back the coordinate system and get the momentum flux components in actual coordinate
  * system using the above calculated flux.
+ *
+ * See also WJ-01-Jun-2021 and WJ-31-May-2021. Initially, `asin` of the cross product was used to
+ * calculate the angle between vectors. However, the return range of `asin` is
+ * @f$[-\pi/2,\pi/2]@f$ which is not enough. We require angle to lie in @f$[0,\pi]@f$. The angle
+ * cannot be greated than @f$\pi@f$ because in that case, the axis of rotation
+ * (@f$\hat{x} \times \hat{n}@f$) would also reverse its direction. So when viewed from the axis of
+ * rotation so computed, the rotation is always anti-cloclwise and the rotation angle is always in
+ * the range @f$[0,\pi]@f$. So keeping all this in mind, `acos` of the dot product is the best
+ * option.
  *
  * @param[in] ocs 'Owner' conservative state
  * @param[in] ncs 'Neighbor' conservative state
@@ -388,7 +432,9 @@ void NavierStokes::get_inv_surf_flux(
     if(M > 1e-3){
         // this tolerance corrsponds to an angle of ~0.06 degrees between x and n
         m /= M; // now m is a unit vector <-- rotation axis
-        double theta = asin(M); // <-- rotation angle
+        double theta = acos(
+            dealii::scalar_product(xdir, normal)
+        ); // <-- rotation angle (both xdir and normal are unit vectors)
         
         R.copy_from(
             dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
@@ -484,7 +530,7 @@ void NavierStokes::get_dif_flux(
     for(int d=0; d<dim; d++){
         v = cons[1+d]/cons[0];
         f[1+d] = mom_flux[d];
-        f[4] += av[6+d]*dir[d] + v*mom_flux[d];
+        f[4] += -av[6+d]*dir[d] + v*mom_flux[d];
     }
     
 }
@@ -601,6 +647,11 @@ void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) c
  *
  * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016).
  *
+ * On later testing, it was identified that the quantities @f$\rho^{\text{ln}}@f$ and
+ * @f$\beta^\text{ln}@f$ can cause problem if both the states have same values
+ * (see WJ-31-May-2021). So for such "ln" quantities, if the denominators are less that 1e-8, the
+ * "ln" quantities are set directly based on state 1.
+ *
  * @pre @p dir has to be a unit vector
  * @pre @p cs1 and @p cs2 must pass the test of NavierStokes::assert_positivity()
  */
@@ -610,10 +661,14 @@ void NavierStokes::chandrashekhar_flux(
 {
     double p1 = get_p(cs1), p2 = get_p(cs2);
     double beta1 = 0.5*cs1[0]/p1, beta2 = 0.5*cs2[0]/p2;
-    double beta_ln = (beta1-beta2)/(log(beta1) - log(beta2));
+    double beta_ln(beta1);
+    double denom = log(beta1) - log(beta2);
+    if(fabs(denom) > 1e-8) beta_ln = (beta1-beta2)/(denom);
     
     double p_hat = 0.5*(cs1[0]+cs2[0])/(beta1+beta2);
-    double rho_ln = (cs1[0]-cs2[0])/(log(cs1[0]) - log(cs2[0]));
+    double rho_ln(cs1[0]);
+    denom = log(cs1[0]) - log(cs2[0]);
+    if(fabs(denom) > 1e-8) rho_ln = (cs1[0]-cs2[0])/(denom);
     
     dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
     double v1, v2; // temporary quantities
@@ -688,11 +743,21 @@ void NavierStokes::test()
         t.new_block();
         NavierStokes ns("air");
         ns.print_modelling_params();
+        const double T = 400;
+        const double mu = ns.get_mu(T);
+        std::cout << "Viscosity and thermal conductivity at " << T << " K: "
+            << mu << ", " << ns.get_k(mu) << "\n";
     }
     
     {
         t.new_block();
         NavierStokes ns("N2");
+        ns.print_modelling_params();
+    }
+
+    {
+        t.new_block("testing inviscid argument");
+        NavierStokes ns("N2", true); // inviscid
         ns.print_modelling_params();
     }
     

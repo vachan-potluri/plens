@@ -11,6 +11,7 @@
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria.h>
+#include <deal.II/distributed/tria.h>
 
 #include <modelling/state.h>
 #include <modelling/avars.h>
@@ -57,7 +58,8 @@ namespace BCs
  * It is mandatory that BC::g_cvars and BC::g_avars are ghosted vectors. This would enable access
  * to periodic cells/faces in case they are not owned by this process. Of course, it is also
  * mandatory that the relevant dofs of BC::g_cvars and BC::g_avars are set appropriately to include
- * these periodic ghosted cells. `add_periodicity()` function can be used for this purpose.
+ * these periodic ghosted cells. `add_periodicity()` function can be used for this purpose. The
+ * appropriate addition of periodic dofs as ghost dofs is done in PLENS::set_dof_handler()
  */
 class Periodic: public BC
 {
@@ -100,18 +102,21 @@ class Periodic: public BC
     public:
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,
+        const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const override;
     
     virtual void get_ghost_stage2(
         const FaceLocalDoFData &ldd,
+        const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) const override;
     
     virtual void get_ghost_stage3(
         const FaceLocalDoFData &ldd,
+        const CAvars &cav,
         const Tensor<1,dim> &normal,
         CAvars &ca_gh
     ) const override;

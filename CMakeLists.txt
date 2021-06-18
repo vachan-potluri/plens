@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
-FIND_PACKAGE(deal.II 9.1.0 QUIET
+FIND_PACKAGE(deal.II 9.3.0 QUIET
     HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
 )
 IF(NOT ${deal.II_FOUND})
@@ -19,8 +19,9 @@ PROJECT(plens)
 OPTION(BUILD_SPACETIME "Build the code on spacetime" OFF)
 IF(BUILD_SPACETIME)
     ADD_DEFINITIONS(-DSPACETIME) # for older cmake versions
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # required on spacetime
 ENDIF(BUILD_SPACETIME)
+
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") # required for 9.3.0
 
 ADD_SUBDIRECTORY(utilities)
 ADD_SUBDIRECTORY(modelling)
