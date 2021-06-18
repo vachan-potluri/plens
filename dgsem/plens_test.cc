@@ -958,12 +958,10 @@ void plens_test::time() const
                             lo_inv_residual
                         );
                     }
-
-                    // reorder loop
+                }
+                for(psize i: problem.locally_owned_dofs){
                     for(cvar var: cvar_list){
-                        for(psize i: problem.locally_owned_dofs){
-                            problem.gcrk_rhs[var][i] = 0;
-                        }
+                        problem.gcrk_rhs[var][i] = 0;
                     }
                 }
                 for(cvar var: cvar_list) problem.gcrk_rhs[var].compress(VectorOperation::insert);
