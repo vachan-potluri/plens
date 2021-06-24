@@ -2258,6 +2258,28 @@ void PLENS::calc_time_step()
 
 
 /**
+ * Calculates pressure, velocity and temperature from gcrk_cvars.
+ *
+ * @pre PLENS::assert_positivity() must be successful before calling this function.
+ */
+void PLENS::post_process()
+{
+    for(psize i: locally_owned_dofs){
+        State cons;
+        for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+        gcrk_p[i] = ns_ptr->get_p(cons);
+        gcrk_T[i] = ns_ptr->get_e(cons)/ns_ptr->get_cv();
+        for(usi d=0; d<dim; d++) gcrk_vel[d][i] = gcrk_cvars[1+d][i]/gcrk_cvars[0][i];
+    }
+
+    gcrk_p.compress(VectorOperation::insert);
+    gcrk_T.compress(VectorOperation::insert);
+    for(usi d=0; d<dim; d++) gcrk_vel[d].compress(VectorOperation::insert);
+}
+
+
+
+/**
  * Writes the data. The following variables are written:
  * - gh_gcrk_cvars
  * - gh_gcrk_avars
