@@ -448,9 +448,7 @@ void PLENS::declare_parameters()
             "base file name",
             "output",
             Patterns::Anything(),
-            "The base name to be used for output files. The individual processor files will be "
-            "named <base file name><proc id>.vtu.<output counter> and the master file will be "
-            "named <base file name>.pvtu.<output counter>."
+            "The base name to be used for output files."
         );
         prm.declare_entry(
             "write frequency",
@@ -2286,6 +2284,7 @@ void PLENS::post_process()
  * - gcrk_mu and gcrk_k
  * - gcrk_alpha
  * - Subdomain id (processor id)
+ * - All other vectors calculated in PLENS::post_process()
  *
  * Since current RK solution is being written, it is expected that this, like
  * PLENS::calc_time_step() will be called during the first RK step, after calculation of blender,
@@ -2310,6 +2309,7 @@ void PLENS::post_process()
  */
 void PLENS::write()
 {
+    post_process();
     std::string op_dir, base_filename;
     prm.enter_subsection("data output");
     {
@@ -2329,6 +2329,11 @@ void PLENS::write()
 
     data_out.add_data_vector(gcrk_mu, "mu");
     data_out.add_data_vector(gcrk_k, "k");
+    data_out.add_data_vector(gcrk_p, "p");
+    data_out.add_data_vector(gcrk_T, "T");
+    data_out.add_data_vector(gcrk_vel[0], "u");
+    data_out.add_data_vector(gcrk_vel[1], "v");
+    data_out.add_data_vector(gcrk_vel[2], "w");
 
     // subdomain id
     Vector<float> subdom(triang.n_active_cells());
