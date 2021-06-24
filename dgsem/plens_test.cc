@@ -219,8 +219,8 @@ void plens_test::face_dof_matching_test() const
     const usi n_dofs_per_face = (fdi.degree+1)*(fdi.degree+1);
     const usi n_dofs_per_cell = n_dofs_per_face*(fdi.degree+1);
 
-    std::vector<unsigned int> dof_ids(n_dofs_per_cell);
-    std::vector<unsigned int> dof_ids_neighbor(n_dofs_per_cell);
+    std::vector<psize> dof_ids(n_dofs_per_cell);
+    std::vector<psize> dof_ids_neighbor(n_dofs_per_cell);
     
     for(const auto &cell: problem.dof_handler.active_cell_iterators()){
         for(usi fid=0; fid<problem.n_faces_per_cell; fid++){

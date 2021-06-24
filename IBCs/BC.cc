@@ -81,7 +81,7 @@ psize BC::get_global_dof_id(const FaceLocalDoFData &ldd) const
     }
     
     // global dof ids held by this cell
-    std::vector<unsigned int> dof_ids(dof_handler.get_fe().dofs_per_cell);
+    std::vector<psize> dof_ids(dof_handler.get_fe().dofs_per_cell);
     cell->get_dof_indices(dof_ids);
     
     // get cell local dof id from face local dof id

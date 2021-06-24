@@ -213,7 +213,7 @@ void PiecewiseFunction::set()
 {
     Point<dim> center; // cell center
     usi pid; // piece id
-    std::vector<unsigned int> dof_ids(dof_handler.get_fe().dofs_per_cell); // dof ids of cell
+    std::vector<psize> dof_ids(dof_handler.get_fe().dofs_per_cell); // dof ids of cell
     State cons;
     double rho, p;
     Tensor<1,dim> vel;
