@@ -385,7 +385,7 @@ class PLENS
     /**
      * All relevant dof locations. Set in set_dof_handler()
      */
-    std::map<unsigned int, Point<dim>> dof_locations;
+    std::map<psize, Point<dim>> dof_locations;
 
     /**
      * Locally owned dofs. Set in set_sol_vecs()

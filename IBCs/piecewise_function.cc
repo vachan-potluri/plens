@@ -85,7 +85,7 @@ usi PiecewiseFunction::get_piece_id(const Point<dim> &p)
  */
 PiecewiseFunction::PiecewiseFunction(
     const DoFHandler<dim> &dh,
-    const std::map<unsigned int, Point<dim>> &dl,
+    const std::map<psize, Point<dim>> &dl,
     std::array<LA::MPI::Vector, 5> &gcv,
     const std::string &filename,
     const NavierStokes *ns_ptr

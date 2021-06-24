@@ -234,7 +234,7 @@ void BlenderCalculator::test()
     LA::MPI::Vector var;
     var.reinit(locally_owned_dofs, MPI_COMM_WORLD);
 
-    std::map<unsigned int, Point<dim>> dof_locations;
+    std::map<psize, Point<dim>> dof_locations;
     DoFTools::map_dofs_to_support_points(MappingQ1<dim>(), dof_handler, dof_locations);
 
     t.new_block("testing construction");
