@@ -2341,52 +2341,25 @@ void PLENS::write()
         DataOut<dim>::CurvedCellRegion::curved_inner_cells
     );
 
-    // processor file
-    std::ofstream proc_file(
-        op_dir + "/" + base_filename +
-        Utilities::int_to_string(
-            Utilities::MPI::this_mpi_process(mpi_comm),
-            proc_id_digits
-        ) + ".vtu." + std::to_string(output_counter)
-    );
-    AssertThrow(
-        proc_file.good(),
-        StandardExceptions::ExcMessage(
-            "Unable to open processor files. Make sure the specified output directory exists."
-        )
-    );
-    data_out.write_vtu(proc_file);
-    proc_file.close();
+    std::string master_filename = data_out.write_vtu_with_pvtu_record(
+        op_dir + "/",
+        base_filename,
+        output_counter,
+        mpi_comm,
+        6
+    ); // n_groups set to default value 0 (one file per processor)
 
-    // master file
+    // master_filename contains the patth relative fo execution dir. For pvd file, the path
+    // relative to output dir is required since pvd file is also written in output dir. So split
+    // the master_filename at "/" and take the last string
+    std::vector<std::string> splits;
+    utilities::split_string(master_filename, "/", splits);
+
+    // pvd file
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
-        std::vector<std::string> filenames;
-        for(usi i=0; i<Utilities::MPI::n_mpi_processes(mpi_comm); i++){
-            // The filenames of processor data files in pvtu record will be treated relative to
-            // the path of pvtu record itself. Since both the pvtu record and processor files exist
-            // in the same directory, prepending output directory is not required
-            filenames.emplace_back(
-                base_filename + Utilities::int_to_string(i, proc_id_digits) + ".vtu." +
-                std::to_string(output_counter)
-            );
-        } // loop over processes
-
-        std::ofstream master_file(
-            op_dir + "/" + base_filename + ".pvtu." + std::to_string(output_counter)
-        );
-        AssertThrow(
-            master_file.good(),
-            StandardExceptions::ExcMessage(
-                "Unable to open master file. Make sure the specified output directory exists."
-            )
-        );
-        data_out.write_pvtu_record(master_file, filenames);
-        master_file.close();
-
-        // write the pvd file
         times_and_names.emplace_back(
             cur_time,
-            base_filename + ".pvtu." + std::to_string(output_counter) // name relative to pvd file path
+            splits[splits.size()-1] // name relative to pvd file path
         );
         std::ofstream pvd_file(op_dir + "/" + base_filename + ".pvd");
         AssertThrow(
