@@ -40,7 +40,7 @@ struct ICTestData
     parallel::distributed::Triangulation<dim> triang;
     
     DoFHandler<dim> dof_handler;
-    std::map<unsigned int, Point<dim>> dof_locations;
+    std::map<psize, Point<dim>> dof_locations;
     IndexSet locally_owned_dofs;
     FE_DGQ<dim> fe;
     

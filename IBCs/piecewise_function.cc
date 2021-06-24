@@ -85,7 +85,7 @@ usi PiecewiseFunction::get_piece_id(const Point<dim> &p)
  */
 PiecewiseFunction::PiecewiseFunction(
     const DoFHandler<dim> &dh,
-    const std::map<unsigned int, Point<dim>> &dl,
+    const std::map<psize, Point<dim>> &dl,
     std::array<LA::MPI::Vector, 5> &gcv,
     const std::string &filename,
     const NavierStokes *ns_ptr
@@ -213,7 +213,7 @@ void PiecewiseFunction::set()
 {
     Point<dim> center; // cell center
     usi pid; // piece id
-    std::vector<unsigned int> dof_ids(dof_handler.get_fe().dofs_per_cell); // dof ids of cell
+    std::vector<psize> dof_ids(dof_handler.get_fe().dofs_per_cell); // dof ids of cell
     State cons;
     double rho, p;
     Tensor<1,dim> vel;

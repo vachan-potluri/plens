@@ -142,7 +142,7 @@ class PiecewiseFunction: public IC
     static constexpr int dim = 3;
     PiecewiseFunction(
         const DoFHandler<dim> &dh,
-        const std::map<unsigned int, Point<dim>> &dl,
+        const std::map<psize, Point<dim>> &dl,
         std::array<LA::MPI::Vector, 5> &gcv,
         const std::string &filename,
         const NavierStokes *ns_ptr

@@ -59,11 +59,11 @@ class IC
      * instead of obtaining from IC::dof_handler because for curved meshes, mappings and manifolds
      * are unknown in this scope.
      */
-    std::map<unsigned int, Point<dim>> dof_locations;
+    std::map<psize, Point<dim>> dof_locations;
 
     IC(
         const DoFHandler<dim> &dh,
-        const std::map<unsigned int, Point<dim>> &dl,
+        const std::map<psize, Point<dim>> &dl,
         std::array<LA::MPI::Vector, 5> &gcv
     );
     virtual ~IC();
