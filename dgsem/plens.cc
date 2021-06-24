@@ -828,7 +828,6 @@ void PLENS::set_sol_vecs()
 
     gcrk_mu.reinit(locally_owned_dofs, mpi_comm);
     gcrk_k.reinit(locally_owned_dofs, mpi_comm);
-    gh_temp_dof_vec.reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     gcrk_blender_var.reinit(locally_owned_dofs, mpi_comm);
 
     // the return type is a weak ptr, it must be converted to shared ptr for usage
@@ -2269,9 +2268,8 @@ void PLENS::calc_time_step()
  * the output counter and the current time so that one can know at what times did the data output
  * happen.
  *
- * @note `DataOut::add_data_vector()` requires a ghosted vector. For conservative and auxiliary
- * variables, this is not an issue. For alpha, `gh_gcrk_alpha` is available, and will be used here. The same variable will also be used as a temporary variable to write
- * For `gcrk_mu` and `gcrk_k`, `gh_temp_dof_vec` is used.
+ * @note Although the documentation says `DataOut::add_data_vector()` requires a ghosted vector, a
+ * non-ghosted but compressed vector also seems to do the job.
  *
  * This function writes 3 files
  * - vtu files for individual processor data
@@ -2301,10 +2299,8 @@ void PLENS::write()
     for(cvar var: cvar_list) data_out.add_data_vector(gh_gcrk_cvars[var], cvar_names[var]);
     for(avar var: avar_list) data_out.add_data_vector(gh_gcrk_avars[var], avar_names[var]);
 
-    gh_temp_dof_vec = gcrk_mu; // compressed in calc_aux_vars()
-    data_out.add_data_vector(gh_temp_dof_vec, "mu");
-    gh_temp_dof_vec = gcrk_k; // compressed in calc_aux_vars()
-    data_out.add_data_vector(gh_temp_dof_vec, "k");
+    data_out.add_data_vector(gcrk_mu, "mu");
+    data_out.add_data_vector(gcrk_k, "k");
 
     // subdomain id
     Vector<float> subdom(triang.n_active_cells());
