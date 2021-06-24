@@ -597,6 +597,13 @@ class PLENS
      */
     Timer clk;
 
+    /**
+     * This is used for generating a pvd file containing all the data files and time value for the
+     * entire simulation (of course, only when write() is called). See
+     * https://www.dealii.org/current/doxygen/deal.II/namespaceDataOutBase.html#a6f1c052ba49fd44cd8e3f35ba871aebd
+     */
+    std::vector<std::pair<double, std::string>> times_and_names;
+
 
 
     void form_neighbor_face_matchings(const double tol = 1e-4);

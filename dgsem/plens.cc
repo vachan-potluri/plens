@@ -2279,6 +2279,15 @@ void PLENS::calc_time_step()
  * @note `DataOut::add_data_vector()` requires a ghosted vector. For conservative and auxiliary
  * variables, this is not an issue. For alpha, `gh_gcrk_alpha` is available, and will be used here. The same variable will also be used as a temporary variable to write
  * For `gcrk_mu` and `gcrk_k`, `gh_temp_dof_vec` is used.
+ *
+ * This function writes 3 files
+ * - vtu files for individual processor data
+ * - pvtu files for compiling processor data
+ * - pvd files for compiling pvtu files across all outputs
+ *
+ * To be frank, the pvd file needs to be written only once after the entire simulation. However,
+ * the cost incurred in writing it everytime is very low. Moreover, this is helpful in case the
+ * simulation needs to be killed.
  */
 void PLENS::write()
 {
@@ -2373,6 +2382,21 @@ void PLENS::write()
         );
         data_out.write_pvtu_record(master_file, filenames);
         master_file.close();
+
+        // write the pvd file
+        times_and_names.emplace_back(
+            cur_time,
+            base_filename + ".pvtu." + std::to_string(output_counter) // name relative to pvd file path
+        );
+        std::ofstream pvd_file(op_dir + "/" + base_filename + ".pvd");
+        AssertThrow(
+            pvd_file.good(),
+            StandardExceptions::ExcMessage(
+                "Unable to open pvd file. Make sure the specified output directory exists."
+            )
+        );
+        DataOutBase::write_pvd_record(pvd_file, times_and_names);
+        pvd_file.close();
     } // root process
 
     // append current time and output counter in <base file name>.times
