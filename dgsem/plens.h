@@ -476,6 +476,21 @@ class PLENS
     LA::MPI::Vector gh_gcrk_alpha;
 
     /**
+     * Pressure. Used in PLENS::write(), set in PLENS::post_process().
+     */
+    LA::MPI::Vector gcrk_p;
+
+    /**
+     * Temperature. Used in PLENS::write(), set in PLENS::post_process().
+     */
+    LA::MPI::Vector gcrk_T;
+
+    /**
+     * Velocity. Used in PLENS::write(), set in PLENS::post_process().
+     */
+    std::array<LA::MPI::Vector, dim> gcrk_vel;
+
+    /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
      * too. This list is populated by looping over all faces held by this process. This is then
      * used to form the boundary condition objects. This list enables construction of BC object

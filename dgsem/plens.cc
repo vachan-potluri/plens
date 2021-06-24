@@ -826,8 +826,14 @@ void PLENS::set_sol_vecs()
         gh_gcrk_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
 
+    for(usi d=0; d<dim; d++){
+        gcrk_vel[d].reinit(locally_owned_dofs, mpi_comm);
+    }
+
     gcrk_mu.reinit(locally_owned_dofs, mpi_comm);
     gcrk_k.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_p.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_T.reinit(locally_owned_dofs, mpi_comm);
     gcrk_blender_var.reinit(locally_owned_dofs, mpi_comm);
 
     // the return type is a weak ptr, it must be converted to shared ptr for usage
