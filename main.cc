@@ -63,8 +63,8 @@ int main(int argc, char** argv){
     RKCoeffs::test();
     #endif
 
-    plens_test();
-    return 0;
+    // plens_test();
+    // return 0;
     const usi n_args = argc-1;
     AssertThrow(
         n_args == 2,
