@@ -453,13 +453,6 @@ void PLENS::declare_parameters()
             "named <base file name>.pvtu.<output counter>."
         );
         prm.declare_entry(
-            "processor id digits",
-            "2",
-            Patterns::Integer(1),
-            "The number of digits to be used for processor id. For instance, if this entry is set "
-            "to 3, then processor id 4 will be represented as '004' in the output files."
-        );
-        prm.declare_entry(
             "write frequency",
             "100",
             Patterns::Integer(1),
@@ -2292,12 +2285,10 @@ void PLENS::calc_time_step()
 void PLENS::write()
 {
     std::string op_dir, base_filename;
-    usi proc_id_digits;
     prm.enter_subsection("data output");
     {
         op_dir = prm.get("directory");
         base_filename = prm.get("base file name");
-        proc_id_digits = prm.get_integer("processor id digits");
     }
     prm.leave_subsection();
 
@@ -2349,7 +2340,7 @@ void PLENS::write()
         6
     ); // n_groups set to default value 0 (one file per processor)
 
-    // master_filename contains the patth relative fo execution dir. For pvd file, the path
+    // master_filename contains the path relative to execution dir. For pvd file, the path
     // relative to output dir is required since pvd file is also written in output dir. So split
     // the master_filename at "/" and take the last string
     std::vector<std::string> splits;
