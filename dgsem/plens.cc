@@ -785,7 +785,7 @@ void PLENS::set_dof_handler()
 
     MPI_Barrier(mpi_comm);
 
-    form_neighbor_face_matchings();
+    form_neighbor_face_matchings(locally_relevant_dofs);
     calc_metric_terms();
 
     MPI_Barrier(mpi_comm);
@@ -794,9 +794,8 @@ void PLENS::set_dof_handler()
 
 
 /**
- * Initialises the solution vectors. An important difference from pens2D is that currently relevant
- * dofs are set directly to what dealii's functions return. So all dofs of neighboring and periodic
- * cells are added instead of just those lying on common face.
+ * Initialises the solution vectors. The locally relevant dofs are already set when
+ * form_neighbor_face_matchings() was called from set_dof_handler().
  *
  * For initialising PLENS::gcrk_alpha and PLENS::gh_gcrk_alpha, the functions of
  * `Utilities::MPI::Partitioner` are used. See the documentation of these variables and also
@@ -808,7 +807,6 @@ void PLENS::set_sol_vecs()
 {
     pcout << "Initialising solution vectors ... ";
     locally_owned_dofs = dof_handler.locally_owned_dofs();
-    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
     for(cvar var: cvar_list){
         g_cvars[var].reinit(locally_owned_dofs, mpi_comm);
@@ -1152,10 +1150,16 @@ void PLENS::run()
  *       - Loop over all neighbor dofs on the same face
  *         - If the dof locations match (upto tolerance level `tol`), populate the map
  *
+ * While doing this, also polulates the `loc_rel_dofs` parameter to store the ghost cell
+ * dofs lying on the partition interface.
+ *
  * @pre Must be called after read_mesh() and set_dof_handler(). May be called at the end of
  * set_dof_handler() after `dof_locations` are calculated.
  */
-void PLENS::form_neighbor_face_matchings(const double tol)
+void PLENS::form_neighbor_face_matchings(
+    IndexSet& loc_rel_dofs,
+    const double tol
+)
 {
     pcout << "Matching neighbor side dof ids on internal faces ... ";
     std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
@@ -1181,6 +1185,7 @@ void PLENS::form_neighbor_face_matchings(const double tol)
                     if(diff.norm() < tol){
                         // match obtained
                         nei_face_matching_dofs[cell->index()][fid][i] = j;
+                        loc_rel_dofs.add_index(dof_ids_nei[fdi.maps[fid_nei].at(j)]);
 
                         // print if i and j are not equal (abnormal match)
                         if(i != j){
