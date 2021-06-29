@@ -2328,8 +2328,8 @@ double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
     );
 
     // now for numerator, compute a temporary dof vector for the difference
-    LA::MPI::Vector rhoE_diff(g_cvars[4]);
-    rhoE_diff -= rhoE_old;
+    LA::MPI::Vector rhoE_diff(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
+    for(psize i: locally_owned_dofs) rhoE_diff[i] = g_cvars[4][i] - rhoE_old[i];
     rhoE_diff.compress(VectorOperation::insert);
 
     VectorTools::integrate_difference(
