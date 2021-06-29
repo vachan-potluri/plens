@@ -456,6 +456,14 @@ void PLENS::declare_parameters()
             Patterns::Integer(1),
             "The solution will be written after these many time steps."
         );
+        prm.declare_entry(
+            "calculate steady state error",
+            "true",
+            Patterns::Bool(),
+            "Whether or not steady state error is to be calculated. rhoE is used for this purpose "
+            "and if true, cell wise error vector will be added to data output and the error will "
+            "be written to the file <base file name>.ss_error."
+        );
     }
     prm.leave_subsection(); // data output
 
