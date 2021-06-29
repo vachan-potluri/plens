@@ -831,6 +831,7 @@ void PLENS::set_sol_vecs()
     gcrk_p.reinit(locally_owned_dofs, mpi_comm);
     gcrk_T.reinit(locally_owned_dofs, mpi_comm);
     gcrk_blender_var.reinit(locally_owned_dofs, mpi_comm);
+    rhoE_old.reinit(locally_owned_dofs, mpi_comm);
 
     // the return type is a weak ptr, it must be converted to shared ptr for usage
     // see https://en.cppreference.com/w/cpp/memory/weak_ptr
@@ -2451,6 +2452,8 @@ void PLENS::update()
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
     }
+    for(psize i: locally_owned_dofs) rhoE_old[i] = g_cvars[4][i];
+    rhoE_old.compress(VectorOperation::insert);
 
     // stage 1
     calc_rhs();

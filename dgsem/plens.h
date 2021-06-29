@@ -491,6 +491,11 @@ class PLENS
     std::array<LA::MPI::Vector, dim> gcrk_vel;
 
     /**
+     * Old solution of $\rho E$. Used for steady state error calculation
+     */
+    LA::MPI::Vector rhoE_old;
+
+    /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
      * too. This list is populated by looping over all faces held by this process. This is then
      * used to form the boundary condition objects. This list enables construction of BC object
