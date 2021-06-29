@@ -2361,6 +2361,7 @@ double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
  * - gcrk_alpha
  * - Subdomain id (processor id)
  * - All other vectors calculated in PLENS::post_process()
+ * - Cell wise steady state error vector (if requested)
  *
  * Since current RK solution is being written, it is expected that this, like
  * PLENS::calc_time_step() will be called during the first RK step, after calculation of blender,
@@ -2387,10 +2388,12 @@ void PLENS::write()
 {
     post_process();
     std::string op_dir, base_filename;
+    bool calculate_ss_error;
     prm.enter_subsection("data output");
     {
         op_dir = prm.get("directory");
         base_filename = prm.get("base file name");
+        calculate_ss_error = prm.get_bool("calculate steady state error");
     }
     prm.leave_subsection();
 
@@ -2422,14 +2425,12 @@ void PLENS::write()
     Vector<float> alpha(gh_gcrk_alpha);
     data_out.add_data_vector(alpha, "alpha");
 
-    // cell indices
-    // Vector<float> cell_ids(triang.n_active_cells());
-    // for(const auto &cell: dof_handler.active_cell_iterators()){
-    //     if(!(cell->is_locally_owned())) continue;
-    //     const psize id = cell->global_active_cell_index();
-    //     cell_ids[id] = id;
-    // }
-    // data_out.add_data_vector(cell_ids, "Cell_indices");
+    double ss_error;
+    if(calculate_ss_error){
+        Vector<double> cell_ss_error(triang.n_active_cells());
+        ss_error = calc_ss_error(cell_ss_error);
+        data_out.add_data_vector(cell_ss_error, "steady state error");
+    }
 
     data_out.build_patches(
         *mapping_ptr,
@@ -2469,6 +2470,7 @@ void PLENS::write()
     } // root process
 
     // append current time and output counter in <base file name>.times
+    // also write steady state error if requested
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
         std::ofstream time_file(op_dir + "/" + base_filename + ".times", std::ios::app);
         AssertThrow(
@@ -2477,6 +2479,16 @@ void PLENS::write()
         );
         time_file << output_counter << " " << cur_time << "\n";
         time_file.close();
+
+        if(calculate_ss_error){
+            std::ofstream error_file(op_dir + "/" + base_filename + ".ss_error", std::ios::app);
+            AssertThrow(
+                error_file.good(),
+                StandardExceptions::ExcMessage("Unable to open steady state error file.")
+            );
+            error_file << output_counter << " " << cur_time << " " << ss_error << "\n";
+            error_file.close();
+        }
     }
     output_counter++;
 } // write()
