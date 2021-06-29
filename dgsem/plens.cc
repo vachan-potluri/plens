@@ -2283,6 +2283,26 @@ void PLENS::post_process()
 
 
 /**
+ * Calculates the steady state error. The parameter `cell_ss_error` is populated using
+ * VectorTools::integrate_difference() and the global error is calculated using
+ * VectorTools::compute_global_error (which is returned). The global steady state error is
+ * calculated as follows
+ * @f[
+ * e = \frac{\lVert (\rho E)^{n+1} - (\rho E)^n \rVert}_{\Omega}
+ * {\lVert (\rho E)^{n+1} \rVert_{\Omega}}
+ * @f]
+ * Here, the norm is taken in L2 sense.
+ * For both numerator and demoniator, VectorTools::integrate_difference() is called with
+ * Function::ZeroFunction.
+ *
+ * @pre `cell_ss_error` must have a size `triang.n_active_cells()`. No checks on this are done.
+ */
+double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
+{}
+
+
+
+/**
  * Writes the data. The following variables are written:
  * - gh_gcrk_cvars
  * - gh_gcrk_avars

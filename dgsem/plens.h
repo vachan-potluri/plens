@@ -646,6 +646,7 @@ class PLENS
     void calc_rhs();
     void calc_time_step();
     void post_process();
+    double calc_ss_error(Vector<double>& cell_ss_error) const;
     void write();
     void update();
 
