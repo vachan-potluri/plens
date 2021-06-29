@@ -2292,14 +2292,56 @@ void PLENS::post_process()
  * e = \frac{\lVert (\rho E)^{n+1} - (\rho E)^n \rVert}_{\Omega}
  * {\lVert (\rho E)^{n+1} \rVert_{\Omega}}
  * @f]
- * Here, the norm is taken in L2 sense.
+ * Here, the norm is taken in L2 sense. The $n$ solution is taken as rhoE_old and $n+1$ is taken
+ * from g_cvars. Thus, this function must be called after update() to get the expected result.
+ *
  * For both numerator and demoniator, VectorTools::integrate_difference() is called with
  * Function::ZeroFunction.
  *
  * @pre `cell_ss_error` must have a size `triang.n_active_cells()`. No checks on this are done.
  */
 double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
-{}
+{
+    // first get the denominator
+    VectorTools::integrate_difference(
+        *mapping_ptr,
+        dof_handler,
+        g_cvars[4],
+        Functions::ZeroFunction<dim>(),
+        cell_ss_error,
+        QGauss<dim>(fe.degree+1),
+        VectorTools::NormType::L2_norm
+    );
+
+    const double denom = VectorTools::compute_global_error(
+        triang,
+        cell_ss_error,
+        VectorTools::NormType::L2_norm
+    );
+
+    // now for numerator, compute a temporary dof vector for the difference
+    LA::MPI::Vector rhoE_diff(g_cvars[4]);
+    rhoE_diff -= rhoE_old;
+    rhoE_diff.compress(VectorOperation::insert);
+
+    VectorTools::integrate_difference(
+        *mapping_ptr,
+        dof_handler,
+        rhoE_diff,
+        Functions::ZeroFunction<dim>(),
+        cell_ss_error,
+        QGauss<dim>(fe.degree+1),
+        VectorTools::NormType::L2_norm
+    );
+
+    const double numer = VectorTools::compute_global_error(
+        triang,
+        cell_ss_error,
+        VectorTools::NormType::L2_norm
+    );
+    
+    return numer/denom; // denom guaranteed to be positive after passing assert_positivity()
+}
 
 
 
