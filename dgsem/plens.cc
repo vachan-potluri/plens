@@ -2426,12 +2426,10 @@ void PLENS::write()
     data_out.add_data_vector(alpha, "alpha");
 
     double ss_error;
+    Vector<double> cell_ss_error(triang.n_active_cells());
     if(calculate_ss_error){
-        Vector<double> cell_ss_error(triang.n_active_cells());
         ss_error = calc_ss_error(cell_ss_error);
-        pcout << "done\n";
         data_out.add_data_vector(cell_ss_error, "steady_state_error");
-        pcout << "added\n";
     }
 
     data_out.build_patches(
@@ -2483,7 +2481,6 @@ void PLENS::write()
         time_file.close();
 
         if(calculate_ss_error){
-            pcout << "in if\n";
             std::ofstream error_file(op_dir + "/" + base_filename + ".ss_error", std::ios::app);
             AssertThrow(
                 error_file.good(),
@@ -2491,7 +2488,6 @@ void PLENS::write()
             );
             error_file << output_counter << " " << cur_time << " " << ss_error << "\n";
             error_file.close();
-            pcout << "one\n";
         }
     }
     output_counter++;
