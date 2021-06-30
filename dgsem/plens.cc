@@ -2514,8 +2514,6 @@ void PLENS::update()
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
     }
-    for(psize i: locally_owned_dofs) rhoE_old[i] = g_cvars[4][i];
-    rhoE_old.compress(VectorOperation::insert);
 
     // stage 1
     calc_rhs();
@@ -2577,6 +2575,9 @@ void PLENS::update()
         }
     }
 
+    for(psize i: locally_owned_dofs) rhoE_old[i] = g_cvars[4][i];
+    rhoE_old.compress(VectorOperation::insert);
+    
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
             g_cvars[var][i] = gcrk_cvars[var][i];
