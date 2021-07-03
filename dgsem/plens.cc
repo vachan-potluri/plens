@@ -1191,7 +1191,7 @@ void PLENS::form_neighbor_face_matchings(
                 for(usi j=0; j<fe_face.dofs_per_face; j++){
                     Point<dim> loc_nei = dof_locations[dof_ids_nei[fdi.maps[fid_nei].at(j)]];
                     Point<dim> diff(loc - loc_nei);
-                    if(diff.norm() < tol){
+                    if(diff.norm() < tol*cell->diameter()){
                         // match obtained
                         nei_face_matching_dofs[cell->index()][fid][i] = j;
                         loc_rel_dofs.add_index(dof_ids_nei[fdi.maps[fid_nei].at(j)]);
