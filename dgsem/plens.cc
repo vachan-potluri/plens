@@ -2477,7 +2477,7 @@ void PLENS::write()
             time_file.good(),
             StandardExceptions::ExcMessage("Unable to open times file.")
         );
-        time_file << output_counter << " " << cur_time << "\n";
+        time_file << output_counter << " " << cur_time << " " << clk.wall_time() << "\n";
         time_file.close();
 
         if(calculate_ss_error){
