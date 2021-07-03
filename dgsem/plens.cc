@@ -2434,7 +2434,7 @@ void PLENS::write()
 
     data_out.build_patches(
         *mapping_ptr,
-        mapping_ptr->get_degree(),
+        fe.degree,
         DataOut<dim>::CurvedCellRegion::curved_inner_cells
     );
 
