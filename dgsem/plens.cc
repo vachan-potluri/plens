@@ -2481,17 +2481,11 @@ void PLENS::write()
         6
     ); // n_groups set to default value 0 (one file per processor)
 
-    // master_filename contains the path relative to execution dir. For pvd file, the path
-    // relative to output dir is required since pvd file is also written in output dir. So split
-    // the master_filename at "/" and take the last string
-    std::vector<std::string> splits;
-    utilities::split_string(master_filename, "/", splits);
-
     // pvd file
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
         times_and_names.emplace_back(
             cur_time,
-            splits[splits.size()-1] // name relative to pvd file path
+            master_filename // name relative to pvd file path
         );
         std::ofstream pvd_file(op_dir + "/" + base_filename + ".pvd");
         AssertThrow(
@@ -2507,7 +2501,8 @@ void PLENS::write()
     // solution transfer
     // the file name for this is same as master filename, with a different extension
     // ".pvtu" substring is the last 5 characters
-    std::string archive_filename = master_filename.substr(0, master_filename.size()-5) + ".ar";
+    std::string archive_filename = op_dir + "/" +
+        master_filename.substr(0, master_filename.size()-5) + ".ar";
     do_solution_transfer(archive_filename);
 
     // append current time and output counter in <base file name>.times
