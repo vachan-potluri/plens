@@ -2409,10 +2409,11 @@ void PLENS::do_solution_transfer(const std::string& filename)
  * @note Although the documentation says `DataOut::add_data_vector()` requires a ghosted vector, a
  * non-ghosted but compressed vector also seems to do the job.
  *
- * This function writes 3 files
+ * This function writes the following files
  * - vtu files for individual processor data
  * - pvtu files for compiling processor data
  * - pvd files for compiling pvtu files across all outputs
+ * - ".ar" archive files by solution transfer
  *
  * To be frank, the pvd file needs to be written only once after the entire simulation. However,
  * the cost incurred in writing it everytime is very low. Moreover, this is helpful in case the
@@ -2502,6 +2503,12 @@ void PLENS::write()
         DataOutBase::write_pvd_record(pvd_file, times_and_names);
         pvd_file.close();
     } // root process
+
+    // solution transfer
+    // the file name for this is same as master filename, with a different extension
+    // ".pvtu" substring is the last 5 characters
+    std::string archive_filename = master_filename.substr(0, master_filename.size()-5) + ".ar";
+    do_solution_transfer(archive_filename);
 
     // append current time and output counter in <base file name>.times
     // also write steady state error if requested
