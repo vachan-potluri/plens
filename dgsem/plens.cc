@@ -2354,6 +2354,40 @@ double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
 
 
 /**
+ * Performs a serialisation using solution transfer. If I understand correctly, serialisation a
+ * process that converts dealii vectors to writable format. The purpose for saving solution vectors
+ * is apparent. The file saved by this function can be read again. When reading again, the
+ * triangulation can be directly read. For also reading the solution vectors, a solution transfer
+ * object has to be constructed again and initialised with the dof handler. The dof handler used
+ * for reading must be attached to the same triangulation obtained earlier from the saved file.
+ * However, the distribution of cells and dofs across processors can be different for this dof
+ * handler (and triangulation). This ability was exploited in "from_file" BC of pens2D and will
+ * also be put to use in this project.
+ *
+ * According to dealii, writing a solution transfer requires ghosted vectors and reading requires
+ * non-ghosted vectors. So, gh_gcrk_cvars will be used here.
+ *
+ * @pre PLENS::gh_gcrk_cvars must be ready to use here.
+ *
+ * @note In this process, the FE degree is nowhere retained. However, this is taken care already
+ * by printing the solution parameters in the output directory. This printed file also has FE
+ * degree added as a comment at the end.
+ */
+void PLENS::do_solution_transfer(const std::string& filename)
+{
+    std::vector<const LA::MPI::Vector*> gh_cvar_ptrs; // pointers to ghosted cvar vectors
+    for(cvar var: cvar_list){
+        gh_cvar_ptrs.emplace_back(&gh_gcrk_cvars[var]);
+    }
+
+    parallel::distributed::SolutionTransfer<dim, LA::MPI::Vector> sol_trans(dof_handler);
+    sol_trans.prepare_for_serialization(gh_cvar_ptrs);
+    triang.save(filename);
+}
+
+
+
+/**
  * Writes the data. The following variables are written:
  * - gh_gcrk_cvars
  * - gh_gcrk_avars

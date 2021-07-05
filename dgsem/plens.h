@@ -30,6 +30,7 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/base/function.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/grid_tools.h>
@@ -654,6 +655,7 @@ class PLENS
     void calc_time_step();
     void post_process();
     double calc_ss_error(Vector<double>& cell_ss_error) const;
+    void do_solution_transfer(const std::string& filename);
     void write();
     void update();
 
