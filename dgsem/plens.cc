@@ -2460,6 +2460,10 @@ void PLENS::write()
     // https://groups.google.com/g/dealii/c/_lmP3VCLBsw
     // instead, use a vector like done for subdomain
     Vector<float> alpha(gh_gcrk_alpha);
+    for(auto &cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+        alpha[cell->index()] = gh_gcrk_alpha[cell->global_active_cell_index()];
+    }
     data_out.add_data_vector(alpha, "alpha");
 
     double ss_error;
