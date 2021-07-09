@@ -625,7 +625,7 @@ class PLENS
 
     void form_neighbor_face_matchings(
         IndexSet& loc_rel_dofs,
-        const double tol = 1e-4
+        const double tol = 1e-8
     );
     void calc_metric_terms();
     void calc_surf_flux(

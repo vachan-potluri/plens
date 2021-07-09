@@ -1191,14 +1191,14 @@ void PLENS::form_neighbor_face_matchings(
                 for(usi j=0; j<fe_face.dofs_per_face; j++){
                     Point<dim> loc_nei = dof_locations[dof_ids_nei[fdi.maps[fid_nei].at(j)]];
                     Point<dim> diff(loc - loc_nei);
-                    if(diff.norm() < tol*cell->diameter()){
+                    if(diff.norm() < tol*cell->minimum_vertex_distance()){
                         // match obtained
                         nei_face_matching_dofs[cell->index()][fid][i] = j;
                         loc_rel_dofs.add_index(dof_ids_nei[fdi.maps[fid_nei].at(j)]);
 
                         // print if i and j are not equal (abnormal match)
                         if(i != j){
-                            std::cout << "\tCell id: " << cell->index()
+                            std::cout << "\n\tCell id: " << cell->index()
                                 << ", Cell-local face id: " << fid
                                 << ", Face-local dof id: " << i
                                 << "\n\tFound abnormal match with\n"
