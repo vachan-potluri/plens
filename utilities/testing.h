@@ -16,8 +16,8 @@ namespace utilities{
  * @brief Automates certain output generation
  *
  * The functionalities this provides are
- * 1. Print "Testing xyz class" when Testing::begin() is invoked
- * 2. Add new line when Testing::new_block() is invoked
+ * 1. Print "Testing xyz class/function" when Testing::begin() is invoked
+ * 2. Add some visible separating content when Testing::new_block() is invoked
  *
  * All output is directed to std::cout
  */
