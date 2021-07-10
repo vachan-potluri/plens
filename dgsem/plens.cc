@@ -2216,7 +2216,7 @@ void PLENS::calc_rhs()
  * @f]
  * where @f$C@f$ is a constant and @f$h@f$ is the cell size.
  *
- * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the cell radius.
+ * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the minimum vertex distance.
  *
  * @remark It was noted during pens2D project that the actual expression of Hethaven which uses
  * $\mu$ in place of $\nu$ in the above formula is dimensionally incorrect.
@@ -2237,7 +2237,7 @@ void PLENS::calc_time_step()
         if(!(cell->is_locally_owned())) continue;
 
         cell->get_dof_indices(dof_ids);
-        double radius = 0.5*cell->diameter();
+        const double length = cell->minimum_vertex_distance();
 
         for(psize i: dof_ids){
             State cons;
@@ -2249,8 +2249,8 @@ void PLENS::calc_time_step()
                 fabs(cons[3]/cons[0])
             });
             // factoring out 1/N^2
-            double cur_step = radius/(max_vel + a +
-                fe.degree*fe.degree*gcrk_mu[i]/(radius*cons[0])
+            double cur_step = length/(max_vel + a +
+                fe.degree*fe.degree*gcrk_mu[i]/(length*cons[0])
             );
             if(cur_step < this_proc_step) this_proc_step = cur_step;
         }
