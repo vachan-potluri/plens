@@ -29,7 +29,8 @@ ref_D_1d(fe_degree+1),
 ref_Q_1d(fe_degree+1),
 cdi(fe_degree),
 blender_calc(fe_degree, gcrk_blender_var),
-clk(mpi_comm)
+clk(mpi_comm),
+timer(pcout, TimerOutput::never, TimerOutput::wall_times)
 {
     declare_parameters();
     prm.parse_input("input.prm");

@@ -610,9 +610,14 @@ class PLENS
     usi write_freq;
 
     /**
-     * A timer for the simulation. Used in print statements
+     * A timer for wall time calculation in the simulation. Used in print statements
      */
     Timer clk;
+
+    /**
+     * A timer used to time certain important sections of the code.
+     */
+    TimerOutput timer;
 
     /**
      * This is used for generating a pvd file containing all the data files and time value for the
