@@ -39,9 +39,20 @@
 class CAvars
 {
     private:
-    State* sp_; // pointer to state
-    Avars* ap_; // pointer to avars
-    bool only_state; // true: only pointer to a state is set, false: both pointers set
+    /**
+     * Pointer to State object being stored
+     */
+    State* sp_;
+
+    /**
+     * Pointer to Avars object being stored
+     */
+    Avars* ap_;
+
+    /**
+     * If `true`, only pointer to a State is set. `false` implies both pointers are set
+     */
+    bool only_state;
     
     
     

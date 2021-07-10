@@ -10,8 +10,7 @@
 /**
  * @brief Constructor. Set parameter values explicitly.
  *
- * Internally calls NavierStokes::set_modelling_params(), NavierStokes::set_inv_surf_flux_scheme()
- * and NavierStokes::set_inv_vol_flux_scheme().
+ * Internally calls NavierStokes::set_modelling_params(), and other flux scheme setters.
  */
 NavierStokes::NavierStokes(
     const double gma, const double M, const double Pr, double mu0, const double T0, const double S,
@@ -38,9 +37,9 @@ NavierStokes::NavierStokes(
 /**
  * @brief Special constructor for air and N2.
  *
- * Internally calls NavierStokes::set_modelling_params(), NavierStokes::set_inv_surf_flux_scheme()
- * and NavierStokes::set_inv_vol_flux_scheme(). If `inviscid==true`, then @f$\mu_0@f$ is set to
- * zero. This results in zero values of @f$\mu@f$ and @f$k@f$.
+ * Internally calls NavierStokes::set_modelling_params(), and other flux scheme setters. If
+ * `inviscid==true`, then @f$\mu_0@f$ is set to zero. This results in zero values of @f$\mu@f$
+ * and @f$k@f$.
  */
 NavierStokes::NavierStokes(
     const std::string gas_name,
@@ -204,9 +203,10 @@ void NavierStokes::set_dif_vol_flux_scheme(const dif_vol_flux_scheme dvfs)
 
 
 /**
- * @brief Sets surface, volume and internal flux wrappers. Surface flux wrappers are used in
- * assembling surface flux for the 3 stages. Volume and internal flux wrappers are used for
- * calculating residual (or, RHS) for stages 2 and 3. See PLENS class documentation for details.
+ * @brief Sets surface, volume and internal (or, exact) flux wrappers. Surface flux wrappers are
+ * used in assembling surface flux for the 3 stages. Volume and internal/exact flux wrappers are
+ * used for calculating residual (or, RHS) for stages 2 and 3. See PLENS class documentation for
+ * details.
  *
  * See the class documentation for more details.
  *

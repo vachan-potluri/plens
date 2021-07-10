@@ -8,8 +8,10 @@
 
 #include <array>
 
-// the ordering will be as described in the enum avar
-using Avars = std::array<double, 9>; // 6 stresses and 3 heat fluxes
+/**
+ * A data structure for auxiliary variables. See @ref avar for the ordering.
+ */
+using Avars = std::array<double, 9>;
 
 #endif
  

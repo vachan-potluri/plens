@@ -5,7 +5,8 @@
  * These enums may not be actually used in the code. But they serve as reference for ordering 
  * convention of quantities like in a conservative state. The names are useful during data output.
  * 
- * The ordering of enum avar is as follows, considering the stresses represented by a matrix.
+ * The ordering of viscous stresses in @ref avar is as follows, considering the stresses
+ * represented by a matrix. The remaining elements (6-8) are for heat flux.
 @verbatim
     0  1  2
            
