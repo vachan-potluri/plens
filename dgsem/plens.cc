@@ -2154,13 +2154,22 @@ void PLENS::calc_cell_lo_inv_residual(
 void PLENS::calc_rhs()
 {
     assert_positivity();
-    calc_aux_vars();
-    calc_blender();
+    {
+        TimerOutput::Scope timer_section(timer, "Calculate auxiliary variables");
+        calc_aux_vars();
+    }
+    {
+        TimerOutput::Scope timer_section(timer, "Calculate blender");
+        calc_blender();
+    }
     
     // calculate stages 2 & 3 flux
     locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux;
-    calc_surf_flux(2, s2_surf_flux);
-    calc_surf_flux(3, s3_surf_flux);
+    {
+        TimerOutput::Scope timer_section(timer, "Calculate stages 2&3 surface fluxes");
+        calc_surf_flux(2, s2_surf_flux);
+        calc_surf_flux(3, s3_surf_flux);
+    }
 
     // initialise variables
     std::vector<State> ho_inv_residual(fe.dofs_per_cell),
@@ -2171,25 +2180,31 @@ void PLENS::calc_rhs()
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
-        calc_cell_ho_residual(
-            2,
-            cell,
-            s2_surf_flux,
-            ho_inv_residual
-        ); // high order inviscid
+        {
+            TimerOutput::Scope timer_section(timer, "Calculate stages 2&3 ho residual");
+            calc_cell_ho_residual(
+                2,
+                cell,
+                s2_surf_flux,
+                ho_inv_residual
+            ); // high order inviscid
 
-        calc_cell_ho_residual(
-            3,
-            cell,
-            s3_surf_flux,
-            ho_dif_residual
-        ); // high order viscous
+            calc_cell_ho_residual(
+                3,
+                cell,
+                s3_surf_flux,
+                ho_dif_residual
+            ); // high order viscous
+        }
 
-        calc_cell_lo_inv_residual(
-            cell,
-            s2_surf_flux,
-            lo_inv_residual
-        );
+        {
+            TimerOutput::Scope timer_section(timer, "Calculate lo inviscid residual");
+            calc_cell_lo_inv_residual(
+                cell,
+                s2_surf_flux,
+                lo_inv_residual
+            );
+        }
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
@@ -2230,7 +2245,8 @@ void PLENS::calc_rhs()
  * @pre This function assumes gcrk_mu is already set. Also assumes positivity of density.
  */
 void PLENS::calc_time_step()
-{    
+{
+    TimerOutput::Scope timer_section(timer, "Calculate time step");
     std::vector<psize> dof_ids(fe.dofs_per_cell);
 
     double this_proc_step = 1e6; // stable time step (factored) for this process
@@ -2421,9 +2437,14 @@ void PLENS::do_solution_transfer(const std::string& filename)
  * To be frank, the pvd file needs to be written only once after the entire simulation. However,
  * the cost incurred in writing it everytime is very low. Moreover, this is helpful in case the
  * simulation needs to be killed.
+ *
+ * This function also prints the timer output everytime it is called. The output will happen on
+ * pcout. If the timer output data is of importance, then the pcout output can be logged into a
+ * file.
  */
 void PLENS::write()
 {
+    timer.print_wall_time_statistics(mpi_comm);
     post_process();
     std::string op_dir, base_filename;
     bool calculate_ss_error;
