@@ -2480,11 +2480,12 @@ void PLENS::write()
 
     // for alpha, direct addition not possible, see WJ-15-Jun-2021 and
     // https://groups.google.com/g/dealii/c/_lmP3VCLBsw
-    // instead, use a vector like done for subdomain
-    Vector<float> alpha(gh_gcrk_alpha);
+    // also see WJ-10-Jul-2021 and
+    // https://groups.google.com/g/dealii/c/hF4AfBqnTdk
+    Vector<float> alpha(triang.n_active_cells());
     for(auto &cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
-        alpha[cell->index()] = gh_gcrk_alpha[cell->global_active_cell_index()];
+        alpha[cell->active_cell_index()] = gh_gcrk_alpha[cell->global_active_cell_index()];
     }
     data_out.add_data_vector(alpha, "alpha");
 
