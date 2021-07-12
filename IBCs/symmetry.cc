@@ -8,7 +8,9 @@
 using namespace BCs;
 
 /**
- * Sets the ghost state according to the algo described in class documentation
+ * Sets the ghost state according to the algo described in class documentation. BR1 flux of the
+ * ghost state calculated here along with the inner state gives an interfacial state with pressure
+ * and density unchanged and only tangential velocity component retained.
  *
  * @pre @p normal has to be a unit vector
  */

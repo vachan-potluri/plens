@@ -53,8 +53,9 @@ namespace BCs{
  *
  * For stage 1 & 3, the interface velocity is just the tangential component of inner velocity
  * @f[
- * \vec{u}_g = \vec{u}_i - (\vec{u}_i\cdot\vec{n})\vec{n}
+ * \vec{u}_f = \vec{u}_i - (\vec{u}_i\cdot\vec{n})\vec{n}
  * @f]
+ * The ghost state is then appropriately set using this and the inner state.
  *
  * This class requires NS pointer for all stages.
  *
