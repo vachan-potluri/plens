@@ -83,6 +83,10 @@ using namespace dealii;
  * These BC objects will work for boundaries involving curved manifolds too, provided the normal
  * used in the getters is correct.
  *
+ * @note For inviscid flux (stage 2), the algorithm can change depending on whether the system
+ * being solved is Euler or compressible Navier-Stokes. The getter for stage 2 accordingly must
+ * incorporate this.
+ *
  * @note For auxiliary variable and viscous fluxes, weak-Riemann and weak-Prescribed approaches are
  * equivalent, it is possible to establish a simple algebraic relation between the weak-Prescribed
  * fluxes and weak-Riemann ghost variables. However, underlying this relation, the algorithms used
