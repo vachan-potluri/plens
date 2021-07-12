@@ -9,7 +9,8 @@ using namespace BCs;
 
 /**
  * Sets the ghost conservative state according to the algo mentioned in the class documentation. The
- * approach taken is very similar to that used in UniformInflow::get_ghost_stage1()
+ * approach taken is very similar to that used in UniformInflow::get_ghost_stage1(). See eq. (50)
+ * of Mengaldo et al (2014). Note: that equation assumes zero wall velocity.
  *
  * @note @p normal is unused
  */
@@ -31,9 +32,17 @@ void UniformTempWall::get_ghost_stage1(
 
 
 /**
- * Ghost state has reversed velocity with all other variables unchanged.
+ * Compressible NS: Ghost state has reversed velocity with all other variables unchanged, see eq.
+ * (44) of Mengaldo et al (2014).
+ * Euler: only tangential component reversed, see eq. (33) of Megaldo et al (2014).
  *
- * @note @p normal is unused
+ * @note Eq. (34) of Mengaldo et al. (2014) rightly shows the total energy to be unchanged. That's
+ * because reversing an orthogonal component doesn't change the velocity magnitude.
+ * @note The equations given by Mengaldo et al (2014) are for stationary wall. To apply here,
+ * replace @f$\vec{v}@f$ in the paper by @f$\vec{v}-\vec{v}_w@f$ which gives velocity relative to
+ * the wall velocity (UniformTempWall::vel_pr_).
+ * @note The wall temperature is irrelevant for this function, and hence also for purely inviscid
+ * simulations.
  */
 void UniformTempWall::get_ghost_stage2(
     const FaceLocalDoFData &ldd,
@@ -42,15 +51,34 @@ void UniformTempWall::get_ghost_stage2(
     State &cons_gh
 ) const
 {
+    // total energy doesn't change in both cases the since velocity magnitude remains same
     cons_gh[0] = cons[0];
     cons_gh[4] = cons[4];
-    for(int d=0; d<dim; d++) cons_gh[1+d] = -cons[1+d]; // reverse velocity
+    if(ns_ptr_->is_inviscid()){
+        Tensor<1,dim> smom_in, smom_in_rel; //  absolute and relative specific momentum
+        for(int d=0; d<dim; d++){
+            smom_in[d] = cons[1+d];
+            smom_in_rel[d] = cons[1+d] - cons[0]*vel_pr_[d];
+        }
+        double normal_smom_rel = scalar_product(smom_in_rel, normal); // smom_in_rel dot normal
+        for(int d=0; d<dim; d++) cons_gh[1+d] = smom_in[d] - 2*normal_smom_rel*normal[d];
+    }
+    else{
+        // reverse relative velocity
+        for(int d=0; d<dim; d++) cons_gh[1+d] = 2*cons[0]*vel_pr_[d] - cons[1+d];
+    }
 }
 
 
 
 /**
- * Ghost aux vars are set to inner aux vars and ghost cons state is set as in stage 1.
+ * Ghost aux vars are set to inner aux vars and ghost cons state is set as in stage 1. Note here
+ * again that since auxiliary variables are the set same, the energy flux becomes linear in
+ * velocity. And as a result, taking an average of separately calculated inner and ghost diffusive
+ * fluxes gives the same flux as Menglado et al (2014) suggest using weak-prescribed approach in
+ * eq. (51). The momentum flux depends solely on auxiliary variables and has nothing to do with
+ * wall velocity or temperature. The prescribed wall temperature is irrelevant here, even for
+ * energy flux.
  *
  * @note @p normal is unused
  */
