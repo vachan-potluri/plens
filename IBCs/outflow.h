@@ -42,7 +42,8 @@ namespace BCs
  * 2. For supersonic case, ghost conservative state equals inner conservative state. For subsonic
  * case, ghost values of @f$\rho@f$, @f$\vec{u}@f$ equal inner values, and ghost value of pressure
  * is calculated as @f$p_{gh}=2p_{pr}-p_{in}@f$ where @f$p_{pr}@f$ is the prescribed pressure,
- * passed in ctor. Temperature is calculated using density and pressure.
+ * passed in ctor. Temperature is calculated using density and pressure. All this was for
+ * compressible NS system. For Euler system, ghost state is set to inner state.
  * 3. Ghost cavars equal inner cavars
  *
  * For BR1 algorithm of stages 1 and 3, the aforementioned strategy is similar to what Mengaldo et
