@@ -307,6 +307,13 @@ class NavierStokes
             cons[4] += 0.5*rho*vel[d]*vel[d];
         }
     }
+
+    /**
+     * @brief Returns a boolean for whether or not the model is inviscid. The check is done by
+     * comparing NavierStokes::mu0_ with 1e-16. Hopefully no gas will have a viscosity smaller
+     * than that. The tolerance may be changed here in future if required.
+     */
+    inline bool is_inviscid() const {return mu0_<1e-16;}
     
     #ifdef DEBUG
     static void test();
