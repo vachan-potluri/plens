@@ -1061,8 +1061,8 @@ void PLENS::set_BC()
 
                     bc_list[cur_bid] = new BCs::Periodic(
                         dof_handler,
-                        gcrk_cvars,
-                        gcrk_avars,
+                        gh_gcrk_cvars,
+                        gh_gcrk_avars,
                         matched_pairs,
                         foid
                     );
