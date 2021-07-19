@@ -50,8 +50,10 @@ Periodic::Periodic(
         //     std::cout << "Pair " << pair_id << ": "
         //         << pair.cell[0]->index() << " " << pair.cell[1]->index() << "\n";
         // }
-        cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
-        pair_id++;
+        if(pair.cell[fid]->is_locally_owned()){
+            cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
+            pair_id++;
+        }
     }
 }
 
