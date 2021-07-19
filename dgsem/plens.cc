@@ -23,6 +23,7 @@ mapping_ptr(nullptr),
 fe(fe_degree),
 fe_face(fe_degree),
 dof_handler(triang),
+has_periodic_bc(false),
 fdi(fe_degree),
 w_1d(fe_degree+1),
 ref_D_1d(fe_degree+1),
@@ -732,6 +733,7 @@ void PLENS::set_dof_handler()
             {
                 type = prm.get("type");
                 if(type == "periodic"){
+                    has_periodic_bc = true;
                     const usi periodic_direction = prm.get_integer("periodic direction");
                     const std::string orientation = prm.get("periodic orientation");
                     const usi other_id = prm.get_integer("other surface boundary id");
@@ -816,6 +818,10 @@ void PLENS::set_sol_vecs()
 {
     pcout << "Initialising solution vectors ... ";
     locally_owned_dofs = dof_handler.locally_owned_dofs();
+    // if the problem has periodic BC, then face dof matching doesn't give relevant dofs
+    if(has_periodic_bc){
+        DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    }
 
     for(cvar var: cvar_list){
         g_cvars[var].reinit(locally_owned_dofs, mpi_comm);
@@ -1195,7 +1201,11 @@ void PLENS::form_neighbor_face_matchings(
                     if(diff.norm() < tol*cell->minimum_vertex_distance()){
                         // match obtained
                         nei_face_matching_dofs[cell->index()][fid][i] = j;
-                        loc_rel_dofs.add_index(dof_ids_nei[fdi.maps[fid_nei].at(j)]);
+                        // for some reason, add_index is only working when there are no periodic
+                        // BCs
+                        if(!has_periodic_bc){
+                            loc_rel_dofs.add_index(dof_ids_nei[fdi.maps[fid_nei].at(j)]);
+                        }
 
                         // print if i and j are not equal (abnormal match)
                         if(i != j){

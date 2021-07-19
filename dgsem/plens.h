@@ -391,6 +391,12 @@ class PLENS
     std::map<psize, Point<dim>> dof_locations;
 
     /**
+     * A boolean variable indicating if the problem has periodic BC(s). This is required to set
+     * the relevant dofs correctly.
+     */
+    bool has_periodic_bc;
+
+    /**
      * Locally owned dofs. Set in set_sol_vecs()
      */
     IndexSet locally_owned_dofs;
