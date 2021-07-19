@@ -80,7 +80,7 @@ class Periodic: public BC
     const std::vector<
         GridTools::PeriodicFacePair<
             parallel::distributed::Triangulation<dim>::cell_iterator>
-        >& per_pairs;
+        > per_pairs;
     /**
      * The 'f'ace id. Must be 0 or 1. This indicates which set of Periodic::per_pairs is in
      * consideration for this BC. See the class documentation.
