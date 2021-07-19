@@ -47,6 +47,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 #include "dtype_aliases.h"
+#include "set_manifold.h"
 #include "LA.h"
 #include "face_dof_info.h"
 #include "metric_terms.h"

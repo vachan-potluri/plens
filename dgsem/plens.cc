@@ -511,6 +511,10 @@ void PLENS::declare_parameters()
  *
  * If there are any periodic BCs to be set, then `triang` object must be modified. This will be
  * done in set_dof_handler().
+ *
+ * @remark For adding the ability to restart a simulation, manifold setting is out-sourced to
+ * set_manifold.h. This way, a coarse triangulation can be applied a manifold before loading an
+ * archived solution.
  */
 void PLENS::read_mesh()
 {
@@ -572,9 +576,7 @@ void PLENS::read_mesh()
             }
             prm.leave_subsection(); // cylinder flare
 
-            CylindricalManifold<dim> manifold(axis, axis_p);
-            triang.set_all_manifold_ids(0);
-            triang.set_manifold(0, manifold);
+            SetManifold::cylinder_flare(axis, axis_p, triang);
         } // if cylinder flare
         else{
             // guaranteed to be blunted double cone
@@ -601,19 +603,7 @@ void PLENS::read_mesh()
             }
             prm.leave_subsection(); // blunted double cone
 
-            CylindricalManifold<dim> cyl_man(axis, separation_p);
-            SphericalManifold<dim> sph_man(nose_center);
-
-            double dotp; // dot product
-            for(auto cell: triang.active_cell_iterators()){
-                if(!(cell->is_locally_owned())) continue;
-                dotp = scalar_product(axis, cell->center() - separation_p);
-                if(dotp < 0) cell->set_all_manifold_ids(0); // sphere
-                else cell->set_all_manifold_ids(1); // cylinder
-            } // loop over owned active cells
-
-            triang.set_manifold(0, sph_man);
-            triang.set_manifold(1, cyl_man);
+            SetManifold::blunted_double_cone(axis, separation_p, nose_center, triang);
         } // if blunted double cone
     }
     prm.leave_subsection(); // subsection mesh
