@@ -18,9 +18,10 @@ MetricTerms<dim>::MetricTerms(const FEValues<dim>& fev, const FullMatrix<double>
 
 /**
  * The main function: computes and stores all the metric terms according to `fev` provided. This
- * function first resizes JxContra_vecs and sets its data freshly. For calculation of contravariant
- * vectors, `FEValuesBase::jacobian()` is used. See WJ-21-May-2021. This function call returns a
- * `DerivativeForm` object which has useful functions from which the vectors are calculated.
+ * function first resizes MetricTerms::JxContra_vecs and sets its data freshly. For calculation of
+ * contravariant vectors, `FEValuesBase::jacobian()` is used. See WJ-21-May-2021. This function
+ * call returns a `DerivativeForm` object which has useful functions from which the vectors are
+ * calculated.
  *
  * First, the covariant vectors are obtained (see appendix B of Hennemann et al 2021):
  * @f[
@@ -54,7 +55,7 @@ MetricTerms<dim>::MetricTerms(const FEValues<dim>& fev, const FullMatrix<double>
  * `FE_DGQ` respectively.
  * @pre Values in `Q` must be consistent with `fev`. It must be the product of 1D weights diagonal
  * matrix and the 1D differentiation matrix:
- * @f$Q_{ij} = w_i D_{ij} = w_i \frac{\partial l_j}{\partial \xi_i}@f$
+ * @f$Q_{ij} = w_i D_{ij} = w_i \frac{\partial l_j}{\partial \xi}(\xi_i)@f$
  * where @f$w@f$ and @f$l@f$ are the weights and shape functions corresponding to 1D LGL
  * quadrature.
  */

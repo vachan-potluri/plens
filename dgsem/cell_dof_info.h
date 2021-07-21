@@ -1,6 +1,6 @@
 /**
  * @file cell_dof_info.h
- * Provides maps to go back and forth cell-local dof ordering and tensorial dof ordering.
+ * @brief Provides maps to go back and forth cell-local dof ordering and tensorial dof ordering.
  */
 
 #ifndef CELL_DOF_INFO_H

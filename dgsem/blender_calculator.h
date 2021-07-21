@@ -38,7 +38,7 @@ using namespace dealii;
 /**
  * Calculates the value of blending parameter, cell-wise. The construction of this object is
  * complete only after BlenderCalculator::parse_parameters() is called. This function reads the
- * parameters under "blender parameters" section of the Parameterhandler provided. The parameters
+ * parameters under "blender parameters" section of the ParameterHandler provided. The parameters
  * are stored only here, and not in PLENS because this is the only place where they are required.
  * However, the entry 'blender parameters/variable' is ignored and instead, a const reference to
  * the variable vector will also be taken in the constructor. All variables read from the

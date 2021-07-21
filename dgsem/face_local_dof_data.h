@@ -21,9 +21,12 @@
  * 2. Face id wrt cell @f$[0,6)@f$
  * 3. DoF id wrt face @f$[0, (N+1)^2)@f$
  *
- * This is mainly used in BC class for periodic BC setting or for setting spatially varying BC.
+ * This is mainly used in BCs::Periodic or for setting spatially varying BC (not yet implemented).
  * Often, this is used in conjunction with FaceDoFInfo and DoFHandler<dim>::cell_iterator to get
- * the global dof from the stored local data.
+ * the global dof from the stored local data. The cell id is generally `cell->index()` and hence
+ * this class is of use only when
+ * 1. You want to index cells that are strictly locally owned
+ * 2. You want to use meshes that don't involve refinement
  */
 struct FaceLocalDoFData
 {
@@ -33,7 +36,7 @@ struct FaceLocalDoFData
     /**
      * @brief Constructor taking all values
      *
-     * @pre @p f @f$\in [0,6)@f$, @p dof_id @f$\in [0,(N+1)^2)@f$
+     * @pre @p f @f$\in [0,6)@f$, @p dof_id @f$\in [0,(N+1)^2)@f$. No assertion is done.
      */
     FaceLocalDoFData(const psize &c, const usi f, const usi d):
         cell_id(c), face_id(f), face_dof_id(d)
