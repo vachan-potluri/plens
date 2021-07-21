@@ -52,8 +52,8 @@ Periodic::Periodic(
         // }
         if(pair.cell[fid]->is_locally_owned()){
             cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
-            pair_id++;
         }
+        pair_id++;
     }
 }
 
