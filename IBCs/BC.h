@@ -66,19 +66,19 @@ using namespace dealii;
  * which will be useful for assembling surface flux. See NavierStokes class documentation for more
  * details on the usage of wrappers.
  *
- * Keeping in mind periodic BC and spatially varying BC, this base class takes const references to
- * dof handler object, and vectors holding global conservative and auxiliary variables. The periodic
- * BC class will additionally have some more entities to be set which will be done by that specific
- * class implementation. In each stage getter, the local information about dof will be taken through
- * FaceLocalDoFData along with the cons/aux state at that particular dof. Initially, this class
- * was designed to work based on FaceLocalDoFData alone. However, to actually get the cons/aux
- * state at this location, a call to BC::get_global_dof_id() would be required for every dof and
- * in each stage. This can soon get quite time consuming. Having said that, the FaceLocalDoFData is
- * still relevant for periodic BC and hence it is not removed completely. Just that for most BCs,
- * this object is unused.
- * Additionally, the local unit normal will also be required. Although the normal could in principle
- * be calculated using dof handler and the local data provided, it would be expensive. Imagine
- * reinitialising an fe values object for each function call.
+ * Keeping in mind BCs::Periodic and spatially varying BC (not currently implemented), this base
+ * class takes const references to dof handler object, and vectors holding global conservative and
+ * auxiliary variables. BCs::Periodic will additionally have some more entities to be set which
+ * will be done by that specific class implementation. In each stage getter, the local information
+ * about dof will be taken through FaceLocalDoFData along with the cons/aux state at that
+ * particular dof. Initially, this class was designed to work based on FaceLocalDoFData alone.
+ * However, to actually get the cons/aux state at this location, a call to BC::get_global_dof_id()
+ * would be required for every dof and in each stage. This can soon get quite time consuming.
+ * Having said that, the FaceLocalDoFData is still relevant for BCs::Periodic and hence it is not
+ * removed completely. Just that for most BCs, this object is unused. Additionally, the local unit
+ * normal will also be required. Although the normal could in principle be calculated using dof
+ * handler and the local data provided, it would be expensive. Imagine reinitialising an fe values
+ * object for each function call.
  *
  * These BC objects will work for boundaries involving curved manifolds too, provided the normal
  * used in the getters is correct.
@@ -94,10 +94,10 @@ using namespace dealii;
  * assume BR1 algorithm (simple avg, see NavierStokes) for these two fluxes. The reason is simple:
  * most auxiliary/diffusive fluxes are a combination of averaging and diffusing. BR1 flux just does
  * the averaging part. So even if a different scheme were to be used (which may include diffusing),
- * the ghost state provided would then have least dissipation.
- * And hence, most derived classes first calculate the face value/flux that would occur and then
- * proceed to calculate the ghost state that ensures this face value. This is the approach taken
- * for steps 1 & 3. For step 2, theories generally provide the ghost values directly.
+ * the ghost state provided would then have least dissipation. And hence, most derived classes
+ * first calculate the face value/flux that would occur and then proceed to calculate the ghost
+ * state that ensures this face value when using BR1 flux. This is the approach taken for steps 1
+ * & 3. For step 2, theories generally provide the ghost values directly.
  */
 class BC
 {

@@ -57,8 +57,8 @@ void BC::form_cell_map()
  * @brief Returns global dof index based on FaceLocalDoFData object @p ldd
  *
  * Algorithm:
- * - Use cell_map_ to get the cell iterator for cell index `ldd.cell_id`. Raise exception if the
- * cell id given doesn't exist in cell_map_
+ * - Use BCs::Periodic::cell_map_ to get the cell iterator for cell index `ldd.cell_id`. Raise
+ *   exception if the cell id given doesn't exist in cell_map_
  * - Get (global) dof indices of this cell
  * - Use FaceDoFInfo @p fdi to get cell-local dof id from `ldd.face_id` and `ldd.face_dof_id`
  * - Use cell dof indices to get global dof from cell-local dof
