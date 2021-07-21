@@ -705,6 +705,12 @@ void PLENS::set_NS()
 void PLENS::set_dof_handler()
 {
     pcout << "Setting DoFHandler object ...\n";
+
+    // the matched pairs will be appended to this list
+    std::vector<GridTools::PeriodicFacePair<
+        parallel::distributed::Triangulation<dim>::cell_iterator>
+    > matched_pairs;
+
     prm.enter_subsection("BCs");
     {
         pcout << "Looking for periodic BCs\n";
@@ -730,10 +736,6 @@ void PLENS::set_dof_handler()
                     bid_periodic_ignore.emplace(other_id);
 
                     pcout << "Found bid " << i << " and " << other_id << " with periodic type\n";
-
-                    std::vector<GridTools::PeriodicFacePair<
-                        parallel::distributed::Triangulation<dim>::cell_iterator>
-                    > matched_pairs;
 
                     if(i != other_id){
                         usi left_id, right_id;
@@ -770,14 +772,15 @@ void PLENS::set_dof_handler()
                         );
                         pcout << "Formed matched pairs with id " << i << "\n";
                     }
-
-                    triang.add_periodicity(matched_pairs);
-                }
+                } // if type is periodic
             }
             prm.leave_subsection(); // bid<x>
-        }
+        } // loop over BCs
     }
     prm.leave_subsection(); // subsection BCs
+
+    // add all periodic face relations at once
+    if(has_periodic_bc) triang.add_periodicity(matched_pairs);
 
     dof_handler.distribute_dofs(fe);
 
