@@ -85,14 +85,15 @@ class plens_test; // forward declaration
  *
  * The algorithm to be implemented is discussed in entries after WJ-15-Feb-2021. The relevant
  * papers are
- * 1. [dgsem1] Hennemann, Ramirez & Hindenlang, JCP, 2021.
- * 2. [dgsem2] Gassner, Winters & Kopriva, JCP, 2016.
- * 3. [dgsem3] Fisher & Carpenter, JCP, 2013.
+ * 1. [1] Hennemann, Ramirez & Hindenlang, JCP, 2021.
+ * 2. [2] Gassner, Winters & Kopriva, JCP, 2016.
+ * 3. [3] Fisher & Carpenter, JCP, 2013.
  *
- * The documentation for this class is being written on-the-fly as the code is being built module
- * by module. Many settings required will be done through dealii::ParameterHandler. Explicit
- * documentation for this will not be provided here, but in the comments of sample prm file. The
- * prm file should be named `input.prm`.
+ * All solver settings required will be done taken dealii::ParameterHandler. Explicit documentation
+ * for this will not be provided here, but will be auto-generated in the comments of sample prm
+ * file which is print when a simulation is run. The prm file should be named `input.prm`, no other
+ * variations to this are possible. In case multiple prm files are to be stored, they can be kept
+ * with particular names and input.prm can be symbolically linked to them as required.
  *
  *
  *
@@ -104,25 +105,37 @@ class plens_test; // forward declaration
  * Curved meshes are significantly complicated because dealii doesn't provide a support to directly
  * read higher order meshes. See the note __pens2D to plens__ for more details. Also see entries
  * around WJ-05-Apr-2021. To truly have curved meshes, i.e.; curvature even in the internal cell
- * edges, manifold must be set to all the internal features too. Because specifying region wise
+ * edges, a manifold must be set to all the internal features too. Because specifying region wise
  * manifold through prm file is difficult, currently only "cylinder flare" and
- * "blunted double cone" geometries are supported. See read_mesh() for more details.
+ * "blunted double cone" geometries are supported. See read_mesh() and SetManifold for more
+ * details.
  *
  * If there are any periodic boundary conditions, then the mesh has to be in 'standard orientation'
  * as described in dealii documentation. The best example of such meshes is a cartesian mesh.
+ * Periodic boundary conditions will be taken care in @ref dof_handler.
  *
  * @section dof_handler DoFHandler and solution vectors
  *
  * Because periodic boundary conditions are supported, the dof handler being constructed must take
  * this into account. This is done in set_dof_handler(). Note that there will be two loops required
- * over BCs. Once for setting dof handler and once for setting BCs. These two steps cannot be
- * combined because BCs require dof handler and solution vectors for construction.
+ * over BCs. Once for setting dof handler (viz. here) and once for setting BCs, in set_BC(). These
+ * two steps cannot be combined because BCs require dof handler and solution vectors for
+ * construction. Periodicity relations are added to PLENS::triang in set_dof_handler() using
+ * standard dealii's functions.
  *
- * Once dof handler is constructed, the solution vectors are constructed using the owned and
- * relevant dofs. Relevant dofs here are combination of owned dofs and dofs in neighboring cells
- * and the dofs in cells connected by periodicity (if any). Unlike in pens2D, here all the dofs
- * are taken as relevant rather than just the ones lying on the common face. This may be modified
- * in the future.
+ * To create the index sets for owned and relevant dofs, two different approaches are used
+ * depending on the scenario.
+ * - If the simulation doesn't have periodic boundary conditions, then only the dofs of the
+ *   adjacent cell, lying on the common face are considered relevant. These are really all that is
+ *   required. Such relevant dofs are formed in form_neighbor_face_matchings(). This function
+ *   serves another major purpose too, see @ref face_assem.
+ * - If the simulation has periodic boundary conditions, then simply dealii's in-built function
+ *   is used to get the relevant dofs. In this case, all dofs of adjacent cells are considered
+ *   relevant.
+ *
+ * The vaiable PLENS::has_periodic_bc indicates whether or not the simulation has periodic boundary
+ * conditions. Once dof handler is constructed, the solution vectors are constructed using the
+ * owned and relevant dofs.
  *
  * @subsection cell_indices A note on cell indices
  *
@@ -150,6 +163,10 @@ class plens_test; // forward declaration
  * by this function is used as the "key" (actually, it is not a map, so using the term "key" is
  * not strictly correct).
  *
+ * And finally to close, using `cell->index()` is valid only when
+ * - You want to distinguish between only cells owned by a process
+ * - There is no mesh refinement
+ *
  * @section modelling Fluid and flow modelling
  *
  * This is done through the NavierStokes class. The fluid is assumed to be a perfect gas and the
@@ -163,8 +180,7 @@ class plens_test; // forward declaration
  *
  * Currently, the code supports only one initial condition: ICs::PiecewiseFunction. See the class
  * documentation for more details. The domain is divided into pieces using cartesian bifurcators
- * and in each piece, a function is set.
- *
+ * and in each piece, a function is set. Shortly, an IC to restart a simulation will be added.
  *
  * @section BCs Boundary conditions
  *
@@ -176,17 +192,25 @@ class plens_test; // forward declaration
  * - BCs::Symmetry
  * - BCs::Periodic
  *
- * See the class documentations for details. The periodic boundary conditions is a very fragile one
- * to handle. For periodic BC to be applied, the mesh must be in standard orientation (see
- * dealii's documentation for the meaning of this). Further, there must be two entries per pair
- * for a periodic BC and each of those entries must be consistent with each other. By consistent,
- * we mean
- * 1. The 'periodic direction' must be given same for both entries
- * 1. The 'other surface boundary id' must be complementary to each other
- * 1. The 'periodic orientation' must be complementary to each other
+ * @remark BCs::Empty was introduced on trial basis and found to not work like expected, and hence
+ * is not mentioned here.
  *
- * These are absolutely essential and no checks are done on these. If these are not followed, the
- * code may produce unexpected behaviour.
+ * The philosophy of the boundary condition handling is described in BCs::BC. Basically all that is
+ * required are the ghost variables. Now what exactly are these ghost variables depends on what is
+ * being calculated. Read about the "stages" described in @ref face_assem and also in NavierStokes.
+ *
+ * See the individual class documentations for algo-related details. The periodic boundary
+ * condition is a very fragile one to handle. For periodic BC to be applied, the mesh must be in
+ * standard orientation (see dealii's documentation for the meaning of this). Further, there must
+ * be two entries per pair for a periodic BC and each of those entries must be consistent with each
+ * other. By consistent, we mean
+ * 1. The 'periodic direction' must be given same for both entries
+ * 2. The 'other surface boundary id' must be complementary to each other
+ * 3. The 'periodic orientation' must be complementary to each other
+ *
+ * See the documentation of parameters to know what these mean. These are absolutely essential and
+ * no checks are done on these. If these are not followed, the code may produce unexpected
+ * behaviour.
  *
  * @section face_assem Face term assembly
  *
@@ -203,11 +227,12 @@ class plens_test; // forward declaration
  * matches. This procedure is employed in form_neighbor_face_matchings().
  *
  * Once this matchings are available, it is simple to loop over all faces of actively owned cells
- * and calculate the flux. The function calc_surf_flux() does this. It takes an argument for the
- * 'stage' of flux computation. The surface fluxes are required in 3 stages. The information about
- * these stages is given in detail in NavierStokes class.
+ * and calculate the flux, provided distributed vectors are available. The function
+ * calc_surf_flux() does this. It takes an argument for the 'stage' of flux computation. The
+ * surface fluxes are required in 3 stages. The information about these stages is given in detail
+ * in NavierStokes class.
  * 1. Auxiliary variable calculation. Here, surface values of conservative variables are required
- * to compute @f$\nabla\vec{v}@f$ and @f$\nabla T@f$.
+ *    to compute @f$\nabla\vec{v}@f$ and @f$\nabla T@f$.
  * 2. Inviscid conservative flux.
  * 3. Diffusive or viscous conservative flux.
  *
@@ -218,27 +243,27 @@ class plens_test; // forward declaration
  * components of @f$\nabla\vec{v}@f$ and @f$\nabla T@f$ require different normal vector components
  * and hence, as such, there is no "normal" component for auxiliary flux.
  *
+ * The presence of flux calculation wrappers in NavierStokes and BCs allows for a single function
+ * calc_surf_flux() to do the job for all stages. This tremendously improves code maintainability
+ * and significantly assists easy development.
+ *
  * @section vol_contrib Volumetric contribution
  *
- * This is the most important, most involved part of the code. The relevant papers are
- *
- * [1] Hennemann, Ramirez, Hindenlang et al, JCP, 2021.
- *
- * [2] Gassner, Winters & Kopriva, JCP, 2016.
- *
- * [3] Fischer & Carpenter, JCP, 2013.
+ * This is the most important, most involved part of the code. See Hennemann et al (2021) [1] for
+ * the algorithm.
  *
  * Took all relevant notes in short and attached them to WJ-22-Feb-2021. Also, took detailed notes
  * and attached them to WJ-20-May-2021. These notes are also present physically in TW1 book.
- * Further notes taken will be mentioned as and when done.
+ *
  * Explaining the algo here is impossible. However, some very important notes are mentioned here.
- * 1. Like in [1-3], dealii also uses @f$[0,1]^3@f$ as the reference cell. Had it been
- * @f$[-1,1]^3@f$, things would have got slightly complicated.
- * 1. The volumetric contribution is always calculated by transforming the physical cell to
- * reference space. Thus, every cell's calculation is completely isolated from other cells.
- * 1. The subcell normal vectors obtained in (1-B.53)
+ * 1. Like in refs [1-3], dealii also uses @f$[0,1]^3@f$ as the reference cell. Had it been
+ *    @f$[-1,1]^3@f$, things would have got slightly complicated.
+ * 2. The volumetric contribution is always calculated by transforming the physical cell to
+ *    reference space. Thus, every cell's calculation is completely isolated from other cells.
+ * 1. The subcell normal vectors obtained in eq. (B.53) of [1]
  *    - May not be unit vectors
  *    - Do not match (in direction) with the physical normals at faces (local indices) 0, 2 and 4.
+        Both these facts are emphasised sufficiently in MetricTerms::subcell_normals.
  *
  * The metric terms are calculated using the class MetricTerms and stored as a map. Read the class
  * documentation and also that of MetricTerms::reinit() to get an idea of what is being done.
@@ -248,10 +273,11 @@ class plens_test; // forward declaration
  * Unlike for surface flux calculation, volumetric contribution cannot be unified for conservative
  * and auxiliary variable calculation. This is because auxiliary variables require gradients of
  * conservative variables in all 3 directions. This means a total of 5*3=15 equations need to be
- * set up for these gradients whereas inviscid/diffusive contribution for conservative variable
- * residual requires only 5 equations. Hence a straight-forward unified approach is not possible.
- * However, the inviscid and diffusive high order residual contributions can be calculated in a
- * single loop. The inviscid subcell contribution can then be added separately.
+ * set up for these gradients (see NavierStokes class for reference) whereas inviscid/diffusive
+ * contribution for conservative variable residual requires only 5 equations. Hence a
+ * straight-forward unified approach is not possible. However, the inviscid and diffusive high
+ * order residual contributions can be calculated in a unified manner. The inviscid subcell
+ * contribution is then added separately.
  *
  * @section final_residual_calc Final residual calculation
  *
