@@ -2283,7 +2283,7 @@ void PLENS::calc_time_step()
     // now multiply by Co/N^2 and broadcast
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
         // use smaller Co for first few time steps
-        if(n_time_steps < 100) time_step *= 0.1*Co/(fe.degree*fe.degree);
+        if(n_time_steps < 1) time_step *= 0.1*Co/(fe.degree*fe.degree);
         else time_step *= Co/(fe.degree*fe.degree);
     }
     MPI_Bcast(&time_step, 1, MPI_DOUBLE, 0, mpi_comm);
