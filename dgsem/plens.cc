@@ -2622,6 +2622,7 @@ void PLENS::update()
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
     }
+    MPI_Barrier(mpi_comm);
 
     // stage 2
     calc_rhs();
@@ -2638,6 +2639,7 @@ void PLENS::update()
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
     }
+    MPI_Barrier(mpi_comm);
 
     // stages 3-5
     for(usi rk_stage=3; rk_stage<=5; rk_stage++){
@@ -2657,6 +2659,7 @@ void PLENS::update()
             gcrk_cvars[var].compress(VectorOperation::insert);
             gh_gcrk_cvars[var] = gcrk_cvars[var];
         }
+        MPI_Barrier(mpi_comm);
     }
 
     for(psize i: locally_owned_dofs) rhoE_old[i] = g_cvars[4][i];
