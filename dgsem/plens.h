@@ -226,7 +226,7 @@ class plens_test; // forward declaration
  * Wolfgang in the above question: loop over neighbor side dofs on a face and see which of them
  * matches. This procedure is employed in form_neighbor_face_matchings().
  *
- * Once this matchings are available, it is simple to loop over all faces of actively owned cells
+ * Once these matchings are available, it is simple to loop over all faces of actively owned cells
  * and calculate the flux, provided distributed vectors are available. The function
  * calc_surf_flux() does this. It takes an argument for the 'stage' of flux computation. The
  * surface fluxes are required in 3 stages. The information about these stages is given in detail
@@ -260,10 +260,10 @@ class plens_test; // forward declaration
  *    @f$[-1,1]^3@f$, things would have got slightly complicated.
  * 2. The volumetric contribution is always calculated by transforming the physical cell to
  *    reference space. Thus, every cell's calculation is completely isolated from other cells.
- * 1. The subcell normal vectors obtained in eq. (B.53) of [1]
+ * 3. The subcell normal vectors obtained in eq. (B.53) of [1]
  *    - May not be unit vectors
  *    - Do not match (in direction) with the physical normals at faces (local indices) 0, 2 and 4.
-        Both these facts are emphasised sufficiently in MetricTerms::subcell_normals.
+ *      Both these facts are emphasised sufficiently in MetricTerms::subcell_normals.
  *
  * The metric terms are calculated using the class MetricTerms and stored as a map. Read the class
  * documentation and also that of MetricTerms::reinit() to get an idea of what is being done.
@@ -281,32 +281,21 @@ class plens_test; // forward declaration
  *
  * @section final_residual_calc Final residual calculation
  *
- * For residual contribution calculation, there are some functions which calculate residual in a
- * given cell and then some outer functions which invoke these functions cell-by-cell. The term
- * "residual" will generally be used for a single cell and the term "rhs" will be used for a vector
- * holding the residual of all cells/dofs. Unlike in @ref face_assem, different "stages" cannot be
- * combined into a single loop even though they use the same formula (eq. (B.14) of Hennemann et al
- * (2021)). Instead, the calculation of conservative variable gradients is kept separate and the
- * calculation of high order inviscid and diffusive contributions is combined in a single function.
- * Low order inviscid contribution is done through a separate function. This separation of inviscid
- * and diffusive contributions allows for any future changes in the algorithm being used for
- * incorporating diffusive terms.
+ * The final residual calculation happens in calc_rhs(). It acts like an orchestrator for all other
+ * functions required to calculate the rhs, i.e.; the residual at every dof. And then, this
+ * function is invoked in update() function which does an RK update of the current solution. The
+ * function calc_rhs() already takes care of limiting by blending with a low order solution
+ * appropriately.
  *
- * This is generally done in the following steps
- * - PLENS::assert_positivity()
- * - PLENS::calc_aux_vars()
- *   - Calculates the auxiliary variables (using eq. (B.14) of Hennemann et al (2021))
- *   - Invokes PLENS::calc_surf_flux() and PLENS::calc_cell_cons_grad() cell-by-cell
- * - PLENS::calc_blender()
- *   - Calculates the value of @f$\alpha@f$. This will subsequently be used for calculating
- *     inviscid contribution
- *   - This function may even be called before PLENS::calc_aux_vars()
- * - PLENS::calc_rhs()
- *   - Calculates the complete residual.
- *   - Internally invokes PLENS::calc_surf_flux(), PLENS::calc_cell_ho_residual() and
- *     PLENS::calc_cell_lo_inv_residual()
+ * @section time_integration Time integration
  *
- * Then, all these steps are put in a time loop to complete the simulation.
+ * This is done in the update() function. Currently, only 5 stage, 3 storage RK4 methods are
+ * supported. There are many variants of this specific method and any of those could be used
+ * by changing the coefficients in RK4Stage5Register3 class. While the original plan was to take
+ * RK order as a parameter, it was realised later that methods higher than RK3 cannot be put in
+ * a generic algorithm.
+ *
+ * The algorithm currently used is from Kennedy, Carpenter & Lewis (2000).
  */
 class PLENS
 {
@@ -335,7 +324,8 @@ class PLENS
      * in an array to be used to store conservative variable flux. See locly_ord_surf_flux_term_t
      *
      * @note It is very easy to encounter seg fault with this type if the size of inner vectors is
-     * not set before accessing them.
+     * not set before accessing them. The functions defined here which modify such variables also
+     * set the size.
      */
     template <class T>
     using locly_ord_surf_term_t = std::map<
@@ -489,7 +479,7 @@ class PLENS
     LA::MPI::Vector gcrk_k;
 
     /**
-     * Variable used for calculating blender (@f$\apha@f$) value. This need not be ghosted. Its
+     * Variable used for calculating blender (@f$\alpha@f$) value. This need not be ghosted. Its
      * value will be set in PLENS::calc_blender() based on the parameters provided.
      */
     LA::MPI::Vector gcrk_blender_var;

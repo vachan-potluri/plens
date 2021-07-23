@@ -7,7 +7,8 @@
 
 /**
  * Constructor. Calls declare_parameters() and parses parameter file. The parameter file should be
- * named 'input.prm'. Asserts `mhod>0`. Sets ns_ptr and mapping_ptr to nullptr.
+ * named 'input.prm'. Asserts `mhod>0`. Sets ns_ptr and mapping_ptr to nullptr. Completely
+ * constructs PLENS::blender_calc by calling BlenderCalculator::parse_parameters().
  */
 PLENS::PLENS(
     const usi mhod,
@@ -48,7 +49,7 @@ timer(pcout, TimerOutput::never, TimerOutput::wall_times)
 
 
 /**
- * Destructor.
+ * Destructor. Deletes the boundary condition object pointers held by PLENS::bc_list.
  */
 PLENS::~PLENS()
 {
@@ -60,11 +61,12 @@ PLENS::~PLENS()
 
 
 /**
- * Declares all parameters.
+ * Declares all parameters. Read the sample file generated after any simulation to understand what
+ * this function does.
  *
- * A total of 12 BCs with ids 0 to 11 are declared in subsection BCs. If any of them are left unset
+ * A total of 12 BCs with ids 1 to 12 are declared in subsection BCs. If any of them are left unset
  * in 'input.prm', then the default type "none" is assumed. Data required for BCs is specified in
- * subsections BCs.bid<x> where x takes values 0 to 11. In the function set_BC(), the value of x
+ * subsections BCs.bid<x> where x takes values 1 to 12. In the function set_BC(), the value of x
  * is set to all physical boundary ids and corresponding sections are read from prm file. Thus, any
  * physical boundary id cannot have "none" as its type.
  */
@@ -1157,13 +1159,14 @@ void PLENS::run()
  *   - Loop over all internal faces
  *     - Loop over all dofs on face
  *       - Loop over all neighbor dofs on the same face
- *         - If the dof locations match (upto tolerance level `tol`), populate the map
+ *         - If the dof locations match (upto tolerance level `tol` times minimum vertex distance),
+ *           populate the map
  *
  * While doing this, also polulates the `loc_rel_dofs` parameter to store the ghost cell
- * dofs lying on the partition interface.
+ * dofs lying on the partition interface in case PLENS::has_periodic_bc is `false`.
  *
  * @pre Must be called after read_mesh() and set_dof_handler(). May be called at the end of
- * set_dof_handler() after `dof_locations` are calculated.
+ * set_dof_handler() after PLENS::dof_locations are calculated.
  */
 void PLENS::form_neighbor_face_matchings(
     IndexSet& loc_rel_dofs,
@@ -1222,9 +1225,15 @@ void PLENS::form_neighbor_face_matchings(
 
 /**
  * Calculates all metric terms. More specifically
- * 1. 1D quadrature weights
- * 1. 1D Differentiation (strong version) and "Q" matrix
- * 1. Other metric terms using MetricTerms
+ * 1. 1D quadrature weights @f$w_i@f$
+ * 2. 1D Differentiation matrix @f$D@f$ (strong version) and also the matrix @f$Q@f$
+ * 3. Other metric terms using MetricTerms and populate PLENS::metrics. Once these are obtained,
+ *    the weights and matrices can be ignored.
+ *
+ * @f[
+ * D_{ij} = \frac{\partial l_j}{\partial \xi}(\xi_i)\\
+ * Q_{ij} = w_i D_{ij}
+ * @f]
  *
  * @pre `dof_handler` must be ready to use. This function can be called at the end of
  * PLENS::set_dof_handler().
@@ -1276,7 +1285,7 @@ void PLENS::calc_metric_terms()
  * - Loop over owned cells
  *   - Loop over faces
  *     - If face is at boundary
- *       - Calculate the surface flux using BC objects from bc_list
+ *       - Calculate the surface flux using BC objects from PLENS::bc_list
  *     - Else (internal face)
  *       - If the neighbor is also owned by this process
  *         - Compute the flux using owner and neighbor solution.
@@ -1295,8 +1304,7 @@ void PLENS::calc_metric_terms()
  * @pre This function assumes that `gh_gcrk_cvars` and `gh_gcrk_avars` are ready to use. Also,
  * assumes that the entire setup (including BCs) is complete.
  *
- * @warning This function resizes @p surf_flux_term internally. So all data stored up to this point
- * is discarded. Although this is not an efficient practice, for now this will be done.
+ * @note This function resizes `surf_flux_term`.
  */
 void PLENS::calc_surf_flux(
     const usi stage,
@@ -1465,7 +1473,8 @@ void PLENS::calc_surf_flux(
 /**
  * Calculates conservative variable gradients in a `cell`. The relevant formula is eq. (B.14) of
  * [1]. The volumetric terms are calculated using PLENS::gcrk_cvars and the surface flux is taken
- * from `s1_surf_flux` which holds the conservative variable flux for stage 1.
+ * from `s1_surf_flux` which is assumed to hold the conservative variable flux for stage 1 (viz.
+ * the auxiliary flux).
  *
  * Suppose @f$\partial \rho/\partial x@f$ is to be calculated. Then, a differential equation is
  * constructed:
@@ -1477,14 +1486,18 @@ void PLENS::calc_surf_flux(
  * variable, 3 such equations corresponding to 3 gradients are used.
  *
  * The strategy for calculation is simple. For the two point volume fluxes, use
- * NavierStokes::get_aux_vol_flux(). For BR1 flux, the direction passed in this function doesn't
- * matter. This flux is multiplied by the component of contravariant vector in the gradient
- * direction. See eq. (B.15) of [1]. See also TW1 notes or WJ dated 20-May-2021.
+ * NavierStokes::get_aux_vol_flux(). For the special case of BR1 flux (which is the only option
+ * available currently in the NavierStokes class), the direction passed in this function doesn't
+ * matter. Also, unlike for stages 2 & 3 (viz. inviscid and diffusive fluxes), the NavierStokes
+ * function for auxiliary flux doesn't give a "component", but rather, a value. Hence, this flux
+ * must be multiplied by the component of contravariant vector in the gradient direction. See eq.
+ * (B.15) of [1]. See also TW1 notes or WJ dated 20-May-2021.
  *
  * Note that for the surface contribution of those dofs lying on face, since this involves stage 1
- * flux, it has no direction (see PLENS::calc_surf_flux()). The flux has same sign in the storage
- * of both cells having the common interface. This is unlike stages 2 and 3 where the flux for
- * every cell is stored as normal flux with outward pointing face normal. This means that the
+ * flux, and hence has no "directional component" (as said above), the flux will have same sign in
+ * the storage (i.e.; in `s1_surf_flux`) of both cells having the common interface. This is unlike
+ * stages 2 and 3 where the flux for every boundary dof is stored (in, say `s2_surf_flux` or
+ * `s3_surf_flux`) using normal flux with outward pointing face normal. This means that the
  * surface contribution expression in (B.14) of [1] can be directly used here (without worrying
  * about surface normals).
  *
@@ -1604,8 +1617,8 @@ void PLENS::calc_cell_cons_grad(
 
 
 /**
- * Asserts the positivity of PLENS::gcrk_cvars. This is a requirement for using the algo and
- * NavierStokes functions.
+ * Asserts the positivity of PLENS::gcrk_cvars. This is a requirement for using the DGSEM limiter
+ * algo and NavierStokes functions. Uses NavierStokes::assert_positivity() for the task.
  */
 void PLENS::assert_positivity() const
 {
@@ -1619,13 +1632,14 @@ void PLENS::assert_positivity() const
 
 
 /**
- * Calculates the auxiliary variables and populates gcrk_avars. Internally uses calc_surf_flux()
- * and calc_cell_cons_grad(). Obviously, gcrk_cvars are used within these functions to calculate
- * the relevant quantities. The latter function gives the gradients of conservative variables, from
- * which the auxiliary variables are to be calculated. The relevant formulae are
+ * Calculates the auxiliary variables and populates PLENS::gcrk_avars. Internally uses
+ * calc_surf_flux() and calc_cell_cons_grad(). Obviously, PLENS::gcrk_cvars are used within these
+ * functions to calculate the relevant quantities. The latter function gives the gradients of
+ * conservative variables, from which the auxiliary variables are to be calculated. The relevant
+ * formulae are
  * @f[
  * \tau_{ij} = \mu \left(
- * \frac{\partial u_i}{\partial x_j} + \frac{\partial u_i}{\partial x_j}
+ * \frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i}
  * \right) - \frac{2\mu}{3} \delta_{ij} \frac{\partial u_k}{\partial x_k}\\
  * \vec{q} = -k\nabla T
  * @f]
@@ -1640,23 +1654,25 @@ void PLENS::assert_positivity() const
  * \frac{u_i u_i}{2} \nabla \rho - \rho u_i \nabla u_i
  * @f]
  * Since @f$e=c_v T@f$, and @f$c_v@f$ is constant, @f$\nabla T = \frac{\nabla e}{c_v}@f$.
- * All these operations will be done using simple dof-wise multiplication.
+ * All the scalar multiplication operations will be done using simple dof-wise multiplication.
  *
  * @pre Since division by density is required, positivity of density is required. Also, since
  * viscosity and thermal conductivity are calculated, positivity of energy is required. One way to
- * ensure this is to call PLENS::assert_positivity()
+ * ensure this is to call assert_positivity()
  *
  * Algo
  * - Loop over owned dofs
  *   - Calculate viscosity and thermal conductivity
  * - Calculate surface flux for stage 1
  * - Loop over owned cells
+ *   - Get conservative gradients in the cell
  *   - Loop over dofs
  *     - Calculate velocity gradients
- *     - Set stress auxiliary variables in gcrk_avars (without factor mu)
+ *     - Set stress auxiliary variables in PLENS::gcrk_avars (without factor @f$\mu@f$)
  *     - Calculate temperature gradient
- *     - Set heat flux auxiliary variables in gcrk_avars (without factor -k)
- * - Multiply appropriate components of gcrk_avars dof-wise with gcrk_mu and (-gcrk_k)
+ *     - Set heat flux auxiliary variables in PLENS::gcrk_avars (without factor @f$-k@f$)
+ * - Multiply appropriate components of PLENS::gcrk_avars dof-wise with PLENS::gcrk_mu and
+ * (-PLENS::gcrk_k)
  */
 void PLENS::calc_aux_vars()
 {
@@ -1756,17 +1772,18 @@ void PLENS::calc_aux_vars()
 
 
 /**
- * Calculates the value of blender (@f$\alpha@f$). First gcrk_blender_var is set according to
- * "blender parameters/variable" entry of prm file. Then, the blender value is calculated in each
- * cell using BlenderCalculator::get_blender() and populated in gcrk_alpha. Then, gh_gcrk_alpha is
- * set for diffusing the value of alpha in each cell.
+ * Calculates the value of blender (@f$\alpha@f$). First PLENS::gcrk_blender_var is updated
+ * according to "blender parameters/variable" entry of prm file. Then, the blender value is
+ * calculated in each cell using BlenderCalculator::get_blender() and populated in
+ * PLENS::gcrk_alpha. Then, PLENS::gh_gcrk_alpha is set for diffusing the value of alpha in each
+ * cell.
  *
- * @note gh_gcrk_alpha is only used in this function. Its sole purpose is to enable the diffusion
- * operation. Once that is done, of course gcrk_alpha would have changed. But gh_gcrk_alpha is not
- * updated because it is never used beyond this function.
+ * @note The indexing for PLENS::gcrk_alpha is based on `cell->global_active_cell_index()` which
+ * was introduced in dealii-9.3.0, rather than `cell->index()` which is commonly used. This is
+ * already explained in @ref cell_indices.
  *
- * The blender variable used in this function is simply based on gcrk_cvars. No fluxes/boundary
- * conditions are required.
+ * The blender variable used in this function is simply based on PLENS::gcrk_cvars. No
+ * fluxes/boundary conditions are required.
  */
 void PLENS::calc_blender()
 {
@@ -1823,14 +1840,14 @@ void PLENS::calc_blender()
 
 /**
  * Calculates high order cell residuals for stages 2 or 3 (inviscid and diffusive fluxes) in a
- * given cell. The algorithm is much similar to PLENS::calc_cell_cons_grad() and uses gcrk_cvars
- * and gcrk_avars.
+ * given `cell`. The algorithm is much similar to calc_cell_cons_grad() and uses PLENS::gcrk_cvars
+ * and PLENS::gcrk_avars. Relevant equations are eqs. (B.14-15) of [1].
  *
  * The volumetric constribution is easily calculated by passing the two relevant states with the
  * average contravariant vector as the "direction" parameter to the volumetric flux functions of
- * NavierStokes class. Note that the average contravariant vector need not be a unit vector.
- * NavierStokes functions require a unit vector. After that, appropriately scale the flux obtained
- * using the norm of contravariant vector.
+ * NavierStokes class (see eq. (B.15) of [1] for what this means). Note that the average
+ * contravariant vector need not be a unit vector. NavierStokes functions require a unit vector.
+ * Hence, later, appropriately scale the flux obtained using the norm of contravariant vector.
  *
  * For the surface contribution, the numerical flux is already held by `s_surf_flux`. One important
  * note here. The algorithm described in appendix B of Hennemann et al (2021) solves the
@@ -1838,11 +1855,13 @@ void PLENS::calc_blender()
  * in positive cartesian directions. However, `s_surf_flux` stores normal flux wrt "outward"
  * normals. This distinction is to be kept in mind. So for faces 1, 3 and 5, the numerical flux
  * stored in `s_surf_flux` can be used without sign change (scaling by norm of contravariant
- * vector would be required). For faces 0, 2 and 4, a sign change will also be required. Now for
- * the internal flux, we simply need to get the inviscid flux in the direction of contravariant
- * vector followed by a scaling with its norm.
+ * vector would be required). For faces 0, 2 and 4, a sign change will also be required (because
+ * outward normals and contravariant vectors face opposite to each other on these faces).
  *
- * @remark Simply put, the contravariant vectors for dofs on faces give the face normal direction
+ * Now for the internal flux, we simply need to get the volume flux in the direction of
+ * contravariant vector followed by a scaling with its norm.
+ *
+ * @note Simply put, the contravariant vectors for dofs on faces give the face normal direction
  * such that it is outward for faces 1, 3 and 5, and inward for faces 0, 2 and 4. The sign changing
  * is required because contravariant and "outward" normal vectors don't match at the latter faces.
  *
@@ -1983,8 +2002,8 @@ void PLENS::calc_cell_ho_residual(
  * the subcell normals of metric terms are relevant. The algorithm used is slightly complicated.
  *
  * First, an outer loop of directions is followed by loops over dofs in complementary directions.
- * Then, a loop over the subcell interfaces of the direction (corresponding to outer loop) is done
- * where the required inter-subcell flux is calculated and its contributions are appropriately
+ * Then, a loop over the subcell interfaces of the outer direction (corresponding to outer loop) is
+ * done where the required inter-subcell flux is calculated and its contributions are appropriately
  * added to the residuals. For each subcell interface, two dofs (subcells) get the flux
  * contribution. The number of such subcell normals (in each direction) will be @f$N+2@f$: one more
  * than the number of dofs. This is obvious because each dof is treated as a subcell and each
@@ -1996,19 +2015,20 @@ void PLENS::calc_cell_ho_residual(
  * For the boundary cases, the numerical flux will be obtained from `s2_surf_flux`. Again, remember
  * that `s2_surf_flux` stores fluxes assuming outward normals at all faces of a cell. These
  * directions match with the subcell normals (for those subcells lying on cell face) for faces 1, 3
- * and 5, while they will be opposite to subcell normals for the remaining faces (0, 2 and 4).
+ * and 5, while they will be opposite to subcell normals for the remaining faces (0, 2 and 4). See
+ * for reference, the note in calc_cell_ho_residual().
  *
  * Algo:
  * - Loop over direction
  *   - Loop over ids in complementary direction 2 (id2=0 to id2=N) [start of internal contributions
  *     loop]
  *     - Loop over ids in complementary direction 1 (id1=0 to id1=N)
- *       - Loop over id in the direction (id=1 to id=N)
+ *       - Loop over id in the direction (id=1 to id=N) (may be called direction 0)
  *         - Evaluate flux between states (id-1, id1, id2) and (id, id1, id2) [the indices have to
  *           be ordered properly, the case for direction=0 is taken as example here]
  *         - Add the contribution to dofs (id-1, id1, id2) and (id, id1, id2) [again, ordering must
  *           be modified appropriately]
- *   - For id1==0 and id1==N+1, use the surface flux from `s2_surf_flux` [surface contrib loop]
+ *   - For id==0 and id==N+1, use the surface flux from `s2_surf_flux` [surface contrib loop]
  *     - Loop over face dofs
  *       - Obtain the flux from `s2_surf_flux` and scale it appropriately with contravariant vector
  *         - Also, appropriate sign change is required because `s2_surf_flux` gives flux assuming
@@ -2147,11 +2167,11 @@ void PLENS::calc_cell_lo_inv_residual(
  * - Assert positivity
  * - Calculate auxiliary variables
  * - Calculate blender
+ * - Calculate surface fluxes for stages 2 and 3
  * - Loop over owned cells
- *   - Calculate surface fluxes for stages 2 and 3
  *   - Get high order inviscid and viscous residual
  *   - Get low order inviscid residual
- *   - Get the complete residual
+ *   - Calculate the final residual (using blender value)
  *   - Set the residual in gcrk_rhs
  */
 void PLENS::calc_rhs()
@@ -2227,7 +2247,7 @@ void PLENS::calc_rhs()
 
 
 /**
- * Calculates time step based on gcrk_cvars. The minimum of stable time step over all cells (across
+ * Calculates time step based on PLENS::gcrk_cvars. The minimum of stable time step over all cells (across
  * all processes) is taken as the time step. The stable time step formula is taken from Hesthaven's
  * book.
  * @f[
@@ -2238,14 +2258,14 @@ void PLENS::calc_rhs()
  * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the minimum vertex distance.
  *
  * @remark It was noted during pens2D project that the actual expression of Hethaven which uses
- * $\mu$ in place of $\nu$ in the above formula is dimensionally incorrect.
+ * @f$\mu@f$ in place of @f$\nu@f$ in the above formula is dimensionally incorrect.
  *
  * @note Although time step calculation is required only once during an update, this function uses
- * gcrk_cvars and not g_cvars because gcrk_mu will also be required. Thus, it is expected that this
- * function is called during the first RK step, before the first update and after calling
- * calc_aux_vars() because that is where gcrk_mu will be set.
+ * PLENS::gcrk_cvars and not PLENS::g_cvars because PLENS::gcrk_mu will also be required. Thus, it
+ * is expected that this function is called during the first RK step, before the first update and
+ * after calling calc_aux_vars() because that is where PLENS::gcrk_mu will be set.
  *
- * @pre This function assumes gcrk_mu is already set. Also assumes positivity of density.
+ * @pre This function assumes PLENS::gcrk_mu is already set. Also assumes positivity of density.
  */
 void PLENS::calc_time_step()
 {
@@ -2316,14 +2336,15 @@ void PLENS::post_process()
 /**
  * Calculates the steady state error. The parameter `cell_ss_error` is populated using
  * VectorTools::integrate_difference() and the global error is calculated using
- * VectorTools::compute_global_error (which is returned). The global steady state error is
+ * VectorTools::compute_global_error() (which is returned). The global steady state error is
  * calculated as follows
  * @f[
- * e = \frac{\lVert (\rho E)^{n+1} - (\rho E)^n \rVert}_{\Omega}
+ * e = \frac{\lVert (\rho E)^{n+1} - (\rho E)^n \rVert_{\Omega}}
  * {\lVert (\rho E)^{n+1} \rVert_{\Omega}}
  * @f]
- * Here, the norm is taken in L2 sense. The $n$ solution is taken as rhoE_old and $n+1$ is taken
- * from g_cvars. Thus, this function must be called after update() to get the expected result.
+ * Here, the norm is taken in L2 sense. The @f$n@f$ solution is taken as PLENS::rhoE_old and
+ * @f$n+1@f$ is taken from PLENS::g_cvars. Thus, this function must be called after update() to get
+ * the expected result (so that PLENS::g_cvars have the desired value).
  *
  * For both numerator and demoniator, VectorTools::integrate_difference() is called with
  * Function::ZeroFunction.
@@ -2378,22 +2399,17 @@ double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
 /**
  * Performs a serialisation using solution transfer. If I understand correctly, serialisation a
  * process that converts dealii vectors to writable format. The purpose for saving solution vectors
- * is apparent. The file saved by this function can be read again. When reading again, the
- * triangulation can be directly read. For also reading the solution vectors, a solution transfer
- * object has to be constructed again and initialised with the dof handler. The dof handler used
- * for reading must be attached to the same triangulation obtained earlier from the saved file.
- * However, the distribution of cells and dofs across processors can be different for this dof
- * handler (and triangulation). This ability was exploited in "from_file" BC of pens2D and will
- * also be put to use in this project.
+ * is apparent. The file saved by this function can be read again. Before reading again, the
+ * triangulation has to be read separately, and also its manifolds have to be set. Then, to read
+ * the solution vectors, a solution transfer object has to be constructed again and initialised
+ * with the dof handler. The dof handler used for reading must be attached to the triangulation
+ * constructed like said above. Doing this procedure for parallel computations is slightly tricky.
+ * Currently, this is not implemented, but is in plan. See ICs::FromArchive.
  *
  * According to dealii, writing a solution transfer requires ghosted vectors and reading requires
- * non-ghosted vectors. So, gh_gcrk_cvars will be used here.
+ * non-ghosted vectors. So, PLENS::gh_gcrk_cvars will be used here.
  *
  * @pre PLENS::gh_gcrk_cvars must be ready to use here.
- *
- * @note In this process, the FE degree is nowhere retained. However, this is taken care already
- * by printing the solution parameters in the output directory. This printed file also has FE
- * degree added as a comment at the end.
  */
 void PLENS::do_solution_transfer(const std::string& filename)
 {
