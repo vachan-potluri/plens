@@ -6,8 +6,6 @@
 #ifndef MANIFOLD_DESCRIPTION_H
 #define MANIFOLD_DESCRIPTION_H
 
-#include <string>
-
 #include <deal.II/grid/tria.h>
 
 using namespace dealii;
