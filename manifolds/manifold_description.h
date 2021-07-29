@@ -41,11 +41,6 @@ class ManifoldDescription
     ManifoldDescription() = default;
 
     /**
-     * Pure virtual destructor.
-     */
-    virtual ~ManifoldDescription() = 0;
-
-    /**
      * Pure virtual setter. This is the main function which applies the manifold(s) to the
      * triangulation provided. Here, the base triangulation class is used.
      */
