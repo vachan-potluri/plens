@@ -56,8 +56,8 @@ namespace ManifoldDescriptions{
  * https://www.dealii.org/current/doxygen/deal.II/classSphericalManifold.html
  * The alternative suggested is to use a TransfiniteInterpolationManifold. However, for the blunted
  * double cone geometry (which is where this class is mostly used), the nose center likes in the
- * cone part and hence this detail is avoided. A warning is printed in case nose center is observed
- * in the spherical part.
+ * cone part and hence this detail is avoided. An exception is thrown in case nose center is
+ * observed in the spherical part. In future, this may be corrected.
  */
 class NoseCylinder: public ManifoldDescription
 {

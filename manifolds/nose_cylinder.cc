@@ -24,11 +24,13 @@ nose_center_(nose_center),
 cyl_man_(axis_dir, bifurcation_point),
 sph_man_(nose_center)
 {
-    if(scalar_product(axis_dir_, nose_center_-bifurcation_point_) > 0){
-        std::cout << "\n\nWARNING at line " << __LINE__ << ", in file " << __FILE__
-            << ":\nThe nose center lies in spherical region. This will produce a very wierd "
-            << "manifold setting. See the detailed documentation.\n\n";
-    }
+    AssertThrow(
+        scalar_product(axis_dir_, nose_center_-bifurcation_point_) > 0,
+        StandardExceptions::ExcMessage(
+            "The nose center lies in spherical region. This will produce a very wierd "
+            "manifold setting. See the detailed documentation."
+        )
+    );
 }
 
 
@@ -47,7 +49,6 @@ void NoseCylinder::set(Triangulation<dim,dim> &triang)
         if(dotp > 0){
             // sphere
             cell->set_all_manifold_ids(sph_id);
-            // don't set id if cell contains nose center
         }
         else if(dotp < 0){
             // cylinder
