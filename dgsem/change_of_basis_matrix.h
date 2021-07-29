@@ -25,7 +25,7 @@
  * @class ChangeOfBasisMatrix
  * @brief Provides a class for storing change of basis (from DG nodal to DG modal) matrix
  *
- * This class is used for the belnding parameter calculation as part of the subcell limiter. This
+ * This class is used for the blending parameter calculation as part of the subcell limiter. This
  * class computes a matrix @f$C@f$ such that
  * @f[
  * \sum_{i=0}^{N_p-1} u_i \phi_i = \sum_{j=0}^{N_p-1} m_j \psi_j \\
@@ -36,9 +36,9 @@
  * Legendre interpolation basis functions and @f$N_p=(N+1)^3@f$ is the number of polynomials.
  *
  * The Lagrange interpolation basis is provided by FE_DGQ<3> and the Legendre basis by
- * FE_DGQLegendre<3>. The ordering of basis functions for the is the same as the nodal/support
- * points' ordering. The shape function ordering in the latter is lexicographic: see the
- * documentation of TensorProductPolynomials.
+ * FE_DGQLegendre<3>. The ordering of basis functions for the former is the same as the
+ * nodal/support points' ordering. The shape function ordering in the latter is lexicographic:
+ * see the documentation of TensorProductPolynomials.
  *
  * Although this class is inteded for using only in 3d, the dimension parameter is taken as a
  * template. So this class can be used in any dimension.

@@ -28,7 +28,9 @@
 #include <deal.II/base/table.h>
 #include <deal.II/base/table_indices.h>
 #include <deal.II/base/timer.h>
+#include <deal.II/base/function.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/grid_tools.h>
@@ -42,8 +44,10 @@
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include "dtype_aliases.h"
+#include "set_manifold.h"
 #include "LA.h"
 #include "face_dof_info.h"
 #include "metric_terms.h"
@@ -81,14 +85,15 @@ class plens_test; // forward declaration
  *
  * The algorithm to be implemented is discussed in entries after WJ-15-Feb-2021. The relevant
  * papers are
- * 1. [dgsem1] Hennemann, Ramirez & Hindenlang, JCP, 2021.
- * 2. [dgsem2] Gassner, Winters & Kopriva, JCP, 2016.
- * 3. [dgsem3] Fisher & Carpenter, JCP, 2013.
+ * 1. [1] Hennemann, Ramirez & Hindenlang, JCP, 2021.
+ * 2. [2] Gassner, Winters & Kopriva, JCP, 2016.
+ * 3. [3] Fisher & Carpenter, JCP, 2013.
  *
- * The documentation for this class is being written on-the-fly as the code is being built module
- * by module. Many settings required will be done through dealii::ParameterHandler. Explicit
- * documentation for this will not be provided here, but in the comments of sample prm file. The
- * prm file should be named `input.prm`.
+ * All solver settings required will be done taken dealii::ParameterHandler. Explicit documentation
+ * for this will not be provided here, but will be auto-generated in the comments of sample prm
+ * file which is print when a simulation is run. The prm file should be named `input.prm`, no other
+ * variations to this are possible. In case multiple prm files are to be stored, they can be kept
+ * with particular names and input.prm can be symbolically linked to them as required.
  *
  *
  *
@@ -100,25 +105,37 @@ class plens_test; // forward declaration
  * Curved meshes are significantly complicated because dealii doesn't provide a support to directly
  * read higher order meshes. See the note __pens2D to plens__ for more details. Also see entries
  * around WJ-05-Apr-2021. To truly have curved meshes, i.e.; curvature even in the internal cell
- * edges, manifold must be set to all the internal features too. Because specifying region wise
+ * edges, a manifold must be set to all the internal features too. Because specifying region wise
  * manifold through prm file is difficult, currently only "cylinder flare" and
- * "blunted double cone" geometries are supported. See read_mesh() for more details.
+ * "blunted double cone" geometries are supported. See read_mesh() and SetManifold for more
+ * details.
  *
  * If there are any periodic boundary conditions, then the mesh has to be in 'standard orientation'
  * as described in dealii documentation. The best example of such meshes is a cartesian mesh.
+ * Periodic boundary conditions will be taken care in @ref dof_handler.
  *
  * @section dof_handler DoFHandler and solution vectors
  *
  * Because periodic boundary conditions are supported, the dof handler being constructed must take
  * this into account. This is done in set_dof_handler(). Note that there will be two loops required
- * over BCs. Once for setting dof handler and once for setting BCs. These two steps cannot be
- * combined because BCs require dof handler and solution vectors for construction.
+ * over BCs. Once for setting dof handler (viz. here) and once for setting BCs, in set_BC(). These
+ * two steps cannot be combined because BCs require dof handler and solution vectors for
+ * construction. Periodicity relations are added to PLENS::triang in set_dof_handler() using
+ * standard dealii's functions.
  *
- * Once dof handler is constructed, the solution vectors are constructed using the owned and
- * relevant dofs. Relevant dofs here are combination of owned dofs and dofs in neighboring cells
- * and the dofs in cells connected by periodicity (if any). Unlike in pens2D, here all the dofs
- * are taken as relevant rather than just the ones lying on the common face. This may be modified
- * in the future.
+ * To create the index sets for owned and relevant dofs, two different approaches are used
+ * depending on the scenario.
+ * - If the simulation doesn't have periodic boundary conditions, then only the dofs of the
+ *   adjacent cell, lying on the common face are considered relevant. These are really all that is
+ *   required. Such relevant dofs are formed in form_neighbor_face_matchings(). This function
+ *   serves another major purpose too, see @ref face_assem.
+ * - If the simulation has periodic boundary conditions, then simply dealii's in-built function
+ *   is used to get the relevant dofs. In this case, all dofs of adjacent cells are considered
+ *   relevant.
+ *
+ * The vaiable PLENS::has_periodic_bc indicates whether or not the simulation has periodic boundary
+ * conditions. Once dof handler is constructed, the solution vectors are constructed using the
+ * owned and relevant dofs.
  *
  * @subsection cell_indices A note on cell indices
  *
@@ -146,6 +163,10 @@ class plens_test; // forward declaration
  * by this function is used as the "key" (actually, it is not a map, so using the term "key" is
  * not strictly correct).
  *
+ * And finally to close, using `cell->index()` is valid only when
+ * - You want to distinguish between only cells owned by a process
+ * - There is no mesh refinement
+ *
  * @section modelling Fluid and flow modelling
  *
  * This is done through the NavierStokes class. The fluid is assumed to be a perfect gas and the
@@ -159,8 +180,7 @@ class plens_test; // forward declaration
  *
  * Currently, the code supports only one initial condition: ICs::PiecewiseFunction. See the class
  * documentation for more details. The domain is divided into pieces using cartesian bifurcators
- * and in each piece, a function is set.
- *
+ * and in each piece, a function is set. Shortly, an IC to restart a simulation will be added.
  *
  * @section BCs Boundary conditions
  *
@@ -172,17 +192,25 @@ class plens_test; // forward declaration
  * - BCs::Symmetry
  * - BCs::Periodic
  *
- * See the class documentations for details. The periodic boundary conditions is a very fragile one
- * to handle. For periodic BC to be applied, the mesh must be in standard orientation (see
- * dealii's documentation for the meaning of this). Further, there must be two entries per pair
- * for a periodic BC and each of those entries must be consistent with each other. By consistent,
- * we mean
- * 1. The 'periodic direction' must be given same for both entries
- * 1. The 'other surface boundary id' must be complementary to each other
- * 1. The 'periodic orientation' must be complementary to each other
+ * @remark BCs::Empty was introduced on trial basis and found to not work like expected, and hence
+ * is not mentioned here.
  *
- * These are absolutely essential and no checks are done on these. If these are not followed, the
- * code may produce unexpected behaviour.
+ * The philosophy of the boundary condition handling is described in BCs::BC. Basically all that is
+ * required are the ghost variables. Now what exactly are these ghost variables depends on what is
+ * being calculated. Read about the "stages" described in @ref face_assem and also in NavierStokes.
+ *
+ * See the individual class documentations for algo-related details. The periodic boundary
+ * condition is a very fragile one to handle. For periodic BC to be applied, the mesh must be in
+ * standard orientation (see dealii's documentation for the meaning of this). Further, there must
+ * be two entries per pair for a periodic BC and each of those entries must be consistent with each
+ * other. By consistent, we mean
+ * 1. The 'periodic direction' must be given same for both entries
+ * 2. The 'other surface boundary id' must be complementary to each other
+ * 3. The 'periodic orientation' must be complementary to each other
+ *
+ * See the documentation of parameters to know what these mean. These are absolutely essential and
+ * no checks are done on these. If these are not followed, the code may produce unexpected
+ * behaviour.
  *
  * @section face_assem Face term assembly
  *
@@ -198,12 +226,13 @@ class plens_test; // forward declaration
  * Wolfgang in the above question: loop over neighbor side dofs on a face and see which of them
  * matches. This procedure is employed in form_neighbor_face_matchings().
  *
- * Once this matchings are available, it is simple to loop over all faces of actively owned cells
- * and calculate the flux. The function calc_surf_flux() does this. It takes an argument for the
- * 'stage' of flux computation. The surface fluxes are required in 3 stages. The information about
- * these stages is given in detail in NavierStokes class.
+ * Once these matchings are available, it is simple to loop over all faces of actively owned cells
+ * and calculate the flux, provided distributed vectors are available. The function
+ * calc_surf_flux() does this. It takes an argument for the 'stage' of flux computation. The
+ * surface fluxes are required in 3 stages. The information about these stages is given in detail
+ * in NavierStokes class.
  * 1. Auxiliary variable calculation. Here, surface values of conservative variables are required
- * to compute @f$\nabla\vec{v}@f$ and @f$\nabla T@f$.
+ *    to compute @f$\nabla\vec{v}@f$ and @f$\nabla T@f$.
  * 2. Inviscid conservative flux.
  * 3. Diffusive or viscous conservative flux.
  *
@@ -214,27 +243,27 @@ class plens_test; // forward declaration
  * components of @f$\nabla\vec{v}@f$ and @f$\nabla T@f$ require different normal vector components
  * and hence, as such, there is no "normal" component for auxiliary flux.
  *
+ * The presence of flux calculation wrappers in NavierStokes and BCs allows for a single function
+ * calc_surf_flux() to do the job for all stages. This tremendously improves code maintainability
+ * and significantly assists easy development.
+ *
  * @section vol_contrib Volumetric contribution
  *
- * This is the most important, most involved part of the code. The relevant papers are
- *
- * [1] Hennemann, Ramirez, Hindenlang et al, JCP, 2021.
- *
- * [2] Gassner, Winters & Kopriva, JCP, 2016.
- *
- * [3] Fischer & Carpenter, JCP, 2013.
+ * This is the most important, most involved part of the code. See Hennemann et al (2021) [1] for
+ * the algorithm.
  *
  * Took all relevant notes in short and attached them to WJ-22-Feb-2021. Also, took detailed notes
  * and attached them to WJ-20-May-2021. These notes are also present physically in TW1 book.
- * Further notes taken will be mentioned as and when done.
+ *
  * Explaining the algo here is impossible. However, some very important notes are mentioned here.
- * 1. Like in [1-3], dealii also uses @f$[0,1]^3@f$ as the reference cell. Had it been
- * @f$[-1,1]^3@f$, things would have got slightly complicated.
- * 1. The volumetric contribution is always calculated by transforming the physical cell to
- * reference space. Thus, every cell's calculation is completely isolated from other cells.
- * 1. The subcell normal vectors obtained in (1-B.53)
+ * 1. Like in refs [1-3], dealii also uses @f$[0,1]^3@f$ as the reference cell. Had it been
+ *    @f$[-1,1]^3@f$, things would have got slightly complicated.
+ * 2. The volumetric contribution is always calculated by transforming the physical cell to
+ *    reference space. Thus, every cell's calculation is completely isolated from other cells.
+ * 3. The subcell normal vectors obtained in eq. (B.53) of [1]
  *    - May not be unit vectors
  *    - Do not match (in direction) with the physical normals at faces (local indices) 0, 2 and 4.
+ *      Both these facts are emphasised sufficiently in MetricTerms::subcell_normals.
  *
  * The metric terms are calculated using the class MetricTerms and stored as a map. Read the class
  * documentation and also that of MetricTerms::reinit() to get an idea of what is being done.
@@ -244,39 +273,29 @@ class plens_test; // forward declaration
  * Unlike for surface flux calculation, volumetric contribution cannot be unified for conservative
  * and auxiliary variable calculation. This is because auxiliary variables require gradients of
  * conservative variables in all 3 directions. This means a total of 5*3=15 equations need to be
- * set up for these gradients whereas inviscid/diffusive contribution for conservative variable
- * residual requires only 5 equations. Hence a straight-forward unified approach is not possible.
- * However, the inviscid and diffusive high order residual contributions can be calculated in a
- * single loop. The inviscid subcell contribution can then be added separately.
+ * set up for these gradients (see NavierStokes class for reference) whereas inviscid/diffusive
+ * contribution for conservative variable residual requires only 5 equations. Hence a
+ * straight-forward unified approach is not possible. However, the inviscid and diffusive high
+ * order residual contributions can be calculated in a unified manner. The inviscid subcell
+ * contribution is then added separately.
  *
  * @section final_residual_calc Final residual calculation
  *
- * For residual contribution calculation, there are some functions which calculate residual in a
- * given cell and then some outer functions which invoke these functions cell-by-cell. The term
- * "residual" will generally be used for a single cell and the term "rhs" will be used for a vector
- * holding the residual of all cells/dofs. Unlike in @ref face_assem, different "stages" cannot be
- * combined into a single loop even though they use the same formula (eq. (B.14) of Hennemann et al
- * (2021)). Instead, the calculation of conservative variable gradients is kept separate and the
- * calculation of high order inviscid and diffusive contributions is combined in a single function.
- * Low order inviscid contribution is done through a separate function. This separation of inviscid
- * and diffusive contributions allows for any future changes in the algorithm being used for
- * incorporating diffusive terms.
+ * The final residual calculation happens in calc_rhs(). It acts like an orchestrator for all other
+ * functions required to calculate the rhs, i.e.; the residual at every dof. And then, this
+ * function is invoked in update() function which does an RK update of the current solution. The
+ * function calc_rhs() already takes care of limiting by blending with a low order solution
+ * appropriately.
  *
- * This is generally done in the following steps
- * - PLENS::assert_positivity()
- * - PLENS::calc_aux_vars()
- *   - Calculates the auxiliary variables (using eq. (B.14) of Hennemann et al (2021))
- *   - Invokes PLENS::calc_surf_flux() and PLENS::calc_cell_cons_grad() cell-by-cell
- * - PLENS::calc_blender()
- *   - Calculates the value of @f$\alpha@f$. This will subsequently be used for calculating
- *     inviscid contribution
- *   - This function may even be called before PLENS::calc_aux_vars()
- * - PLENS::calc_rhs()
- *   - Calculates the complete residual.
- *   - Internally invokes PLENS::calc_surf_flux(), PLENS::calc_cell_ho_residual() and
- *     PLENS::calc_cell_lo_inv_residual()
+ * @section time_integration Time integration
  *
- * Then, all these steps are put in a time loop to complete the simulation.
+ * This is done in the update() function. Currently, only 5 stage, 3 storage RK4 methods are
+ * supported. There are many variants of this specific method and any of those could be used
+ * by changing the coefficients in RK4Stage5Register3 class. While the original plan was to take
+ * RK order as a parameter, it was realised later that methods higher than RK3 cannot be put in
+ * a generic algorithm.
+ *
+ * The algorithm currently used is from Kennedy, Carpenter & Lewis (2000).
  */
 class PLENS
 {
@@ -305,7 +324,8 @@ class PLENS
      * in an array to be used to store conservative variable flux. See locly_ord_surf_flux_term_t
      *
      * @note It is very easy to encounter seg fault with this type if the size of inner vectors is
-     * not set before accessing them.
+     * not set before accessing them. The functions defined here which modify such variables also
+     * set the size.
      */
     template <class T>
     using locly_ord_surf_term_t = std::map<
@@ -388,6 +408,12 @@ class PLENS
     std::map<psize, Point<dim>> dof_locations;
 
     /**
+     * A boolean variable indicating if the problem has periodic BC(s). This is required to set
+     * the relevant dofs correctly.
+     */
+    bool has_periodic_bc;
+
+    /**
      * Locally owned dofs. Set in set_sol_vecs()
      */
     IndexSet locally_owned_dofs;
@@ -453,13 +479,7 @@ class PLENS
     LA::MPI::Vector gcrk_k;
 
     /**
-     * A ghosted temporary dof data vector, used in PLENS::write() for adding gcrK_mu and gcrk_k
-     * to data output.
-     */
-    LA::MPI::Vector gh_temp_dof_vec;
-
-    /**
-     * Variable used for calculating blender (@f$\apha@f$) value. This need not be ghosted. Its
+     * Variable used for calculating blender (@f$\alpha@f$) value. This need not be ghosted. Its
      * value will be set in PLENS::calc_blender() based on the parameters provided.
      */
     LA::MPI::Vector gcrk_blender_var;
@@ -480,6 +500,26 @@ class PLENS
      * Ghosted version of PLENS::gcrk_alpha.
      */
     LA::MPI::Vector gh_gcrk_alpha;
+
+    /**
+     * Pressure. Used in PLENS::write(), set in PLENS::post_process().
+     */
+    LA::MPI::Vector gcrk_p;
+
+    /**
+     * Temperature. Used in PLENS::write(), set in PLENS::post_process().
+     */
+    LA::MPI::Vector gcrk_T;
+
+    /**
+     * Velocity. Used in PLENS::write(), set in PLENS::post_process().
+     */
+    std::array<LA::MPI::Vector, dim> gcrk_vel;
+
+    /**
+     * Old solution of $\rho E$. Used for steady state error calculation
+     */
+    LA::MPI::Vector rhoE_old;
 
     /**
      * A list of boundary ids of the decomposed mesh held by this process. This list can be empty
@@ -593,13 +633,28 @@ class PLENS
     usi write_freq;
 
     /**
-     * A timer for the simulation. Used in print statements
+     * A timer for wall time calculation in the simulation. Used in print statements
      */
     Timer clk;
 
+    /**
+     * A timer used to time certain important sections of the code.
+     */
+    TimerOutput timer;
+
+    /**
+     * This is used for generating a pvd file containing all the data files and time value for the
+     * entire simulation (of course, only when write() is called). See
+     * https://www.dealii.org/current/doxygen/deal.II/namespaceDataOutBase.html#a6f1c052ba49fd44cd8e3f35ba871aebd
+     */
+    std::vector<std::pair<double, std::string>> times_and_names;
 
 
-    void form_neighbor_face_matchings(const double tol = 1e-4);
+
+    void form_neighbor_face_matchings(
+        IndexSet& loc_rel_dofs,
+        const double tol = 1e-8
+    );
     void calc_metric_terms();
     void calc_surf_flux(
         const usi stage,
@@ -626,6 +681,9 @@ class PLENS
     ) const;
     void calc_rhs();
     void calc_time_step();
+    void post_process();
+    double calc_ss_error(Vector<double>& cell_ss_error) const;
+    void do_solution_transfer(const std::string& filename);
     void write();
     void update();
 

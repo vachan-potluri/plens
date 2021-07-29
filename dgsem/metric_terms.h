@@ -96,7 +96,7 @@ class MetricTerms
      * the direction of outward face normal if the face index is 1, 3 or 5. If the face index is 0,
      * 2 or 4, then the subcell normal and the face outward normal point in opposite directions.
      * Because this deals with the subcell, the ordering has to be tensorial. Access:
-     * `subcell_normals[dir][i][j][k]`
+     * `subcell_normals[0][i][j][k]`
      * gives @f$\vec{n}_{(i-1,i)jk}@f$ for `dir=0` and similarly for `dir=1` and `dir=2`. For
      * `dir=0`, `i=0,1,...,N+1` and `j,k=0,1,...,N`. With `dir=0`, when `i=0`, this gives
      * @f$\vec{n}_{(L,0)jk}@f$ and when `i=N+1`, this gives @f$\vec{n}_{(N,R)jk}@f$.

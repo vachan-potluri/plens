@@ -9,7 +9,7 @@ using namespace BCs;
 
 /**
  * Constructor. Calls the base constructor and sets Periodic::per_pairs and Periodic::fid. If fid
- * is not 0 or 1, exception is raised. Populates Periodic::cellid_to_pairid_. Checks is the faces
+ * is not 0 or 1, exception is raised. Populates Periodic::cellid_to_pairid_. Checks if the faces
  * linked through @p pairs have standard orientation. The orientation is a `std::bitset` object.
  * See https://en.cppreference.com/w/cpp/utility/bitset for details. Also see
  * https://www.dealii.org/current/doxygen/deal.II/namespaceGridTools.html#ac2a1903382c6cff07b33d456a641f6d9
@@ -50,7 +50,9 @@ Periodic::Periodic(
         //     std::cout << "Pair " << pair_id << ": "
         //         << pair.cell[0]->index() << " " << pair.cell[1]->index() << "\n";
         // }
-        cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
+        if(pair.cell[fid]->is_locally_owned()){
+            cellid_to_pairid_[pair.cell[fid]->index()] = pair_id;
+        }
         pair_id++;
     }
 }

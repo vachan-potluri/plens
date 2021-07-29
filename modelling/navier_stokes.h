@@ -35,10 +35,10 @@
  * constructed by specifying molecular weight, @f$\gamma@f$, Pr, and Sutherland's constants. The
  * relevant equations are (see APS-1 report)
  * @f[
- * p = \rho RT, \quad R=R^0/M\\
+ * p = \rho RT, \quad R=\frac{R^0}{M}\\
  * e = \frac{R}{\gamma-1}T\\
- * a = \sqrt{\gamma RT}
- * \mu = \mu_0 \left( \frac{T}{T_0} \right)^{3/2} \frac{T_0+S}{T+S}
+ * a = \sqrt{\gamma RT}\\
+ * \mu = \mu_0 \left( \frac{T}{T_0} \right)^{3/2} \frac{T_0+S}{T+S}\\
  * k = \frac{\mu c_p}{\text{Pr}}
  * @f]
  * For air and N2, a second constructor is provided to set all these values without explicitly
@@ -64,11 +64,11 @@
  * @f[
  * \nabla u = \frac{1}{\rho} \left( \nabla (\rho u) - u \nabla\rho \right)
  * @f]
- * This would make the calculation of @f$\nabla T@f$ very cumbersome, but some helping functions
- * will probably be provided here when the code reaches that stage. Different algorithms differ in
- * how the auxiliary variable flux is calculated at the surface (and also in volume specifically for
- * the DGSEM method). Currently, only a simple average, as used by Bassi & Rebay (1997) is
- * implemented. This is labelled BR1. As a result, the 'aux' functions return
+ * This would make the calculation of @f$\nabla T@f$ very cumbersome, but since the PLENS project
+ * is purely for perfect gas flows, it is nevertheless implemented in the main class. Different
+ * algorithms differ in how the auxiliary variable flux is calculated at the surface (and also in
+ * volume specifically for the DGSEM method). Currently, only a simple average, as used by Bassi &
+ * Rebay (1997) is implemented. This is labelled BR1. As a result, the 'aux' functions return
  * @f$\{\rho^*, (\rho u)^*, (\rho v)^*, (\rho w)^*, (\rho E)^*\}@f$ for surface flux (note usage of
  * conservative variables).
  *
@@ -107,22 +107,24 @@
  * function, the inv vol flux is a variable of type <tt>std::function</tt>.
  * Moreover, volume fluxes are already formulated in a directional manner and don't need the
  * two-function approach used here for inviscid surface flux.
- * For both surface and volume fluxes, the options are private functions and the getters (which will
- * be used directly eventually) are public functions/function variables.
+ * For both surface and volume fluxes, the options (like Rusanov, HLLC, Chandrashekhar) are private
+ * functions and the getters (which will be used directly eventually) are public functions/function
+ * variables.
  *
  * For viscous fluxes, additionally, auxiliary variables
  * (@f$\mathbf{\tau}@f$ and @f$\vec{q}^{''}@f$) are also required. For this purpose, a new class
- * cavars is introduced. It is just a container like class to allow storing conservative and
+ * @ref CAvars is introduced. It is just a container-like class to allow storing conservative and
  * auxiliary variables in a single address. Currently, only BR1 type viscous/diffusive flux is
  * implemented. It just returns an average of diffusive fluxes based on variables of both sides.
  *
- * Finally, this class provides wrappers: NavierStokes::surf_flux_wrappers which is an array of surf
- * flux functions in the order aux, inv, dif. This is useful for assembling surface flux terms of
- * all cells. It can avoid code repetition. The repetition is otherwise inevitable because diffusive
- * fluxes can be calculated only after the auxiliary variables are calculated using auxiliary
- * fluxes. This means, at least two decoupled loops will be required: either aux, inv+dif or
- * aux+inv, dif. The wrappers provide unified interface to all types of fluxes thus enabling
- * automation of assembly.
+ * Finally, this class provides wrappers: NavierStokes::surf_flux_wrappers,
+ * NavierStokes::vol_flux_wrappers and NavierStokes::flux_wrappers which are an array of
+ * surf/vol/exact flux functions in the order aux, inv, dif. This is useful for assembling surface
+ * flux terms of all cells. It can avoid code repetition. The repetition is otherwise inevitable
+ * because diffusive fluxes can be calculated only after the auxiliary variables are calculated
+ * using auxiliary fluxes. This means, at least two decoupled loops will be required: either aux,
+ * inv+dif or aux+inv, dif. The wrappers provide unified interface to all types of fluxes thus
+ * enabling automation of assembly.
  *
  * @note If any identifier from {surf, vol} is missing, then that function is a theoretical
  * function. E.g. NavierStokes::get_inv_flux() takes a conservative state and direction to give the
@@ -305,6 +307,13 @@ class NavierStokes
             cons[4] += 0.5*rho*vel[d]*vel[d];
         }
     }
+
+    /**
+     * @brief Returns a boolean for whether or not the model is inviscid. The check is done by
+     * comparing NavierStokes::mu0_ with 1e-16. Hopefully no gas will have a viscosity smaller
+     * than that. The tolerance may be changed here in future if required.
+     */
+    inline bool is_inviscid() const {return mu0_<1e-16;}
     
     #ifdef DEBUG
     static void test();

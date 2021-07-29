@@ -54,6 +54,9 @@ namespace BCs{
  * This class requires NS pointer for all stages.
  *
  * @warning This class uses a raw pointer to a NavierStokes instance.
+ *
+ * @remark This class was introduced as an experiment. It was found that the results it gives are
+ * not good. See WJ-17-Jun-2021.
  */
 class Empty: public BC
 {

@@ -17,6 +17,11 @@
  * @class FaceDoFInfo
  * @brief This class contains maps that map face-local dof id to cell-local dof id
  *
+ * Simply put, for FE_DGQ<3> elements, this class provides 6 arrays. These arrays consist the
+ * cell-locally ordered dofs lying on the faces of the element. And then it also provides inverse
+ * maps so that given a face id in a cell, the face-local dof numbering can be converted back to
+ * cell-local dof numbering.
+ *
  * This data comes in handy when looping over dofs on a face. This is mostly required for surface
  * flux assembly. This class is also used for periodic boundary condition. The usage of this data
  * is best illustrated by an example.
@@ -47,6 +52,8 @@ class FaceDoFInfo
     /**
      * @brief Forward maps. Access: `maps[face id][face-local dof id]`. The result is cell-local dof
      * id.
+     *
+     * @waring This is a non-const public variable, do not accidentally modify its values.
      */
     std::array<std::vector<usi>, 2*dim> maps;
     

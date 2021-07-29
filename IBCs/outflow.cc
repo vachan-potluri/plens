@@ -9,7 +9,9 @@ using namespace BCs;
 
 /**
  * @brief Sets the ghost conservative state to inner conservative state obtained using
- * BC::get_state().
+ * BC::get_state(). See eq. (42) in Mengaldo et al (2014). This equation is actually for a weak-
+ * prescribed approach, but since BR1 flux (which is an averaging operation) will be used, the
+ * resultant from weak-Riemann approach will also be the same.
  *
  * @note @p normal is unused
  */
@@ -30,8 +32,10 @@ void Outflow::get_ghost_stage1(
  * @f[
  * (\rho E)_{gh} = (\rho E)_{in} + 2\frac{p_{pr}-p_{in}}{\gamma-1}
  * @f]
+ * See eqs. (40) and (41) in Mengaldo et al (2014).
  *
  * @note @p normal is unused
+ * @note The algorithm is different for inviscid and viscous flow
  */
 void Outflow::get_ghost_stage2(
     const FaceLocalDoFData &ldd,
@@ -41,7 +45,7 @@ void Outflow::get_ghost_stage2(
 ) const
 {
     double M = ns_ptr_->get_M(cons);
-    if(M >= 1) cons_gh = cons;
+    if(ns_ptr_->is_inviscid() || M >= 1) cons_gh = cons;
     else{
         // subsonic
         cons_gh = cons;
@@ -53,7 +57,10 @@ void Outflow::get_ghost_stage2(
 
 
 /**
- * @brief Sets the ghost cavars to inner cavars obtained using BC::get_cavars().
+ * @brief Sets the ghost cavars to inner cavars obtained using BC::get_cavars(). See eq. (43) in
+ * Mengaldo et al (2014). Again, like in Outflow::get_ghost_stage1(), although the return value
+ * is a ghost state while Mengaldo et al use a weak-prescribed approach, since the inner and ghost
+ * variable are the same, the resultant flux will be the same when BR1 flux would be used.
  *
  * @note @p normal is unused
  */

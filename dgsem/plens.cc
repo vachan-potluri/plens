@@ -7,7 +7,8 @@
 
 /**
  * Constructor. Calls declare_parameters() and parses parameter file. The parameter file should be
- * named 'input.prm'. Asserts `mhod>0`. Sets ns_ptr and mapping_ptr to nullptr.
+ * named 'input.prm'. Asserts `mhod>0`. Sets ns_ptr and mapping_ptr to nullptr. Completely
+ * constructs PLENS::blender_calc by calling BlenderCalculator::parse_parameters().
  */
 PLENS::PLENS(
     const usi mhod,
@@ -23,13 +24,15 @@ mapping_ptr(nullptr),
 fe(fe_degree),
 fe_face(fe_degree),
 dof_handler(triang),
+has_periodic_bc(false),
 fdi(fe_degree),
 w_1d(fe_degree+1),
 ref_D_1d(fe_degree+1),
 ref_Q_1d(fe_degree+1),
 cdi(fe_degree),
 blender_calc(fe_degree, gcrk_blender_var),
-clk(mpi_comm)
+clk(mpi_comm),
+timer(pcout, TimerOutput::never, TimerOutput::wall_times)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -46,7 +49,7 @@ clk(mpi_comm)
 
 
 /**
- * Destructor.
+ * Destructor. Deletes the boundary condition object pointers held by PLENS::bc_list.
  */
 PLENS::~PLENS()
 {
@@ -58,11 +61,12 @@ PLENS::~PLENS()
 
 
 /**
- * Declares all parameters.
+ * Declares all parameters. Read the sample file generated after any simulation to understand what
+ * this function does.
  *
- * A total of 12 BCs with ids 0 to 11 are declared in subsection BCs. If any of them are left unset
+ * A total of 12 BCs with ids 1 to 12 are declared in subsection BCs. If any of them are left unset
  * in 'input.prm', then the default type "none" is assumed. Data required for BCs is specified in
- * subsections BCs.bid<x> where x takes values 0 to 11. In the function set_BC(), the value of x
+ * subsections BCs.bid<x> where x takes values 1 to 12. In the function set_BC(), the value of x
  * is set to all physical boundary ids and corresponding sections are read from prm file. Thus, any
  * physical boundary id cannot have "none" as its type.
  */
@@ -448,22 +452,21 @@ void PLENS::declare_parameters()
             "base file name",
             "output",
             Patterns::Anything(),
-            "The base name to be used for output files. The individual processor files will be "
-            "named <base file name><proc id>.vtu.<output counter> and the master file will be "
-            "named <base file name>.pvtu.<output counter>."
-        );
-        prm.declare_entry(
-            "processor id digits",
-            "2",
-            Patterns::Integer(1),
-            "The number of digits to be used for processor id. For instance, if this entry is set "
-            "to 3, then processor id 4 will be represented as '004' in the output files."
+            "The base name to be used for output files."
         );
         prm.declare_entry(
             "write frequency",
             "100",
             Patterns::Integer(1),
             "The solution will be written after these many time steps."
+        );
+        prm.declare_entry(
+            "calculate steady state error",
+            "true",
+            Patterns::Bool(),
+            "Whether or not steady state error is to be calculated. rhoE is used for this purpose "
+            "and if true, cell wise error vector will be added to data output and the error will "
+            "be written to the file <base file name>.ss_error."
         );
     }
     prm.leave_subsection(); // data output
@@ -510,6 +513,10 @@ void PLENS::declare_parameters()
  *
  * If there are any periodic BCs to be set, then `triang` object must be modified. This will be
  * done in set_dof_handler().
+ *
+ * @remark For adding the ability to restart a simulation, manifold setting is out-sourced to
+ * set_manifold.h. This way, a coarse triangulation can be applied a manifold before loading an
+ * archived solution.
  */
 void PLENS::read_mesh()
 {
@@ -571,9 +578,7 @@ void PLENS::read_mesh()
             }
             prm.leave_subsection(); // cylinder flare
 
-            CylindricalManifold<dim> manifold(axis, axis_p);
-            triang.set_all_manifold_ids(0);
-            triang.set_manifold(0, manifold);
+            SetManifold::cylinder_flare(axis, axis_p, triang);
         } // if cylinder flare
         else{
             // guaranteed to be blunted double cone
@@ -600,19 +605,7 @@ void PLENS::read_mesh()
             }
             prm.leave_subsection(); // blunted double cone
 
-            CylindricalManifold<dim> cyl_man(axis, separation_p);
-            SphericalManifold<dim> sph_man(nose_center);
-
-            double dotp; // dot product
-            for(auto cell: triang.active_cell_iterators()){
-                if(!(cell->is_locally_owned())) continue;
-                dotp = scalar_product(axis, cell->center() - separation_p);
-                if(dotp < 0) cell->set_all_manifold_ids(0); // sphere
-                else cell->set_all_manifold_ids(1); // cylinder
-            } // loop over owned active cells
-
-            triang.set_manifold(0, sph_man);
-            triang.set_manifold(1, cyl_man);
+            SetManifold::blunted_double_cone(axis, separation_p, nose_center, triang);
         } // if blunted double cone
     }
     prm.leave_subsection(); // subsection mesh
@@ -714,6 +707,12 @@ void PLENS::set_NS()
 void PLENS::set_dof_handler()
 {
     pcout << "Setting DoFHandler object ...\n";
+
+    // the matched pairs will be appended to this list
+    std::vector<GridTools::PeriodicFacePair<
+        parallel::distributed::Triangulation<dim>::cell_iterator>
+    > matched_pairs;
+
     prm.enter_subsection("BCs");
     {
         pcout << "Looking for periodic BCs\n";
@@ -732,16 +731,13 @@ void PLENS::set_dof_handler()
             {
                 type = prm.get("type");
                 if(type == "periodic"){
+                    has_periodic_bc = true;
                     const usi periodic_direction = prm.get_integer("periodic direction");
                     const std::string orientation = prm.get("periodic orientation");
                     const usi other_id = prm.get_integer("other surface boundary id");
                     bid_periodic_ignore.emplace(other_id);
 
                     pcout << "Found bid " << i << " and " << other_id << " with periodic type\n";
-
-                    std::vector<GridTools::PeriodicFacePair<
-                        parallel::distributed::Triangulation<dim>::cell_iterator>
-                    > matched_pairs;
 
                     if(i != other_id){
                         usi left_id, right_id;
@@ -778,14 +774,15 @@ void PLENS::set_dof_handler()
                         );
                         pcout << "Formed matched pairs with id " << i << "\n";
                     }
-
-                    triang.add_periodicity(matched_pairs);
-                }
+                } // if type is periodic
             }
             prm.leave_subsection(); // bid<x>
-        }
+        } // loop over BCs
     }
     prm.leave_subsection(); // subsection BCs
+
+    // add all periodic face relations at once
+    if(has_periodic_bc) triang.add_periodicity(matched_pairs);
 
     dof_handler.distribute_dofs(fe);
 
@@ -794,7 +791,7 @@ void PLENS::set_dof_handler()
 
     MPI_Barrier(mpi_comm);
 
-    form_neighbor_face_matchings();
+    form_neighbor_face_matchings(locally_relevant_dofs);
     calc_metric_terms();
 
     MPI_Barrier(mpi_comm);
@@ -803,9 +800,8 @@ void PLENS::set_dof_handler()
 
 
 /**
- * Initialises the solution vectors. An important difference from pens2D is that currently relevant
- * dofs are set directly to what dealii's functions return. So all dofs of neighboring and periodic
- * cells are added instead of just those lying on common face.
+ * Initialises the solution vectors. The locally relevant dofs are already set when
+ * form_neighbor_face_matchings() was called from set_dof_handler().
  *
  * For initialising PLENS::gcrk_alpha and PLENS::gh_gcrk_alpha, the functions of
  * `Utilities::MPI::Partitioner` are used. See the documentation of these variables and also
@@ -817,7 +813,10 @@ void PLENS::set_sol_vecs()
 {
     pcout << "Initialising solution vectors ... ";
     locally_owned_dofs = dof_handler.locally_owned_dofs();
-    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    // if the problem has periodic BC, then face dof matching doesn't give relevant dofs
+    if(has_periodic_bc){
+        DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    }
 
     for(cvar var: cvar_list){
         g_cvars[var].reinit(locally_owned_dofs, mpi_comm);
@@ -833,10 +832,16 @@ void PLENS::set_sol_vecs()
         gh_gcrk_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
 
+    for(usi d=0; d<dim; d++){
+        gcrk_vel[d].reinit(locally_owned_dofs, mpi_comm);
+    }
+
     gcrk_mu.reinit(locally_owned_dofs, mpi_comm);
     gcrk_k.reinit(locally_owned_dofs, mpi_comm);
-    gh_temp_dof_vec.reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
+    gcrk_p.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_T.reinit(locally_owned_dofs, mpi_comm);
     gcrk_blender_var.reinit(locally_owned_dofs, mpi_comm);
+    rhoE_old.reinit(locally_owned_dofs, mpi_comm);
 
     // the return type is a weak ptr, it must be converted to shared ptr for usage
     // see https://en.cppreference.com/w/cpp/memory/weak_ptr
@@ -1061,8 +1066,8 @@ void PLENS::set_BC()
 
                     bc_list[cur_bid] = new BCs::Periodic(
                         dof_handler,
-                        gcrk_cvars,
-                        gcrk_avars,
+                        gh_gcrk_cvars,
+                        gh_gcrk_avars,
                         matched_pairs,
                         foid
                     );
@@ -1154,12 +1159,19 @@ void PLENS::run()
  *   - Loop over all internal faces
  *     - Loop over all dofs on face
  *       - Loop over all neighbor dofs on the same face
- *         - If the dof locations match (upto tolerance level `tol`), populate the map
+ *         - If the dof locations match (upto tolerance level `tol` times minimum vertex distance),
+ *           populate the map
+ *
+ * While doing this, also polulates the `loc_rel_dofs` parameter to store the ghost cell
+ * dofs lying on the partition interface in case PLENS::has_periodic_bc is `false`.
  *
  * @pre Must be called after read_mesh() and set_dof_handler(). May be called at the end of
- * set_dof_handler() after `dof_locations` are calculated.
+ * set_dof_handler() after PLENS::dof_locations are calculated.
  */
-void PLENS::form_neighbor_face_matchings(const double tol)
+void PLENS::form_neighbor_face_matchings(
+    IndexSet& loc_rel_dofs,
+    const double tol
+)
 {
     pcout << "Matching neighbor side dof ids on internal faces ... ";
     std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
@@ -1182,13 +1194,18 @@ void PLENS::form_neighbor_face_matchings(const double tol)
                 for(usi j=0; j<fe_face.dofs_per_face; j++){
                     Point<dim> loc_nei = dof_locations[dof_ids_nei[fdi.maps[fid_nei].at(j)]];
                     Point<dim> diff(loc - loc_nei);
-                    if(diff.norm() < tol){
+                    if(diff.norm() < tol*cell->minimum_vertex_distance()){
                         // match obtained
                         nei_face_matching_dofs[cell->index()][fid][i] = j;
+                        // for some reason, add_index is only working when there are no periodic
+                        // BCs
+                        if(!has_periodic_bc){
+                            loc_rel_dofs.add_index(dof_ids_nei[fdi.maps[fid_nei].at(j)]);
+                        }
 
                         // print if i and j are not equal (abnormal match)
                         if(i != j){
-                            std::cout << "\tCell id: " << cell->index()
+                            std::cout << "\n\tCell id: " << cell->index()
                                 << ", Cell-local face id: " << fid
                                 << ", Face-local dof id: " << i
                                 << "\n\tFound abnormal match with\n"
@@ -1208,9 +1225,15 @@ void PLENS::form_neighbor_face_matchings(const double tol)
 
 /**
  * Calculates all metric terms. More specifically
- * 1. 1D quadrature weights
- * 1. 1D Differentiation (strong version) and "Q" matrix
- * 1. Other metric terms using MetricTerms
+ * 1. 1D quadrature weights @f$w_i@f$
+ * 2. 1D Differentiation matrix @f$D@f$ (strong version) and also the matrix @f$Q@f$
+ * 3. Other metric terms using MetricTerms and populate PLENS::metrics. Once these are obtained,
+ *    the weights and matrices can be ignored.
+ *
+ * @f[
+ * D_{ij} = \frac{\partial l_j}{\partial \xi}(\xi_i)\\
+ * Q_{ij} = w_i D_{ij}
+ * @f]
  *
  * @pre `dof_handler` must be ready to use. This function can be called at the end of
  * PLENS::set_dof_handler().
@@ -1262,7 +1285,7 @@ void PLENS::calc_metric_terms()
  * - Loop over owned cells
  *   - Loop over faces
  *     - If face is at boundary
- *       - Calculate the surface flux using BC objects from bc_list
+ *       - Calculate the surface flux using BC objects from PLENS::bc_list
  *     - Else (internal face)
  *       - If the neighbor is also owned by this process
  *         - Compute the flux using owner and neighbor solution.
@@ -1281,8 +1304,7 @@ void PLENS::calc_metric_terms()
  * @pre This function assumes that `gh_gcrk_cvars` and `gh_gcrk_avars` are ready to use. Also,
  * assumes that the entire setup (including BCs) is complete.
  *
- * @warning This function resizes @p surf_flux_term internally. So all data stored up to this point
- * is discarded. Although this is not an efficient practice, for now this will be done.
+ * @note This function resizes `surf_flux_term`.
  */
 void PLENS::calc_surf_flux(
     const usi stage,
@@ -1451,7 +1473,8 @@ void PLENS::calc_surf_flux(
 /**
  * Calculates conservative variable gradients in a `cell`. The relevant formula is eq. (B.14) of
  * [1]. The volumetric terms are calculated using PLENS::gcrk_cvars and the surface flux is taken
- * from `s1_surf_flux` which holds the conservative variable flux for stage 1.
+ * from `s1_surf_flux` which is assumed to hold the conservative variable flux for stage 1 (viz.
+ * the auxiliary flux).
  *
  * Suppose @f$\partial \rho/\partial x@f$ is to be calculated. Then, a differential equation is
  * constructed:
@@ -1463,14 +1486,18 @@ void PLENS::calc_surf_flux(
  * variable, 3 such equations corresponding to 3 gradients are used.
  *
  * The strategy for calculation is simple. For the two point volume fluxes, use
- * NavierStokes::get_aux_vol_flux(). For BR1 flux, the direction passed in this function doesn't
- * matter. This flux is multiplied by the component of contravariant vector in the gradient
- * direction. See eq. (B.15) of [1]. See also TW1 notes or WJ dated 20-May-2021.
+ * NavierStokes::get_aux_vol_flux(). For the special case of BR1 flux (which is the only option
+ * available currently in the NavierStokes class), the direction passed in this function doesn't
+ * matter. Also, unlike for stages 2 & 3 (viz. inviscid and diffusive fluxes), the NavierStokes
+ * function for auxiliary flux doesn't give a "component", but rather, a value. Hence, this flux
+ * must be multiplied by the component of contravariant vector in the gradient direction. See eq.
+ * (B.15) of [1]. See also TW1 notes or WJ dated 20-May-2021.
  *
  * Note that for the surface contribution of those dofs lying on face, since this involves stage 1
- * flux, it has no direction (see PLENS::calc_surf_flux()). The flux has same sign in the storage
- * of both cells having the common interface. This is unlike stages 2 and 3 where the flux for
- * every cell is stored as normal flux with outward pointing face normal. This means that the
+ * flux, and hence has no "directional component" (as said above), the flux will have same sign in
+ * the storage (i.e.; in `s1_surf_flux`) of both cells having the common interface. This is unlike
+ * stages 2 and 3 where the flux for every boundary dof is stored (in, say `s2_surf_flux` or
+ * `s3_surf_flux`) using normal flux with outward pointing face normal. This means that the
  * surface contribution expression in (B.14) of [1] can be directly used here (without worrying
  * about surface normals).
  *
@@ -1590,8 +1617,8 @@ void PLENS::calc_cell_cons_grad(
 
 
 /**
- * Asserts the positivity of PLENS::gcrk_cvars. This is a requirement for using the algo and
- * NavierStokes functions.
+ * Asserts the positivity of PLENS::gcrk_cvars. This is a requirement for using the DGSEM limiter
+ * algo and NavierStokes functions. Uses NavierStokes::assert_positivity() for the task.
  */
 void PLENS::assert_positivity() const
 {
@@ -1605,13 +1632,14 @@ void PLENS::assert_positivity() const
 
 
 /**
- * Calculates the auxiliary variables and populates gcrk_avars. Internally uses calc_surf_flux()
- * and calc_cell_cons_grad(). Obviously, gcrk_cvars are used within these functions to calculate
- * the relevant quantities. The latter function gives the gradients of conservative variables, from
- * which the auxiliary variables are to be calculated. The relevant formulae are
+ * Calculates the auxiliary variables and populates PLENS::gcrk_avars. Internally uses
+ * calc_surf_flux() and calc_cell_cons_grad(). Obviously, PLENS::gcrk_cvars are used within these
+ * functions to calculate the relevant quantities. The latter function gives the gradients of
+ * conservative variables, from which the auxiliary variables are to be calculated. The relevant
+ * formulae are
  * @f[
  * \tau_{ij} = \mu \left(
- * \frac{\partial u_i}{\partial x_j} + \frac{\partial u_i}{\partial x_j}
+ * \frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i}
  * \right) - \frac{2\mu}{3} \delta_{ij} \frac{\partial u_k}{\partial x_k}\\
  * \vec{q} = -k\nabla T
  * @f]
@@ -1626,23 +1654,25 @@ void PLENS::assert_positivity() const
  * \frac{u_i u_i}{2} \nabla \rho - \rho u_i \nabla u_i
  * @f]
  * Since @f$e=c_v T@f$, and @f$c_v@f$ is constant, @f$\nabla T = \frac{\nabla e}{c_v}@f$.
- * All these operations will be done using simple dof-wise multiplication.
+ * All the scalar multiplication operations will be done using simple dof-wise multiplication.
  *
  * @pre Since division by density is required, positivity of density is required. Also, since
  * viscosity and thermal conductivity are calculated, positivity of energy is required. One way to
- * ensure this is to call PLENS::assert_positivity()
+ * ensure this is to call assert_positivity()
  *
  * Algo
  * - Loop over owned dofs
  *   - Calculate viscosity and thermal conductivity
  * - Calculate surface flux for stage 1
  * - Loop over owned cells
+ *   - Get conservative gradients in the cell
  *   - Loop over dofs
  *     - Calculate velocity gradients
- *     - Set stress auxiliary variables in gcrk_avars (without factor mu)
+ *     - Set stress auxiliary variables in PLENS::gcrk_avars (without factor @f$\mu@f$)
  *     - Calculate temperature gradient
- *     - Set heat flux auxiliary variables in gcrk_avars (without factor -k)
- * - Multiply appropriate components of gcrk_avars dof-wise with gcrk_mu and (-gcrk_k)
+ *     - Set heat flux auxiliary variables in PLENS::gcrk_avars (without factor @f$-k@f$)
+ * - Multiply appropriate components of PLENS::gcrk_avars dof-wise with PLENS::gcrk_mu and
+ * (-PLENS::gcrk_k)
  */
 void PLENS::calc_aux_vars()
 {
@@ -1742,17 +1772,18 @@ void PLENS::calc_aux_vars()
 
 
 /**
- * Calculates the value of blender (@f$\alpha@f$). First gcrk_blender_var is set according to
- * "blender parameters/variable" entry of prm file. Then, the blender value is calculated in each
- * cell using BlenderCalculator::get_blender() and populated in gcrk_alpha. Then, gh_gcrk_alpha is
- * set for diffusing the value of alpha in each cell.
+ * Calculates the value of blender (@f$\alpha@f$). First PLENS::gcrk_blender_var is updated
+ * according to "blender parameters/variable" entry of prm file. Then, the blender value is
+ * calculated in each cell using BlenderCalculator::get_blender() and populated in
+ * PLENS::gcrk_alpha. Then, PLENS::gh_gcrk_alpha is set for diffusing the value of alpha in each
+ * cell.
  *
- * @note gh_gcrk_alpha is only used in this function. Its sole purpose is to enable the diffusion
- * operation. Once that is done, of course gcrk_alpha would have changed. But gh_gcrk_alpha is not
- * updated because it is never used beyond this function.
+ * @note The indexing for PLENS::gcrk_alpha is based on `cell->global_active_cell_index()` which
+ * was introduced in dealii-9.3.0, rather than `cell->index()` which is commonly used. This is
+ * already explained in @ref cell_indices.
  *
- * The blender variable used in this function is simply based on gcrk_cvars. No fluxes/boundary
- * conditions are required.
+ * The blender variable used in this function is simply based on PLENS::gcrk_cvars. No
+ * fluxes/boundary conditions are required.
  */
 void PLENS::calc_blender()
 {
@@ -1809,14 +1840,14 @@ void PLENS::calc_blender()
 
 /**
  * Calculates high order cell residuals for stages 2 or 3 (inviscid and diffusive fluxes) in a
- * given cell. The algorithm is much similar to PLENS::calc_cell_cons_grad() and uses gcrk_cvars
- * and gcrk_avars.
+ * given `cell`. The algorithm is much similar to calc_cell_cons_grad() and uses PLENS::gcrk_cvars
+ * and PLENS::gcrk_avars. Relevant equations are eqs. (B.14-15) of [1].
  *
  * The volumetric constribution is easily calculated by passing the two relevant states with the
  * average contravariant vector as the "direction" parameter to the volumetric flux functions of
- * NavierStokes class. Note that the average contravariant vector need not be a unit vector.
- * NavierStokes functions require a unit vector. After that, appropriately scale the flux obtained
- * using the norm of contravariant vector.
+ * NavierStokes class (see eq. (B.15) of [1] for what this means). Note that the average
+ * contravariant vector need not be a unit vector. NavierStokes functions require a unit vector.
+ * Hence, later, appropriately scale the flux obtained using the norm of contravariant vector.
  *
  * For the surface contribution, the numerical flux is already held by `s_surf_flux`. One important
  * note here. The algorithm described in appendix B of Hennemann et al (2021) solves the
@@ -1824,11 +1855,13 @@ void PLENS::calc_blender()
  * in positive cartesian directions. However, `s_surf_flux` stores normal flux wrt "outward"
  * normals. This distinction is to be kept in mind. So for faces 1, 3 and 5, the numerical flux
  * stored in `s_surf_flux` can be used without sign change (scaling by norm of contravariant
- * vector would be required). For faces 0, 2 and 4, a sign change will also be required. Now for
- * the internal flux, we simply need to get the inviscid flux in the direction of contravariant
- * vector followed by a scaling with its norm.
+ * vector would be required). For faces 0, 2 and 4, a sign change will also be required (because
+ * outward normals and contravariant vectors face opposite to each other on these faces).
  *
- * @remark Simply put, the contravariant vectors for dofs on faces give the face normal direction
+ * Now for the internal flux, we simply need to get the volume flux in the direction of
+ * contravariant vector followed by a scaling with its norm.
+ *
+ * @note Simply put, the contravariant vectors for dofs on faces give the face normal direction
  * such that it is outward for faces 1, 3 and 5, and inward for faces 0, 2 and 4. The sign changing
  * is required because contravariant and "outward" normal vectors don't match at the latter faces.
  *
@@ -1969,8 +2002,8 @@ void PLENS::calc_cell_ho_residual(
  * the subcell normals of metric terms are relevant. The algorithm used is slightly complicated.
  *
  * First, an outer loop of directions is followed by loops over dofs in complementary directions.
- * Then, a loop over the subcell interfaces of the direction (corresponding to outer loop) is done
- * where the required inter-subcell flux is calculated and its contributions are appropriately
+ * Then, a loop over the subcell interfaces of the outer direction (corresponding to outer loop) is
+ * done where the required inter-subcell flux is calculated and its contributions are appropriately
  * added to the residuals. For each subcell interface, two dofs (subcells) get the flux
  * contribution. The number of such subcell normals (in each direction) will be @f$N+2@f$: one more
  * than the number of dofs. This is obvious because each dof is treated as a subcell and each
@@ -1982,19 +2015,20 @@ void PLENS::calc_cell_ho_residual(
  * For the boundary cases, the numerical flux will be obtained from `s2_surf_flux`. Again, remember
  * that `s2_surf_flux` stores fluxes assuming outward normals at all faces of a cell. These
  * directions match with the subcell normals (for those subcells lying on cell face) for faces 1, 3
- * and 5, while they will be opposite to subcell normals for the remaining faces (0, 2 and 4).
+ * and 5, while they will be opposite to subcell normals for the remaining faces (0, 2 and 4). See
+ * for reference, the note in calc_cell_ho_residual().
  *
  * Algo:
  * - Loop over direction
  *   - Loop over ids in complementary direction 2 (id2=0 to id2=N) [start of internal contributions
  *     loop]
  *     - Loop over ids in complementary direction 1 (id1=0 to id1=N)
- *       - Loop over id in the direction (id=1 to id=N)
+ *       - Loop over id in the direction (id=1 to id=N) (may be called direction 0)
  *         - Evaluate flux between states (id-1, id1, id2) and (id, id1, id2) [the indices have to
  *           be ordered properly, the case for direction=0 is taken as example here]
  *         - Add the contribution to dofs (id-1, id1, id2) and (id, id1, id2) [again, ordering must
  *           be modified appropriately]
- *   - For id1==0 and id1==N+1, use the surface flux from `s2_surf_flux` [surface contrib loop]
+ *   - For id==0 and id==N+1, use the surface flux from `s2_surf_flux` [surface contrib loop]
  *     - Loop over face dofs
  *       - Obtain the flux from `s2_surf_flux` and scale it appropriately with contravariant vector
  *         - Also, appropriate sign change is required because `s2_surf_flux` gives flux assuming
@@ -2133,23 +2167,32 @@ void PLENS::calc_cell_lo_inv_residual(
  * - Assert positivity
  * - Calculate auxiliary variables
  * - Calculate blender
+ * - Calculate surface fluxes for stages 2 and 3
  * - Loop over owned cells
- *   - Calculate surface fluxes for stages 2 and 3
  *   - Get high order inviscid and viscous residual
  *   - Get low order inviscid residual
- *   - Get the complete residual
+ *   - Calculate the final residual (using blender value)
  *   - Set the residual in gcrk_rhs
  */
 void PLENS::calc_rhs()
 {
     assert_positivity();
-    calc_aux_vars();
-    calc_blender();
+    {
+        TimerOutput::Scope timer_section(timer, "Calculate auxiliary variables");
+        calc_aux_vars();
+    }
+    {
+        TimerOutput::Scope timer_section(timer, "Calculate blender");
+        calc_blender();
+    }
     
     // calculate stages 2 & 3 flux
     locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux;
-    calc_surf_flux(2, s2_surf_flux);
-    calc_surf_flux(3, s3_surf_flux);
+    {
+        TimerOutput::Scope timer_section(timer, "Calculate stages 2&3 surface fluxes");
+        calc_surf_flux(2, s2_surf_flux);
+        calc_surf_flux(3, s3_surf_flux);
+    }
 
     // initialise variables
     std::vector<State> ho_inv_residual(fe.dofs_per_cell),
@@ -2160,25 +2203,31 @@ void PLENS::calc_rhs()
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
-        calc_cell_ho_residual(
-            2,
-            cell,
-            s2_surf_flux,
-            ho_inv_residual
-        ); // high order inviscid
+        {
+            TimerOutput::Scope timer_section(timer, "Calculate stages 2&3 ho residual");
+            calc_cell_ho_residual(
+                2,
+                cell,
+                s2_surf_flux,
+                ho_inv_residual
+            ); // high order inviscid
 
-        calc_cell_ho_residual(
-            3,
-            cell,
-            s3_surf_flux,
-            ho_dif_residual
-        ); // high order viscous
+            calc_cell_ho_residual(
+                3,
+                cell,
+                s3_surf_flux,
+                ho_dif_residual
+            ); // high order viscous
+        }
 
-        calc_cell_lo_inv_residual(
-            cell,
-            s2_surf_flux,
-            lo_inv_residual
-        );
+        {
+            TimerOutput::Scope timer_section(timer, "Calculate lo inviscid residual");
+            calc_cell_lo_inv_residual(
+                cell,
+                s2_surf_flux,
+                lo_inv_residual
+            );
+        }
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
@@ -2198,7 +2247,7 @@ void PLENS::calc_rhs()
 
 
 /**
- * Calculates time step based on gcrk_cvars. The minimum of stable time step over all cells (across
+ * Calculates time step based on PLENS::gcrk_cvars. The minimum of stable time step over all cells (across
  * all processes) is taken as the time step. The stable time step formula is taken from Hesthaven's
  * book.
  * @f[
@@ -2206,20 +2255,21 @@ void PLENS::calc_rhs()
  * @f]
  * where @f$C@f$ is a constant and @f$h@f$ is the cell size.
  *
- * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the cell radius.
+ * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the minimum vertex distance.
  *
  * @remark It was noted during pens2D project that the actual expression of Hethaven which uses
- * $\mu$ in place of $\nu$ in the above formula is dimensionally incorrect.
+ * @f$\mu@f$ in place of @f$\nu@f$ in the above formula is dimensionally incorrect.
  *
  * @note Although time step calculation is required only once during an update, this function uses
- * gcrk_cvars and not g_cvars because gcrk_mu will also be required. Thus, it is expected that this
- * function is called during the first RK step, before the first update and after calling
- * calc_aux_vars() because that is where gcrk_mu will be set.
+ * PLENS::gcrk_cvars and not PLENS::g_cvars because PLENS::gcrk_mu will also be required. Thus, it
+ * is expected that this function is called during the first RK step, before the first update and
+ * after calling calc_aux_vars() because that is where PLENS::gcrk_mu will be set.
  *
- * @pre This function assumes gcrk_mu is already set. Also assumes positivity of density.
+ * @pre This function assumes PLENS::gcrk_mu is already set. Also assumes positivity of density.
  */
 void PLENS::calc_time_step()
-{    
+{
+    TimerOutput::Scope timer_section(timer, "Calculate time step");
     std::vector<psize> dof_ids(fe.dofs_per_cell);
 
     double this_proc_step = 1e6; // stable time step (factored) for this process
@@ -2227,7 +2277,7 @@ void PLENS::calc_time_step()
         if(!(cell->is_locally_owned())) continue;
 
         cell->get_dof_indices(dof_ids);
-        double radius = 0.5*cell->diameter();
+        const double length = cell->minimum_vertex_distance();
 
         for(psize i: dof_ids){
             State cons;
@@ -2239,8 +2289,8 @@ void PLENS::calc_time_step()
                 fabs(cons[3]/cons[0])
             });
             // factoring out 1/N^2
-            double cur_step = radius/(max_vel + a +
-                fe.degree*fe.degree*gcrk_mu[i]/(radius*cons[0])
+            double cur_step = length/(max_vel + a +
+                fe.degree*fe.degree*gcrk_mu[i]/(length*cons[0])
             );
             if(cur_step < this_proc_step) this_proc_step = cur_step;
         }
@@ -2252,10 +2302,126 @@ void PLENS::calc_time_step()
 
     // now multiply by Co/N^2 and broadcast
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
-        time_step *= Co/(fe.degree*fe.degree);
+        // use smaller Co for first few time steps
+        if(n_time_steps < 1) time_step *= 0.1*Co/(fe.degree*fe.degree);
+        else time_step *= Co/(fe.degree*fe.degree);
     }
     MPI_Bcast(&time_step, 1, MPI_DOUBLE, 0, mpi_comm);
 } // calc_time_step
+
+
+
+/**
+ * Calculates pressure, velocity and temperature from gcrk_cvars.
+ *
+ * @pre PLENS::assert_positivity() must be successful before calling this function.
+ */
+void PLENS::post_process()
+{
+    for(psize i: locally_owned_dofs){
+        State cons;
+        for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+        gcrk_p[i] = ns_ptr->get_p(cons);
+        gcrk_T[i] = ns_ptr->get_e(cons)/ns_ptr->get_cv();
+        for(usi d=0; d<dim; d++) gcrk_vel[d][i] = gcrk_cvars[1+d][i]/gcrk_cvars[0][i];
+    }
+
+    gcrk_p.compress(VectorOperation::insert);
+    gcrk_T.compress(VectorOperation::insert);
+    for(usi d=0; d<dim; d++) gcrk_vel[d].compress(VectorOperation::insert);
+}
+
+
+
+/**
+ * Calculates the steady state error. The parameter `cell_ss_error` is populated using
+ * VectorTools::integrate_difference() and the global error is calculated using
+ * VectorTools::compute_global_error() (which is returned). The global steady state error is
+ * calculated as follows
+ * @f[
+ * e = \frac{\lVert (\rho E)^{n+1} - (\rho E)^n \rVert_{\Omega}}
+ * {\lVert (\rho E)^{n+1} \rVert_{\Omega}}
+ * @f]
+ * Here, the norm is taken in L2 sense. The @f$n@f$ solution is taken as PLENS::rhoE_old and
+ * @f$n+1@f$ is taken from PLENS::g_cvars. Thus, this function must be called after update() to get
+ * the expected result (so that PLENS::g_cvars have the desired value).
+ *
+ * For both numerator and demoniator, VectorTools::integrate_difference() is called with
+ * Function::ZeroFunction.
+ *
+ * @pre `cell_ss_error` must have a size `triang.n_active_cells()`. No checks on this are done.
+ */
+double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
+{
+    // first get the denominator
+    VectorTools::integrate_difference(
+        *mapping_ptr,
+        dof_handler,
+        g_cvars[4],
+        Functions::ZeroFunction<dim>(),
+        cell_ss_error,
+        QGauss<dim>(fe.degree+1),
+        VectorTools::NormType::L2_norm
+    );
+
+    const double denom = VectorTools::compute_global_error(
+        triang,
+        cell_ss_error,
+        VectorTools::NormType::L2_norm
+    );
+
+    // now for numerator, compute a temporary dof vector for the difference
+    LA::MPI::Vector rhoE_diff(locally_owned_dofs, mpi_comm);
+    for(psize i: locally_owned_dofs) rhoE_diff[i] = g_cvars[4][i] - rhoE_old[i];
+    rhoE_diff.compress(VectorOperation::insert);
+
+    VectorTools::integrate_difference(
+        *mapping_ptr,
+        dof_handler,
+        rhoE_diff,
+        Functions::ZeroFunction<dim>(),
+        cell_ss_error,
+        QGauss<dim>(fe.degree+1),
+        VectorTools::NormType::L2_norm
+    );
+
+    const double numer = VectorTools::compute_global_error(
+        triang,
+        cell_ss_error,
+        VectorTools::NormType::L2_norm
+    );
+    
+    return numer/denom; // denom guaranteed to be positive after passing assert_positivity()
+}
+
+
+
+/**
+ * Performs a serialisation using solution transfer. If I understand correctly, serialisation a
+ * process that converts dealii vectors to writable format. The purpose for saving solution vectors
+ * is apparent. The file saved by this function can be read again. Before reading again, the
+ * triangulation has to be read separately, and also its manifolds have to be set. Then, to read
+ * the solution vectors, a solution transfer object has to be constructed again and initialised
+ * with the dof handler. The dof handler used for reading must be attached to the triangulation
+ * constructed like said above. Doing this procedure for parallel computations is slightly tricky.
+ * Currently, this is not implemented, but is in plan. See ICs::FromArchive.
+ *
+ * According to dealii, writing a solution transfer requires ghosted vectors and reading requires
+ * non-ghosted vectors. So, PLENS::gh_gcrk_cvars will be used here.
+ *
+ * @pre PLENS::gh_gcrk_cvars must be ready to use here.
+ */
+void PLENS::do_solution_transfer(const std::string& filename)
+{
+    std::vector<const LA::MPI::Vector*> gh_cvar_ptrs; // pointers to ghosted cvar vectors
+    for(cvar var: cvar_list){
+        gh_cvar_ptrs.emplace_back(&gh_gcrk_cvars[var]);
+    }
+
+    parallel::distributed::SolutionTransfer<dim, LA::MPI::Vector> sol_trans(dof_handler);
+    sol_trans.prepare_for_serialization(gh_cvar_ptrs);
+    triang.save(filename);
+}
 
 
 
@@ -2266,6 +2432,8 @@ void PLENS::calc_time_step()
  * - gcrk_mu and gcrk_k
  * - gcrk_alpha
  * - Subdomain id (processor id)
+ * - All other vectors calculated in PLENS::post_process()
+ * - Cell wise steady state error vector (if requested)
  *
  * Since current RK solution is being written, it is expected that this, like
  * PLENS::calc_time_step() will be called during the first RK step, after calculation of blender,
@@ -2276,19 +2444,34 @@ void PLENS::calc_time_step()
  * the output counter and the current time so that one can know at what times did the data output
  * happen.
  *
- * @note `DataOut::add_data_vector()` requires a ghosted vector. For conservative and auxiliary
- * variables, this is not an issue. For alpha, `gh_gcrk_alpha` is available, and will be used here. The same variable will also be used as a temporary variable to write
- * For `gcrk_mu` and `gcrk_k`, `gh_temp_dof_vec` is used.
+ * @note Although the documentation says `DataOut::add_data_vector()` requires a ghosted vector, a
+ * non-ghosted but compressed vector also seems to do the job.
+ *
+ * This function writes the following files
+ * - vtu files for individual processor data
+ * - pvtu files for compiling processor data
+ * - pvd files for compiling pvtu files across all outputs
+ * - ".ar" archive files by solution transfer
+ *
+ * To be frank, the pvd file needs to be written only once after the entire simulation. However,
+ * the cost incurred in writing it everytime is very low. Moreover, this is helpful in case the
+ * simulation needs to be killed.
+ *
+ * This function also prints the timer output everytime it is called. The output will happen on
+ * pcout. If the timer output data is of importance, then the pcout output can be logged into a
+ * file.
  */
 void PLENS::write()
 {
+    timer.print_wall_time_statistics(mpi_comm);
+    post_process();
     std::string op_dir, base_filename;
-    usi proc_id_digits;
+    bool calculate_ss_error;
     prm.enter_subsection("data output");
     {
         op_dir = prm.get("directory");
         base_filename = prm.get("base file name");
-        proc_id_digits = prm.get_integer("processor id digits");
+        calculate_ss_error = prm.get_bool("calculate steady state error");
     }
     prm.leave_subsection();
 
@@ -2301,10 +2484,13 @@ void PLENS::write()
     for(cvar var: cvar_list) data_out.add_data_vector(gh_gcrk_cvars[var], cvar_names[var]);
     for(avar var: avar_list) data_out.add_data_vector(gh_gcrk_avars[var], avar_names[var]);
 
-    gh_temp_dof_vec = gcrk_mu; // compressed in calc_aux_vars()
-    data_out.add_data_vector(gh_temp_dof_vec, "mu");
-    gh_temp_dof_vec = gcrk_k; // compressed in calc_aux_vars()
-    data_out.add_data_vector(gh_temp_dof_vec, "k");
+    data_out.add_data_vector(gcrk_mu, "mu");
+    data_out.add_data_vector(gcrk_k, "k");
+    data_out.add_data_vector(gcrk_p, "p");
+    data_out.add_data_vector(gcrk_T, "T");
+    data_out.add_data_vector(gcrk_vel[0], "u");
+    data_out.add_data_vector(gcrk_vel[1], "v");
+    data_out.add_data_vector(gcrk_vel[2], "w");
 
     // subdomain id
     Vector<float> subdom(triang.n_active_cells());
@@ -2313,77 +2499,80 @@ void PLENS::write()
 
     // for alpha, direct addition not possible, see WJ-15-Jun-2021 and
     // https://groups.google.com/g/dealii/c/_lmP3VCLBsw
-    // instead, use a vector like done for subdomain
-    Vector<float> alpha(gh_gcrk_alpha);
+    // also see WJ-10-Jul-2021 and
+    // https://groups.google.com/g/dealii/c/hF4AfBqnTdk
+    Vector<float> alpha(triang.n_active_cells());
+    for(auto &cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+        alpha[cell->active_cell_index()] = gh_gcrk_alpha[cell->global_active_cell_index()];
+    }
     data_out.add_data_vector(alpha, "alpha");
 
-    // cell indices
-    // Vector<float> cell_ids(triang.n_active_cells());
-    // for(const auto &cell: dof_handler.active_cell_iterators()){
-    //     if(!(cell->is_locally_owned())) continue;
-    //     const psize id = cell->global_active_cell_index();
-    //     cell_ids[id] = id;
-    // }
-    // data_out.add_data_vector(cell_ids, "Cell_indices");
+    double ss_error;
+    Vector<double> cell_ss_error(triang.n_active_cells());
+    if(calculate_ss_error){
+        ss_error = calc_ss_error(cell_ss_error);
+        data_out.add_data_vector(cell_ss_error, "steady_state_error");
+    }
 
     data_out.build_patches(
         *mapping_ptr,
-        mapping_ptr->get_degree(),
+        fe.degree,
         DataOut<dim>::CurvedCellRegion::curved_inner_cells
     );
 
-    // processor file
-    std::ofstream proc_file(
-        op_dir + "/" + base_filename +
-        Utilities::int_to_string(
-            Utilities::MPI::this_mpi_process(mpi_comm),
-            proc_id_digits
-        ) + ".vtu." + std::to_string(output_counter)
-    );
-    AssertThrow(
-        proc_file.good(),
-        StandardExceptions::ExcMessage(
-            "Unable to open processor files. Make sure the specified output directory exists."
-        )
-    );
-    data_out.write_vtu(proc_file);
-    proc_file.close();
+    std::string master_filename = data_out.write_vtu_with_pvtu_record(
+        op_dir + "/",
+        base_filename,
+        output_counter,
+        mpi_comm,
+        6
+    ); // n_groups set to default value 0 (one file per processor)
 
-    // master file
+    // pvd file
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
-        std::vector<std::string> filenames;
-        for(usi i=0; i<Utilities::MPI::n_mpi_processes(mpi_comm); i++){
-            // The filenames of processor data files in pvtu record will be treated relative to
-            // the path of pvtu record itself. Since both the pvtu record and processor files exist
-            // in the same directory, prepending output directory is not required
-            filenames.emplace_back(
-                base_filename + Utilities::int_to_string(i, proc_id_digits) + ".vtu." +
-                std::to_string(output_counter)
-            );
-        } // loop over processes
-
-        std::ofstream master_file(
-            op_dir + "/" + base_filename + ".pvtu." + std::to_string(output_counter)
+        times_and_names.emplace_back(
+            cur_time,
+            master_filename // name relative to pvd file path
         );
+        std::ofstream pvd_file(op_dir + "/" + base_filename + ".pvd");
         AssertThrow(
-            master_file.good(),
+            pvd_file.good(),
             StandardExceptions::ExcMessage(
-                "Unable to open master file. Make sure the specified output directory exists."
+                "Unable to open pvd file. Make sure the specified output directory exists."
             )
         );
-        data_out.write_pvtu_record(master_file, filenames);
-        master_file.close();
+        DataOutBase::write_pvd_record(pvd_file, times_and_names);
+        pvd_file.close();
     } // root process
 
+    // solution transfer
+    // the file name for this is same as master filename, with a different extension
+    // ".pvtu" substring is the last 5 characters
+    std::string archive_filename = op_dir + "/" +
+        master_filename.substr(0, master_filename.size()-5) + ".ar";
+    do_solution_transfer(archive_filename);
+
     // append current time and output counter in <base file name>.times
+    // also write steady state error if requested
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
         std::ofstream time_file(op_dir + "/" + base_filename + ".times", std::ios::app);
         AssertThrow(
             time_file.good(),
             StandardExceptions::ExcMessage("Unable to open times file.")
         );
-        time_file << output_counter << " " << cur_time << "\n";
+        time_file << output_counter << " " << cur_time << " " << clk.wall_time() << "\n";
         time_file.close();
+
+        if(calculate_ss_error){
+            std::ofstream error_file(op_dir + "/" + base_filename + ".ss_error", std::ios::app);
+            AssertThrow(
+                error_file.good(),
+                StandardExceptions::ExcMessage("Unable to open steady state error file.")
+            );
+            error_file << output_counter << " " << cur_time << " " << ss_error << "\n";
+            error_file.close();
+        }
     }
     output_counter++;
 } // write()
@@ -2433,6 +2622,7 @@ void PLENS::update()
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
     }
+    MPI_Barrier(mpi_comm);
 
     // stage 2
     calc_rhs();
@@ -2449,6 +2639,7 @@ void PLENS::update()
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
     }
+    MPI_Barrier(mpi_comm);
 
     // stages 3-5
     for(usi rk_stage=3; rk_stage<=5; rk_stage++){
@@ -2468,8 +2659,12 @@ void PLENS::update()
             gcrk_cvars[var].compress(VectorOperation::insert);
             gh_gcrk_cvars[var] = gcrk_cvars[var];
         }
+        MPI_Barrier(mpi_comm);
     }
 
+    for(psize i: locally_owned_dofs) rhoE_old[i] = g_cvars[4][i];
+    rhoE_old.compress(VectorOperation::insert);
+    
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
             g_cvars[var][i] = gcrk_cvars[var][i];

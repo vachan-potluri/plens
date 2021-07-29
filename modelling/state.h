@@ -12,7 +12,10 @@
 #ifndef STATE_H
 #define STATE_H
 
-using State = std::array<double, 5>; // for conservative/primitive state array/vector
+/**
+ * A data structure for conservative variable state. See @ref cvar for ordering.
+ */
+using State = std::array<double, 5>;
 
 #endif
 

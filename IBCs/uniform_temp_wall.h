@@ -35,9 +35,11 @@ namespace BCs
  *    - Interface temperature equals prescribed temperature
  *    - Interface density is calculated using prescribed temperature and inner pressure
  * 2. Ghost conservative state is obtained by reversing inner velocity, keeping other variables
- * unchanged.
+ * unchanged for compressible NS equations. For Euler equations, only the normal component is
+ * reversed.
  * 3. Ghost auxiliary variables equal inner auxiliary variables and ghost velocity (as part of
- * conservative state) is set such that the interface velocity becomes zero (with BR1 viscous flux).
+ * conservative state) is set such that the interface velocity becomes wall velocity (with BR1
+ * viscous flux).
  *
  * Because stage 1 requires calculating density from pressure and temperature, this class requires
  * a NavierStokes object pointer.

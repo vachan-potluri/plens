@@ -80,7 +80,7 @@ void BlenderCalculator::parse_parameters(ParameterHandler& prm)
 /**
  * Calculates blender value for the given cell according to section 4 of Hennemann et al (2021).
  * Calls BlenderCalculator::get_trouble() to calculate the trouble and then returns the modified
- * blender value.
+ * blender value. Nodal to modal conversion is done using BlenderCalculator::cbm.
  *
  * @note For this function to be available, a call to BlenderCalculator::parse_parameters() is
  * necessary. Otherwise, the relevant parameters would have garbage value. An exception is thrown

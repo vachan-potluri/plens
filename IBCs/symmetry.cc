@@ -8,7 +8,9 @@
 using namespace BCs;
 
 /**
- * Sets the ghost state according to the algo described in class documentation
+ * Sets the ghost state according to the algo described in class documentation. BR1 flux of the
+ * ghost state calculated here along with the inner state gives an interfacial state with pressure
+ * and density unchanged and only tangential velocity component retained.
  *
  * @pre @p normal has to be a unit vector
  */
@@ -60,7 +62,12 @@ void Symmetry::get_ghost_stage2(
 
 
 /**
- * Sets the ghost state according to the algo described in class documentation
+ * Sets the ghost state according to the algo described in class documentation. Note here that
+ * since the inner gradients are used as ghost gradients, the flux of momentum is as good as
+ * direct evaluation from inner gradients. For the energy flux, since the gradients are the same
+ * and the conservative state is set as in stage 1, the average of inner and ghost diffusive
+ * fluxes would then use a velocity which has only the tangential component. This is what is
+ * actually desired.
  *
  * @pre @p normal has to be a unit vector
  */

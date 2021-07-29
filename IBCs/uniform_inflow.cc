@@ -54,6 +54,11 @@ void UniformInflow::get_ghost_stage2(
  * variables equal inner values and ghost conservative state is calculated like in stage 1. With
  * this, the BR1 viscous flux of ghost and inner cavars is equivalent to theoretical viscous flux
  * calculated using inner avars and prescribed conservative state.
+ *
+ * @note The above statement is not true in general, but is true here because the gradients are the
+ * same. This makes the diffusive flux (of energy alone, to be precise, momentum fluxes depend only
+ * on the gradients) linear in velocity. Thus calculating the flux and taking an average become
+ * commutable in this special case.
  */
 void UniformInflow::get_ghost_stage3(
     const FaceLocalDoFData &ldd,
