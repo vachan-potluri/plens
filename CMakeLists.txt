@@ -24,6 +24,7 @@ ENDIF(BUILD_SPACETIME)
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") # required for 9.3.0
 
 ADD_SUBDIRECTORY(utilities)
+ADD_SUBDIRECTORY(manifolds)
 ADD_SUBDIRECTORY(modelling)
 ADD_SUBDIRECTORY(IBCs)
 ADD_SUBDIRECTORY(dgsem)
@@ -34,7 +35,7 @@ ADD_EXECUTABLE(plens.out
 
 DEAL_II_SETUP_TARGET(plens.out)
 
-TARGET_LINK_LIBRARIES(plens.out utilities modelling IBCs dgsem)
+TARGET_LINK_LIBRARIES(plens.out utilities manifolds modelling IBCs dgsem)
 
 # for make debug
 ADD_CUSTOM_TARGET(debug

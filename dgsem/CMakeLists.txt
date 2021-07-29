@@ -10,7 +10,7 @@ TARGET_INCLUDE_DIRECTORIES(dgsem PUBLIC "..")
 
 DEAL_II_SETUP_TARGET(dgsem)
 
-TARGET_LINK_LIBRARIES(dgsem utilities modelling IBCs)
+TARGET_LINK_LIBRARIES(dgsem utilities manifolds modelling IBCs)
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
