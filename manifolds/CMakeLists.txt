@@ -1,5 +1,6 @@
 ADD_LIBRARY(manifolds SHARED
     manifold_description.cc
+    cylinder.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(manifolds PUBLIC "..")
