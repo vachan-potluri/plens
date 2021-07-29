@@ -12,6 +12,8 @@
 
 using namespace dealii;
 
+namespace ManifoldDescriptions{
+
 /**
  * @class ManifoldDescription
  * @brief A base class for classes that describe a generic manifold and provide functions for
@@ -49,5 +51,7 @@ class ManifoldDescription
      */
     virtual void set(Triangulation<dim,dim> &triang) = 0;
 };
+
+} // namespace ManifoldDescriptions
 
 #endif
