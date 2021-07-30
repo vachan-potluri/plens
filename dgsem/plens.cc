@@ -348,16 +348,31 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "type",
             "piecewise function",
-            Patterns::Selection("piecewise function"),
-            "Options: 'piecewise function'"
+            Patterns::Selection("piecewise function|from archive"),
+            "Options: 'piecewise function|from archive'"
         );
 
         prm.declare_entry(
             "file name",
             "ic.dat",
             Patterns::FileName(),
-            "Relevant for: piecewise function. For piecewise function, this file must contain a "
-            "list of functions of conservative variables in pieces of domain."
+            "Relevant for: 'piecewise function', 'from archive'. For 'piecewise function', this "
+            "file must contain a list of functions of conservative variables in pieces of domain. "
+            "For 'from archive', this file is the archive's filename."
+        );
+
+        prm.declare_entry(
+            "archive mesh file name",
+            "mesh.msh",
+            Patterns::FileName(),
+            "Relevant for: 'from archive'. The file name of archive's mesh."
+        );
+
+        prm.declare_entry(
+            "archive fe degree",
+            "1",
+            Patterns::Integer(1,9),
+            "Relevant for: 'from archive'. The fe degree of the solution stored in archive."
         );
     }
     prm.leave_subsection(); // subsection IC
