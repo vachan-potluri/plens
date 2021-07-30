@@ -25,10 +25,11 @@ cyl_man_(axis_dir, bifurcation_point),
 sph_man_(nose_center)
 {
     AssertThrow(
-        scalar_product(axis_dir_, nose_center_-bifurcation_point_) > 0,
+        scalar_product(axis_dir_, nose_center_-bifurcation_point_) < 0,
         StandardExceptions::ExcMessage(
-            "The nose center lies in spherical region. This will produce a very wierd "
-            "manifold setting. See the detailed documentation."
+            "The nose center lies in spherical region. This will produce a singularity in "
+            "spherical manifold. It can be overcome using TransfiniteInterpolationManifold, but "
+            "that is not currently implemented."
         )
     );
 }
