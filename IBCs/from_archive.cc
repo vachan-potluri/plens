@@ -93,8 +93,8 @@ ar_dof_handler_(ar_triang_)
 /**
  * Sets FromArchive::g_cvars. The algorithm is simple:
  * - For every conservative variable
- *   - Construct an fe field function for archived solution
- *   - Loop over locally owned dofs of the present problem
+ *   - Construct an fe field function for archived solution FromArchive::ar_gh_gcvars_
+ *   - Loop over locally owned dofs of the present problem FromArchive::locally_owned_dofs_
  *     - Set the conservative variable value using archived solutions's field function
  */
 void FromArchive::set()
@@ -107,7 +107,19 @@ void FromArchive::set()
         );
 
         for(auto cur_dof: locally_owned_dofs_){
-            g_cvars[var][cur_dof] = ar_cvar_fn.value(dof_locations[cur_dof]);
-        }
-    }
+            try{
+                g_cvars[var][cur_dof] = ar_cvar_fn.value(dof_locations[cur_dof]);
+            }
+            catch(...){
+                AssertThrow(
+                    false,
+                    StandardExceptions::ExcMessage(
+                        "Unable to probe for archived solution at one dof location of the "
+                        "problem. This commonly occurs if the domain of the problem has portions "
+                        "that lie out of the domain of the archived solution domain."
+                    )
+                );
+            }
+        } // loop over owned dofs
+    } // loop over cvars
 }

@@ -53,6 +53,11 @@ namespace ICs
  * 3. Read the archived solution. To read the archived solution, solution vectors must be
  *    constructed. To allow for difference in partitioning, these solution vectors are constructed
  *    with all dofs as relevant.
+ *
+ * Once this job is done, the rest is made easy by dealii's Functions::FEFieldFunction. The archive
+ * dof handler and solution vectors are used to generate such field functions. These field
+ * functions can then be asked for values at any point inside the archive's dof handler domain.
+ * Using this, the
  */
 class FromArchive: public IC
 {
