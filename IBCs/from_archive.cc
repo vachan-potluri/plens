@@ -107,6 +107,7 @@ ar_dof_handler_(ar_triang_)
  */
 void FromArchive::set()
 {
+    pcout << "Setting IC on all owned dofs. This may take long time\n";
     for(cvar var: cvar_list){
         Functions::FEFieldFunction<dim, DoFHandler<dim>, LA::MPI::Vector> ar_cvar_fn(
             ar_dof_handler_,
