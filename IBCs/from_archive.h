@@ -101,6 +101,8 @@ class FromArchive: public IC
         const usi ar_fe_degree,
         const std::string &ar_filename
     );
+
+    virtual void set() override;
 };
 
 } // namespace ICs

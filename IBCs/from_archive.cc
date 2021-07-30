@@ -87,3 +87,27 @@ ar_dof_handler_(ar_triang_)
         ar_gh_gcvars_[var] = ar_gcvars_[var];
     }
 }
+
+
+
+/**
+ * Sets FromArchive::g_cvars. The algorithm is simple:
+ * - For every conservative variable
+ *   - Construct an fe field function for archived solution
+ *   - Loop over locally owned dofs of the present problem
+ *     - Set the conservative variable value using archived solutions's field function
+ */
+void FromArchive::set()
+{
+    for(cvar var: cvar_list){
+        Functions::FEFieldFunction<dim, DoFHandler<dim>, LA::MPI::Vector> ar_cvar_fn(
+            ar_dof_handler_,
+            ar_gh_gcvars_[var],
+            ar_mapping_
+        );
+
+        for(auto cur_dof: locally_owned_dofs_){
+            g_cvars[var][cur_dof] = ar_cvar_fn.value(dof_locations[cur_dof]);
+        }
+    }
+}
