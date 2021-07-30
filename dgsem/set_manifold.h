@@ -1,6 +1,8 @@
 /**
  * @file set_manifold.h
  * @brief Provides functions for setting different manifolds.
+ * @deprecated These functions are not used anymore, classes in ManifoldDescriptions are currently
+ * used.
  */
 
 #ifndef SET_MANIFOLD_H
