@@ -59,7 +59,7 @@ namespace ICs
  * Once this job is done, the rest is made easy by dealii's Functions::FEFieldFunction. The archive
  * dof handler and solution vectors are used to generate such field functions. These field
  * functions can then be asked for values at any point inside the archive's dof handler domain.
- * Using this, the
+ * Using this, FromArchive::g_cvars are set.
  */
 class FromArchive: public IC
 {

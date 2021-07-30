@@ -22,7 +22,8 @@ using namespace dealii;
 namespace ManifoldDescriptions{
 
 /**
- * @class A class to apply manifolds for geometries like cylinder with nose. The common example
+ * @class NoseCylinder
+ * A class to apply manifolds for geometries like cylinder with nose. The common example
  * is for this is a blunted cone or blunted double cone. This class requires three information
  * pieces:
  * 1. The axis direction. For convenience, it will be assumed that the axis direction matches with
@@ -50,7 +51,7 @@ namespace ManifoldDescriptions{
  *  - Else (it is 0)
  *    - Throw an exception
  *
- * @note If the nose portion contains nose center, then cylindrical manifold is not applied for
+ * @note If the nose portion contains nose center, then spherical manifold is not applied for
  * the cell containing nose center. This is because the spherical manifold functions have a
  * singularity at that point. See
  * https://www.dealii.org/current/doxygen/deal.II/classSphericalManifold.html
