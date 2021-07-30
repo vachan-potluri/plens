@@ -102,16 +102,17 @@ void PLENS::declare_parameters()
 
         prm.declare_entry(
             "curved subtype",
-            "cylinder flare",
-            Patterns::Selection("cylinder flare|blunted double cone"),
+            "cylinder",
+            Patterns::Selection("cylinder|nose cylinder"),
             "If 'type' was set to 'curved', then this entry indicates which type of curved mesh "
             "is in question. Accordingly, the entries of that subsection are considered. Options "
-            "'cylinder flare|blunted double cone'"
+            "'cylinder|nose cylinder'. The subsequent settings are used to form a"
+            " ManifoldDescription class."
         );
 
         // Entries for curved mesh. See entries around WJ-05-Apr-2021 and the note
-        // 'pens2D to plens'
-        prm.enter_subsection("cylinder flare");
+        // 'pens2D to plens'. Also see WJ-30-Jul-2021.
+        prm.enter_subsection("cylinder");
         {
             prm.declare_entry(
                 "axis direction",
@@ -130,14 +131,15 @@ void PLENS::declare_parameters()
         } // subsection cylinder flare
         prm.leave_subsection();
 
-        prm.enter_subsection("blunted double cone");
+        prm.enter_subsection("nose cylinder");
         {
             prm.declare_entry(
                 "axis direction",
                 "1 0 0",
                 Patterns::List(Patterns::Double(), dim, dim, " "),
                 "Space-separated elements of a vector indicating axis direction. The vector may "
-                "be scaled arbitrarily. Here, it is assumed that axis points away from the nose"
+                "be scaled arbitrarily. Here, it is assumed that axis points in the nose surface "
+                "normal direction"
             );
 
             prm.declare_entry(
@@ -145,7 +147,7 @@ void PLENS::declare_parameters()
                 "0 0 0",
                 Patterns::List(Patterns::Double(), dim, dim, " "),
                 "Space-separated elements of a coordinate indicating the bifurcation between nose "
-                "section and cone section. This point must also lie on the axis"
+                "section and cylinder section. This point must lie on the axis"
             );
 
             prm.declare_entry(
