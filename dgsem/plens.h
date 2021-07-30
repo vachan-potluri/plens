@@ -56,6 +56,9 @@
 #include "blender_calculator.h"
 #include "rk4_stage5_register3.h"
 #include <utilities/split_string.h>
+#include <manifolds/manifold_description.h>
+#include <manifolds/cylinder.h>
+#include <manifolds/nose_cylinder.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
 #include <IBCs/IC.h>
@@ -385,6 +388,15 @@ class PLENS
      * it remains a nullptr as set in constructor
      */
     std::unique_ptr<MappingQGeneric<dim>> mapping_ptr;
+
+    /**
+     * Pointer to ManifoldDescription object. This is set to null in constructor and will be set
+     * if the mesh type is specified curved. Set in read_mesh(). Normally, this (manifold
+     * description) information is not required beyond this function. However, if the initial
+     * condition used is ICs::FromArchive, then this pointer is passed so that the triangulation
+     * for the solution being read can be assigned correct manifold.
+     */
+    std::unique_ptr<ManifoldDescriptions::ManifoldDescription> mfld_desc_ptr;
 
     /**
      * Finite element object (for volume). Set in constructor.

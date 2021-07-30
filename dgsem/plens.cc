@@ -561,13 +561,13 @@ void PLENS::read_mesh()
         // curved type
         mapping_ptr = std::make_unique<MappingQGeneric<dim>>(mapping_ho_degree);
         std::string curved_type = prm.get("curved subtype");
-        if(curved_type == "cylinder flare"){
+        if(curved_type == "cylinder"){
             std::string temp;
             std::vector<std::string> splits;
 
             Tensor<1,dim> axis;
             Point<dim> axis_p;
-            prm.enter_subsection("cylinder flare");
+            prm.enter_subsection("cylinder");
             {
                 // get axis and axis point
                 temp = prm.get("axis direction"); // prm file guarantees this has exactly 3 doubles
@@ -580,17 +580,18 @@ void PLENS::read_mesh()
             }
             prm.leave_subsection(); // cylinder flare
 
-            SetManifold::cylinder_flare(axis, axis_p, triang);
+            mfld_desc_ptr = std::make_unique<ManifoldDescriptions::Cylinder>(axis, axis_p);
+            // SetManifold::cylinder_flare(axis, axis_p, triang);
         } // if cylinder flare
         else{
-            // guaranteed to be blunted double cone
+            // guaranteed to be nose cylinder
             std::string temp;
             std::vector<std::string> splits;
 
             Tensor<1,dim> axis;
             Point<dim> separation_p, nose_center;
 
-            prm.enter_subsection("blunted double cone");
+            prm.enter_subsection("nose cylinder");
             {
                 // get axis and axis point
                 temp = prm.get("axis direction"); // prm file guarantees this has exactly 3 doubles
@@ -607,9 +608,17 @@ void PLENS::read_mesh()
             }
             prm.leave_subsection(); // blunted double cone
 
-            SetManifold::blunted_double_cone(axis, separation_p, nose_center, triang);
+            mfld_desc_ptr = std::make_unique<ManifoldDescriptions::NoseCylinder>(
+                axis,
+                separation_p,
+                nose_center
+            );
+            // SetManifold::blunted_double_cone(axis, separation_p, nose_center, triang);
         } // if blunted double cone
-    }
+
+        // apply the manifold for curved mesh
+        mfld_desc_ptr->set(triang);
+    } // curved subtype
     prm.leave_subsection(); // subsection mesh
     pcout << "Completed\n";
 
