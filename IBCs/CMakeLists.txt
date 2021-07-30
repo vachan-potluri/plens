@@ -9,6 +9,7 @@ ADD_LIBRARY(IBCs SHARED
     periodic.cc
     IC.cc
     piecewise_function.cc
+    from_archive.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(IBCs PUBLIC "..")
