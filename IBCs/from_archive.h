@@ -9,6 +9,8 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/index_set.h>
+#include <deal.II/base/utilities.h>
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/grid/grid_in.h>
@@ -95,14 +97,16 @@ class FromArchive: public IC
     public:
     static constexpr int dim = 3;
 
+    const ConditionalOStream pcout;
+
     FromArchive(
         const DoFHandler<dim> &dh,
         const std::map<psize, Point<dim>> &dl,
         std::array<LA::MPI::Vector, 5> &gcv,
         const MPI_Comm &mpi_comm,
         const std::string &ar_mesh_filename,
-        const std::unique_ptr<ManifoldDescriptions::ManifoldDescription> ar_mfld_desc_ptr,
-        const std::unique_ptr<MappingQGeneric<dim>> ar_mapping_ptr,
+        const std::unique_ptr<ManifoldDescriptions::ManifoldDescription> &ar_mfld_desc_ptr,
+        const std::unique_ptr<MappingQGeneric<dim>> &ar_mapping_ptr,
         const usi ar_fe_degree,
         const std::string &ar_filename
     );
