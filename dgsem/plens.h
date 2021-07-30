@@ -63,6 +63,7 @@
 #include <modelling/var_enums.h>
 #include <IBCs/IC.h>
 #include <IBCs/piecewise_function.h>
+#include <IBCs/from_archive.h>
 #include <IBCs/BC.h>
 #include <IBCs/free.h>
 #include <IBCs/outflow.h>

@@ -890,7 +890,9 @@ void PLENS::set_sol_vecs()
 
 
 /**
- * Sets the IC
+ * Sets the IC. If the IC type is ICs::FromArchive, then PLENS::mfld_desc_ptr and
+ * PLENS::mapping_ptr are applied to archived triangulation. Generally this is always the case.
+ * This may be changed in future according to requirement.
  *
  * @pre read_mesh(), set_NS(), set_dof_handler() and set_sol_vecs() must be called before this
  */
@@ -909,6 +911,23 @@ void PLENS::set_IC()
                 g_cvars,
                 filename,
                 ns_ptr.get()
+            );
+        }
+        else{
+            // from archive
+            const std::string ar_mesh_filename = prm.get("archive mesh file name");
+            const std::string ar_filename = prm.get("file name");
+            const usi ar_fe_degree = prm.get_integer("archive fe degree");
+            ic_ptr = std::make_unique<ICs::FromArchive>(
+                dof_handler,
+                dof_locations,
+                g_cvars,
+                mpi_comm,
+                ar_mesh_filename,
+                mfld_desc_ptr,
+                mapping_ptr,
+                ar_fe_degree,
+                ar_filename
             );
         }
     }
