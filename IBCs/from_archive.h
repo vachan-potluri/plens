@@ -8,20 +8,27 @@
 
 #include <deal.II/base/point.h>
 #include <deal.II/base/exceptions.h>
+#include <deal.II/base/index_set.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/solution_transfer.h>
+#include <deal.II/fe/fe.h>
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/mapping_q_generic.h>
 
 #include "IC.h"
 #include <dgsem/dtype_aliases.h>
 #include <dgsem/LA.h>
 #include <modelling/var_enums.h>
+#include <manifolds/manifold_description.h>
+#include <manifolds/cylinder.h>
+#include <manifolds/nose_cylinder.h>
 
 #include <string>
 #include <fstream>
-#include <map>
+#include <algorithm>
 
 using namespace dealii;
 namespace ICs
@@ -31,14 +38,22 @@ namespace ICs
  * @class FromArchive
  * An IC class that is used to set IC from archives saved by solution transfer. This is either used
  * for restarting a simulation, or setting a solution as IC to a probably more finer grid. The
- * algorithm used here is as in pens2D. First, the archive triangulation is read. The archive dof
- * handler is constructed using the constructor parameter provided. Once that is done, the
- * solution vectors stored in the archive are read. Now for these solution vectors, their ghosted
- * versions are created by specifying all dofs as relevant. This way, the ghosted vectors can be
- * used to set the IC of the actual problem regardless of the newer partition.
+ * algorithm used here is as in pens2D.
  *
- * Once the archive triang, dof handler and solution vectors are ready, the only information of the
- * actual problem we require is the dof locations which is provided by the ctor.
+ * This class does its job partly in the constructor and partly in set(). The job in the
+ * constructor is to reproduce the solution saved in the archive. This involves the following steps
+ * 1. Read the archived triangulation. This need not be the same as the triangulation on which the
+ *    IC is being set. However, this class uses FEFieldFunction to set the IC and hence the
+ *    archived triangulation must be a geometrical superset of the problem's triangulation. Once
+ *    read, manifold is applied to the archived triangulation. This is done using the pointer
+ *    passed in the constructor, when it is not a `nullptr`.
+ * 2. Form the archived dof handler. This is easy, just use the archived triangulation and the fe
+ *    degree.
+ * 3. Read the archived solution. To read the archived solution, solution vectors must be
+ *    constructed. To allow for difference in partitioning, these solution vectors are constructed
+ *    with all dofs as relevant.
+ * 4. The solution vectors are then used to construct the field functions which are subsequently
+ *    used in set().
  */
 class FromArchive: public IC
 {
@@ -54,9 +69,24 @@ class FromArchive: public IC
     parallel::distributed::Triangulation<dim> ar_triang_;
 
     /**
+     * Mapping used for archived triangulation
+     */
+    MappingQGeneric<dim> ar_mapping_;
+
+    /**
      * DoF handler for archived solution.
      */
     DoFHandler<dim> ar_dof_handler_;
+
+    /**
+     * Un-ghosted vectors of archived solution.
+     */
+    std::array<LA::MPI::Vector, 5> ar_gcvars_;
+
+    /**
+     * Ghosted vectors of archived solution. All dofs are specified as relevant for these vectors.
+     */
+    std::array<LA::MPI::Vector, 5> ar_gh_gcvars_;
 
     public:
     static constexpr int dim = 3;
@@ -65,9 +95,12 @@ class FromArchive: public IC
         const DoFHandler<dim> &dh,
         const std::map<psize, Point<dim>> &dl,
         std::array<LA::MPI::Vector, 5> &gcv,
-        const std::string &ar_filename,
+        const MPI_Comm &mpi_comm,
         const std::string &ar_mesh_filename,
-        const usi ar_fe_degree
+        const std::unique_ptr<ManifoldDescriptions::ManifoldDescription> mfld_desc_ptr,
+        const std::unique_ptr<MappingQGeneric<dim>> mapping_ptr,
+        const usi ar_fe_degree,
+        const std::string &ar_filename
     );
 };
 
