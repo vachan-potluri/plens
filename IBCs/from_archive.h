@@ -17,6 +17,7 @@
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/mapping_q_generic.h>
+#include <deal.II/numerics/fe_field_function.h>
 
 #include "IC.h"
 #include <dgsem/dtype_aliases.h>
@@ -52,8 +53,6 @@ namespace ICs
  * 3. Read the archived solution. To read the archived solution, solution vectors must be
  *    constructed. To allow for difference in partitioning, these solution vectors are constructed
  *    with all dofs as relevant.
- * 4. The solution vectors are then used to construct the field functions which are subsequently
- *    used in set().
  */
 class FromArchive: public IC
 {
@@ -97,8 +96,8 @@ class FromArchive: public IC
         std::array<LA::MPI::Vector, 5> &gcv,
         const MPI_Comm &mpi_comm,
         const std::string &ar_mesh_filename,
-        const std::unique_ptr<ManifoldDescriptions::ManifoldDescription> mfld_desc_ptr,
-        const std::unique_ptr<MappingQGeneric<dim>> mapping_ptr,
+        const std::unique_ptr<ManifoldDescriptions::ManifoldDescription> ar_mfld_desc_ptr,
+        const std::unique_ptr<MappingQGeneric<dim>> ar_mapping_ptr,
         const usi ar_fe_degree,
         const std::string &ar_filename
     );
