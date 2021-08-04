@@ -10,6 +10,7 @@ ADD_LIBRARY(IBCs SHARED
     IC.cc
     piecewise_function.cc
     from_archive.cc
+    from_archive_restart.cc
 )
 
 TARGET_INCLUDE_DIRECTORIES(IBCs PUBLIC "..")
