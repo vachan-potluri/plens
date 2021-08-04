@@ -914,8 +914,7 @@ void PLENS::set_IC()
                 ns_ptr.get()
             );
         }
-        else{
-            // from archive
+        else if(type == "from archive"){
             const std::string ar_mesh_filename = prm.get("archive mesh file name");
             const std::string ar_filename = prm.get("file name");
             const usi ar_fe_degree = prm.get_integer("archive fe degree");
@@ -928,6 +927,16 @@ void PLENS::set_IC()
                 mfld_desc_ptr,
                 mapping_ptr,
                 ar_fe_degree,
+                ar_filename
+            );
+        }
+        else{
+            // from archive restart
+            const std::string ar_filename = prm.get("file name");
+            ic_ptr = std::make_unique<ICs::FromArchiveRestart>(
+                dof_handler,
+                dof_locations,
+                g_cvars,
                 ar_filename
             );
         }
