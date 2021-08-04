@@ -348,17 +348,18 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "type",
             "piecewise function",
-            Patterns::Selection("piecewise function|from archive"),
-            "Options: 'piecewise function|from archive'"
+            Patterns::Selection("piecewise function|from archive|from archive restart"),
+            "Options: 'piecewise function|from archive|from archive restart'"
         );
 
         prm.declare_entry(
             "file name",
             "ic.dat",
             Patterns::FileName(),
-            "Relevant for: 'piecewise function', 'from archive'. For 'piecewise function', this "
-            "file must contain a list of functions of conservative variables in pieces of domain. "
-            "For 'from archive', this file is the archive's filename."
+            "Relevant for: 'piecewise function', 'from archive', 'from archive restart'. For "
+            "'piecewise function', this file must contain a list of functions of conservative "
+            "variables in pieces of domain. For 'from archive' and 'from archive restart', this "
+            "file is the archive's filename."
         );
 
         prm.declare_entry(
