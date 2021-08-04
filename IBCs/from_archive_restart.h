@@ -95,6 +95,8 @@ class FromArchiveRestart: public IC
         std::array<LA::MPI::Vector, 5> &gcv,
         const std::string &ar_filename
     );
+
+    virtual void set() override;
 };
 
 } // namespace ICs

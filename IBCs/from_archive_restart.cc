@@ -54,3 +54,20 @@ ar_dof_handler_(ar_triang_)
     parallel::distributed::SolutionTransfer<dim, LA::MPI::Vector> sol_trans(ar_dof_handler_);
     sol_trans.deserialize(ar_gcvar_ptrs);
 }
+
+
+
+/**
+ * Sets FromArchiveRestart::g_cvars dof-wise to FromArchiveRestart::ar_gcvars_. If the conditions
+ * mentioned in detailed documentation are not met, then this function will likely throw run time
+ * errors.
+ */
+void FromArchiveRestart::set()
+{
+    pcout << "Setting the IC\n";
+    for(cvar var: cvar_list){
+        for(auto i: locally_owned_dofs_){
+            g_cvars[var][i] = ar_gcvars_[var][i];
+        }
+    }
+}
