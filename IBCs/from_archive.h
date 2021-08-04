@@ -53,13 +53,13 @@ namespace ICs
  * 2. Form the archived dof handler. This is easy, just use the archived triangulation and the fe
  *    degree.
  * 3. Read the archived solution. To read the archived solution, solution vectors must be
- *    constructed. To allow for difference in partitioning, these solution vectors are constructed
- *    with all dofs as relevant.
+ *    constructed. To allow for difference in partitioning, these solution vectors have a ghosted
+ *    version which are constructed with all dofs as relevant.
  *
  * Once this job is done, the rest is made easy by dealii's Functions::FEFieldFunction. The archive
- * dof handler and solution vectors are used to generate such field functions. These field
+ * dof handler and ghosted solution vectors are used to generate such field functions. These field
  * functions can then be asked for values at any point inside the archive's dof handler domain.
- * Using this, FromArchive::g_cvars are set.
+ * Using this, FromArchive::g_cvars are set (in set()).
  *
  * @note There are better ways to do the solution evaluation part. See the thread
  * https://groups.google.com/g/dealii/c/p5CE15yChrI and also WJ-04-Aug-2021.

@@ -386,17 +386,18 @@ class PLENS
     /**
      * Pointer to the mapping object. This will be set in read_mesh() where the mesh type
      * (straight/curved) is used to set the degree of mapping. For 'curved' mesh, the mapping
-     * degree is set equal to the value taken through constructor. Until read_mesh() is called,
-     * it remains a nullptr as set in constructor
+     * degree is set equal to the value taken through constructor (subsequently stored in
+     * PLENS::mapping_ho_degree). Until read_mesh() is called, it remains a nullptr as set in
+     * constructor.
      */
     std::unique_ptr<MappingQGeneric<dim>> mapping_ptr;
 
     /**
-     * Pointer to ManifoldDescription object. This is set to null in constructor and will be set
-     * if the mesh type is specified curved. Set in read_mesh(). Normally, this (manifold
-     * description) information is not required beyond this function. However, if the initial
-     * condition used is ICs::FromArchive, then this pointer is passed so that the triangulation
-     * for the solution being read can be assigned correct manifold.
+     * Pointer to ManifoldDescriptions::ManifoldDescription object. This is set to null in
+     * constructor and will be set if the mesh type is specified curved. Set in read_mesh().
+     * Normally, this (manifold description) information is not required beyond this function.
+     * However, if the initial condition used is ICs::FromArchive, then this pointer is passed so
+     * that the triangulation for the solution being read can be assigned correct manifold.
      */
     std::unique_ptr<ManifoldDescriptions::ManifoldDescription> mfld_desc_ptr;
 
@@ -423,7 +424,7 @@ class PLENS
 
     /**
      * A boolean variable indicating if the problem has periodic BC(s). This is required to set
-     * the relevant dofs correctly.
+     * the relevant dofs correctly. See set_dof_handler() and set_sol_vecs().
      */
     bool has_periodic_bc;
 
@@ -445,7 +446,7 @@ class PLENS
 
     /**
      * Global conservative variable vectors of 'c'urrent 'RK' solution. These are the main vectors
-     * which are updated in every (sub) time step
+     * which are updated in every (sub) time step in update().
      */
     std::array<LA::MPI::Vector, 5> gcrk_cvars;
 
@@ -466,12 +467,12 @@ class PLENS
 
     /**
      * The vector containing "right hand side" or residual for all dofs globally. Will be used to
-     * update PLENS::gcrk_cvars.
+     * update PLENS::gcrk_cvars. Will be calculated in calc_rhs().
      */
     std::array<LA::MPI::Vector, 5> gcrk_rhs;
 
     /**
-     * Like PLENS::gcrk_rhs, but for previous stage RK solution. Used in the last three stages of
+     * Like PLENS::gcrk_rhs, but for previous stage RK solution. Used in the last four stages of
      * RK4 update.
      */
     std::array<LA::MPI::Vector, 5> gprk_rhs;
@@ -494,12 +495,13 @@ class PLENS
 
     /**
      * Variable used for calculating blender (@f$\alpha@f$) value. This need not be ghosted. Its
-     * value will be set in PLENS::calc_blender() based on the parameters provided.
+     * value will be set in PLENS::calc_blender() based on the parameters provided. Generally, this
+     * is one of @f$p,\ \rho,\ p\rho@f$.
      */
     LA::MPI::Vector gcrk_blender_var;
 
     /**
-     * An array that stores the value of blender itself ($\alpha$). The elements of this vector
+     * An array that stores the value of blender itself (@f$\alpha@f$). The elements of this vector
      * are to be accessed using `CellAccessor::global_active_cell_index()` which is introduced in
      * dealii-9.3.0. The construction of this vector is done using
      * `Triangulation::global_active_cell_index_partitioner()` which returns (pointer to) an object
@@ -531,7 +533,7 @@ class PLENS
     std::array<LA::MPI::Vector, dim> gcrk_vel;
 
     /**
-     * Old solution of $\rho E$. Used for steady state error calculation
+     * Old solution of @f$\rho E@f$. Used for steady state error calculation
      */
     LA::MPI::Vector rhoE_old;
 
@@ -602,7 +604,7 @@ class PLENS
     CellDoFInfo cdi;
 
     /**
-     * The blender calculator object
+     * The BlenderCcalculator object
      */
     BlenderCalculator blender_calc;
 

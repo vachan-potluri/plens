@@ -41,17 +41,17 @@ namespace ICs{
  *
  * This class is a simplification of ICs::FromArchive in a special case. For the class
  * ICs::FromArchive to work, the only requirement is that the archive's triangulation must be
- * encompassing the problems' triangulation. For this class, the requirements are more strict:
+ * encompassing the problem's triangulation. For this class, the requirements are more strict:
  * 1. The archive triangulation and the problem's triangulation must be the same. However, a
  *    separate triangulation has to be constructed to be able to call the `load()` function.
  * 2. The finite element of the archive's and problem's dof handler must be the same. Both the
  *    type and the degree have to match. This essentially makes the dof handlers also match.
  * 3. The number of processors used for archive's solution must be exactly same as the number of
- *    processors being used by the current problem. Otherwise, using the loaded solution directly
+ *    processors being used by the current problem. Otherwise, direct usage of the loaded solution
  *    would not be possible and we would have to evaluate the solution at points which are not
  *    owned (like in ICs::FromArchive).
  *
- * So in essence, the partitioning of the domain, the the dof numbering must remain constant
+ * So in essence, the partitioning of the domain, the dof numbering must remain constant
  * accross archive's and problem's dof handlers for this class to work. No checkings of any sort
  * are done, but rather this is assumed. If the assumptions don't match, wierd results may be
  * expected.
@@ -59,8 +59,8 @@ namespace ICs{
  * For more details, see https://groups.google.com/g/dealii/c/p5CE15yChrI.
  *
  * The job is done mostly in the constructor which is very similar to ICs::FromArchive's
- * constructor, except that ghosted vectors are not used. The set function then simply equates the
- * problem's solution vectors to the archive's vectors dof-wise.
+ * constructor, except that ghosted vectors are not constructed. The set function then simply
+ * equates the problem's solution vectors to the archive's vectors dof-wise.
  */
 class FromArchiveRestart: public IC
 {

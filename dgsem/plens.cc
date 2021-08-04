@@ -505,37 +505,20 @@ void PLENS::declare_parameters()
  * boundary ids, see
  * https://dealii.org/developer/doxygen/deal.II/group__simplex.html#ga058cd187cea704428ac1118410cd0fb8.
  * However, there seems to be a version mismatch between the vtk meshes that gmsh writes and what
- * dealii expects. See WJ-07-May-2021
+ * dealii expects. See WJ-07-May-2021. As a result, the vtk format is never really used.
  *
- * For straight edged meshes, the procedure is simple. mapping_ptr is set using
+ * For straight edged meshes, the procedure is simple. PLENS::mapping_ptr is set using
  * MappingQGeneric<dim>(1).
  *
- * For curved meshes, only "cylinder flare" and "blunted double cone" geometries are supported. For
- * cylinder flare, the entire mesh is assigned CylindricalManifold. For blunted double cone, the
- * nose part is assigned SphericalManifold and the rest is assigned CylindricalManifold. See note
- * __pens2D to plens__ and entries around WJ-05-Apr-2021. The algorithm for setting manifold on
- * blunted double cone is
+ * For curved meshes, the classes in ManifoldDescriptions are used to set the curvatures in the
+ * mesh. The parameter options in prm file are set according to the classes in this namespace. All
+ * classes in this namespace provide a `set()` function which is used to assign manifold(s) to
+ * PLENS::triang. PLENS::mapping_ptr is set using MappingQGeneric<dim>(mapping_ho_degree).
  *
- * - Loop over all cells
- *  - If the dot product of line joining separation point to cell center and axis is negative
- *    - Set manifold id for spherical manifold
- *  - Else
- *    - Set manifold id for cylindrical manifold
+ * If there are any periodic BCs to be set, then `triang` object must be modified so that the cells
+ * connected through periodicity are marked as relevant. This will be done in set_dof_handler().
  *
- * Where separation point is a point on the axis which bifurcates the cone section from sphere
- * section. The plane normal to axis and passing through the separation point is the bifurcator.
- *
- * For curved meshes, mapping_ptr is set using MappingQGeneric<dim>(mapping_ho_degree).
- *
- * @note It is assumed that the cells are also strictly bifurcated: no cells have bifurcator plane
- * passing through them in the middle. This can be ensured by meshing the two regions separately.
- *
- * If there are any periodic BCs to be set, then `triang` object must be modified. This will be
- * done in set_dof_handler().
- *
- * @remark For adding the ability to restart a simulation, manifold setting is out-sourced to
- * set_manifold.h. This way, a coarse triangulation can be applied a manifold before loading an
- * archived solution.
+ * When using ICs::FromArchive as the IC, PLENS::mfld_desc_ptr is passed for its constructor.
  */
 void PLENS::read_mesh()
 {
@@ -645,8 +628,8 @@ void PLENS::read_mesh()
 
 
 /**
- * Forms the NavierStokes object based on settings in prm file. See declare_parameters() for the
- * settings.
+ * Forms the NavierStokes object PLENS::ns_ptr based on settings in prm file. See
+ * declare_parameters() for the settings.
  */
 void PLENS::set_NS()
 {
@@ -720,8 +703,12 @@ void PLENS::set_NS()
  * Since there will be separate entries for each surface/boundary in a periodic BC, the
  * 'other surface boundary id' is stored in a set and any boundary id which lies in this set is
  * ignored. Of course, this assumes the two entries of periodic boundaries are consistent with
- * physical description in terms of their entries. Collecting and setting matched pairs only once
- * is sufficient.
+ * physical description in terms of their entries for 'left' and 'right' ids. Collecting and
+ * setting matched pairs only once is sufficient.
+ *
+ * @remark It was realised later the call to `Triangulation::add_periodicity()` must happen only
+ * once. This means __all__ periodic boundary pairs must be collected in a single vector of
+ * PerioficFacePair. To enable this, the variable PLENS::has_periodic_bc was introduced.
  *
  * If the 'right' id and 'left' id of a pair match (i.e.; both faces have same id), then a more
  * restricted version of collect_periodic_faces() is called which takes only one boundary id.
@@ -729,6 +716,11 @@ void PLENS::set_NS()
  * @note It is required for set_BC() that right id and left id be different. But that is not
  * required for this function. So this function doesn't assert that, set_BC() will. But this
  * function will print a warning stating so.
+ *
+ * This function populates PLENS::dof_locations and calls form_neighbor_face_matchings(),
+ * calc_metric_terms(). If PLENS::has_periodic_bc is `true`, then form_neighbor_face_matchings()
+ * doesn't populate the PLENS::locally_relevant_dofs and instead, those will be obtained using
+ * `DoFTools::extract_locally_relevant_dofs()` in set_sol_vecs().
  *
  * @pre read_mesh() has to be called before this.
  */
@@ -828,12 +820,14 @@ void PLENS::set_dof_handler()
 
 
 /**
- * Initialises the solution vectors. The locally relevant dofs are already set when
- * form_neighbor_face_matchings() was called from set_dof_handler().
+ * Initialises the solution vectors. If PLENS::has_periodic_bc is `false`, the locally relevant
+ * dofs are already set when form_neighbor_face_matchings() was called from set_dof_handler().
+ * Otherwise, they are set here using `DoFTools::extract_locally_relevant_dofs()`.
  *
  * For initialising PLENS::gcrk_alpha and PLENS::gh_gcrk_alpha, the functions of
  * `Utilities::MPI::Partitioner` are used. See the documentation of these variables and also
- * @ref cell_indices.
+ * @ref cell_indices. The partitioner for this purpose is a cell index partitioner returned by
+ * `Triangulation::global_active_cell_index_partitioner()`.
  *
  * @pre read_mesh() and set_dof_handler() must be called before this
  */
@@ -957,11 +951,13 @@ void PLENS::set_IC()
  * Every boundary with a unique boundary id is assigned a BC object. For periodic boundary
  * conditions, each boundary of the periodic pair is assigned a separate BC object.
  *
- * First, a loop over all faces owned by this process is used to determing the number of boundaries
+ * First, a loop over all faces owned by this process is used to determine the number of boundaries
  * this process is exposed to. The list PLENS::bid_list is thus populated. Then, based on this
- * list, the boundary condition objects are constructed by parsing the prm file. For periodic
- * boundary conditions, it might well be possible that the pairs are owned by different mpi
- * processes and hence separate objects are assigned to them.
+ * list, the boundary condition objects (PLENS::bc_list) are constructed by parsing the prm file.
+ * For periodic boundary conditions, it might well be possible that the pairs are owned by
+ * different mpi processes and hence separate objects are assigned to them.
+ *
+ * A physical boundary (i.e.; one which has an id assigned in mesh file) cannot be of type `none`.
  *
  * @note For the reasons described above, it is mandatory that the 'left' and 'right' boundary ids
  * for a periodic pair are different. Otherwise, it is impossible to set BCs::Periodic::fid
@@ -969,7 +965,8 @@ void PLENS::set_IC()
  * of a periodic boundary. In that case, it is inevitable that we have two entries for a periodic
  * pair.
  *
- * @warning Dynamic memory allocation will be done for BC objects
+ * @warning Dynamic memory allocation will be done for BC objects. They are deleted in the
+ * destructor.
  */
 void PLENS::set_BC()
 {
@@ -1175,7 +1172,7 @@ void PLENS::read_time_settings()
  * Runs the entire simulation. A copy of the prm file along with fe degree and mapping degree is
  * written to the output directory at the beginning. The fe and mapping degrees are added as
  * comments in the copy printed. The copy will be printed at
- * <output directory>/simulation_parameters.prm.
+ * `<output directory>/simulation_parameters.prm`.
  */
 void PLENS::run()
 {
@@ -2368,7 +2365,8 @@ void PLENS::calc_time_step()
 
 
 /**
- * Calculates pressure, velocity and temperature from gcrk_cvars.
+ * Calculates pressure, velocity and temperature from gcrk_cvars. Populates PLENS::gcrk_p,
+ * PLENS::gcrk_T and PLENS::gcrk_vel.
  *
  * @pre PLENS::assert_positivity() must be successful before calling this function.
  */
@@ -2483,22 +2481,24 @@ void PLENS::do_solution_transfer(const std::string& filename)
 
 /**
  * Writes the data. The following variables are written:
- * - gh_gcrk_cvars
- * - gh_gcrk_avars
- * - gcrk_mu and gcrk_k
- * - gcrk_alpha
+ * - PLENS::gh_gcrk_cvars
+ * - PLENS::gh_gcrk_avars
+ * - PLENS::gcrk_mu and PLENS::gcrk_k
+ * - PLENS::gcrk_alpha
  * - Subdomain id (processor id)
  * - All other vectors calculated in PLENS::post_process()
  * - Cell wise steady state error vector (if requested)
  *
  * Since current RK solution is being written, it is expected that this, like
- * PLENS::calc_time_step() will be called during the first RK step, after calculation of blender,
+ * PLENS::calc_time_step(), will be called during the first RK step, after calculation of blender,
  * and before the first update.
  *
  * The location and naming of files is described in PLENS::declare_parameters(). Additionally, to
- * keep a log of data output time, a file "<base file name>.times" is written. This file contains
+ * keep a log of data output time, a file `<base file name>.times` is written. This file contains
  * the output counter and the current time so that one can know at what times did the data output
- * happen.
+ * happen. Additionally, a file `<base file name>.ss_error` is written to output the steady state
+ * error at the output instant if the error calculation is requested. This calculation of error is
+ * done using calc_ss_error()
  *
  * @note Although the documentation says `DataOut::add_data_vector()` requires a ghosted vector, a
  * non-ghosted but compressed vector also seems to do the job.
@@ -2514,8 +2514,8 @@ void PLENS::do_solution_transfer(const std::string& filename)
  * simulation needs to be killed.
  *
  * This function also prints the timer output everytime it is called. The output will happen on
- * pcout. If the timer output data is of importance, then the pcout output can be logged into a
- * file.
+ * pcout. If the timer output data is of importance and needs to be stored, then the pcout output
+ * can be logged into a file.
  */
 void PLENS::write()
 {
@@ -2639,8 +2639,9 @@ void PLENS::write()
  * Updates the solution for one time step. Currently, only 5 stage 3 register RK4 algorithm is
  * used. See RK4Stage5Register3 class documentation for details. PLENS::g_cvars is used like a
  * buffer before and after the update. Although the algorithm is a 3 register one, since the
- * solution data variable is not being overwritten here, the implementation will be done like a
- * 3N scheme: one register for solution and 3 registers for residuals.
+ * solution data variable (viz. PLENS::gcrk_cvars) is not being overwritten here, the
+ * implementation will be done like a 3N scheme: one register for solution and 3 registers for
+ * residuals.
  *
  * See also WJ-09-Jun-2021
  */
