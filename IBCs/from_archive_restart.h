@@ -51,6 +51,11 @@ namespace ICs{
  *    would not be possible and we would have to evaluate the solution at points which are not
  *    owned (like in ICs::FromArchive).
  *
+ * So in essence, the partitioning of the domain, the the dof numbering must remain constant
+ * accross archive's and problem's dof handlers for this class to work. No checkings of any sort
+ * are done, but rather this is assumed. If the assumptions don't match, wierd results may be
+ * expected.
+ *
  * For more details, see https://groups.google.com/g/dealii/c/p5CE15yChrI.
  *
  * The job is done mostly in the constructor which is very similar to ICs::FromArchive's
