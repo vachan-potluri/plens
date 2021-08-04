@@ -60,6 +60,15 @@ namespace ICs
  * dof handler and solution vectors are used to generate such field functions. These field
  * functions can then be asked for values at any point inside the archive's dof handler domain.
  * Using this, FromArchive::g_cvars are set.
+ *
+ * @note There are better ways to do the solution evaluation part. See the thread
+ * https://groups.google.com/g/dealii/c/p5CE15yChrI and also WJ-04-Aug-2021.
+ * Wolfgang and Peter have given some alternatives. However, I don't think any changes are
+ * currently required because this class is not used much.
+ * @note If the aim is to restart the same simulation (on the same mesh, using same FE and same
+ * number of processors), then use ICs::FromArchiveRestart instead. That doesn't involve evaluating
+ * a solution and hence is exact. With this class, there are bound to be some distortions if a
+ * point belongs to multiple cells (i.e.; lies on their boundaries).
  */
 class FromArchive: public IC
 {
