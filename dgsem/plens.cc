@@ -275,12 +275,12 @@ void PLENS::declare_parameters()
                     "none",
                     Patterns::Selection(
                         "none|free|outflow|uniform inflow|uniform temp wall|symmetry|empty|"
-                        "periodic"
+                        "periodic|insulated wall"
                     ),
                     "Type of BC. Options: 'none|free|outflow|uniform inflow|uniform temp wall"
-                    "|symmetry|empty|periodic'. 'none' type cannot be specified for a physical "
-                    "boundary. For a periodic boundary, separate entries for both surfaces "
-                    "have to be made"
+                    "|symmetry|empty|periodic|insulated wall'. 'none' type cannot be specified "
+                    "for a physical boundary. For a periodic boundary, separate entries for both "
+                    "surfaces have to be made"
                 );
 
                 prm.declare_entry(
@@ -304,7 +304,7 @@ void PLENS::declare_parameters()
                     "0 0 0",
                     Patterns::List(Patterns::Double(), dim, dim, " "),
                     "Space-separated values for prescribed velocity. Relevant for: "
-                    "uniform inflow, uniform temp wall. For uniform temp wall, this describes "
+                    "uniform inflow, uniform temp wall,insulated wall. For walls, this describes "
                     "the wall velocity."
                 );
 
@@ -1123,6 +1123,22 @@ void PLENS::set_BC()
                         gh_gcrk_avars,
                         matched_pairs,
                         foid
+                    );
+                }
+                else if(type == "insulated wall"){
+                    const std::string vel_str = prm.get("prescribed velocity");
+                    std::vector<std::string> splits;
+                    Tensor<1,dim> vel;
+                    utilities::split_string(vel_str, " ", splits);
+                    for(int d=0; d<dim; d++) vel[d] = std::stod(splits[d]);
+                    pcout << "\t Prescribed U: " << vel << "\n";
+
+                    bc_list[cur_bid] = new BCs::InsulatedWall(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        vel,
+                        ns_ptr.get()
                     );
                 }
                 else{
