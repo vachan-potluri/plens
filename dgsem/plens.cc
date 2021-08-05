@@ -2636,26 +2636,15 @@ void PLENS::write()
 
 
 /**
- * Updates the solution for one time step. Currently, only 5 stage 3 register RK4 algorithm is
- * used. See RK4Stage5Register3 class documentation for details. PLENS::g_cvars is used like a
- * buffer before and after the update. Although the algorithm is a 3 register one, since the
- * solution data variable (viz. PLENS::gcrk_cvars) is not being overwritten here, the
+ * The update function for 5 stage 3 register RK4 algorithm. This is not intended to be used
+ * separately, but through the wrapper function update(). See RK4Stage5Register3 class
+ * documentation for details of the exact algorithm. Although the algorithm is a 3 register one,
+ * since the solution data variable (viz. PLENS::gcrk_cvars) is not being overwritten here, the
  * implementation will be done like a 3N scheme: one register for solution and 3 registers for
- * residuals.
- *
- * See also WJ-09-Jun-2021
+ * residuals. See also WJ-09-Jun-2021.
  */
-void PLENS::update()
+void PLENS::update_rk4()
 {
-    // initialise
-    for(cvar var: cvar_list){
-        for(psize i: locally_owned_dofs){
-            gcrk_cvars[var][i] = g_cvars[var][i];
-        }
-        gcrk_cvars[var].compress(VectorOperation::insert);
-        gh_gcrk_cvars[var] = gcrk_cvars[var];
-    }
-
     // stage 1
     calc_rhs();
     // time step must be calculated after calling calc_rhs(), otherwise gcrk_mu would be unset and
@@ -2718,6 +2707,27 @@ void PLENS::update()
         }
         MPI_Barrier(mpi_comm);
     }
+} // update_rk4
+
+
+
+/**
+ * Updates the solution for one time step. This is a wrapper class around update_rk4() and
+ * update_rk3(). Either of them is called depending on the RK degree provided in input file.
+ * PLENS::g_cvars is used like a buffer here before and after the update. 
+ */
+void PLENS::update()
+{
+    // initialise
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            gcrk_cvars[var][i] = g_cvars[var][i];
+        }
+        gcrk_cvars[var].compress(VectorOperation::insert);
+        gh_gcrk_cvars[var] = gcrk_cvars[var];
+    }
+
+    update_rk4();
 
     for(psize i: locally_owned_dofs) rhoE_old[i] = g_cvars[4][i];
     rhoE_old.compress(VectorOperation::insert);

@@ -701,6 +701,8 @@ class PLENS
     double calc_ss_error(Vector<double>& cell_ss_error) const;
     void do_solution_transfer(const std::string& filename);
     void write();
+    void update_rk3();
+    void update_rk4();
     void update();
 
     public:
