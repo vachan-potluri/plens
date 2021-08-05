@@ -614,6 +614,12 @@ class PLENS
     const RK4Stage5Register3 rk4_coeffs;
 
     /**
+     * RK update order/degree. Takes value 3 or 4. Depending on this value, update() calls
+     * update_rk3() and update_rk4() respectively. The value is set in read_time_settings().
+     */
+    usi rk_order;
+
+    /**
      * Current simulation time.
      */
     double cur_time;
@@ -701,6 +707,8 @@ class PLENS
     double calc_ss_error(Vector<double>& cell_ss_error) const;
     void do_solution_transfer(const std::string& filename);
     void write();
+    void update_rk4();
+    void update_rk3();
     void update();
 
     public:
