@@ -14,6 +14,7 @@
 #include <modelling/avars.h>
 #include <modelling/cavars.h>
 #include <modelling/var_enums.h>
+#include <modelling/navier_stokes.h>
 #include <dgsem/LA.h>
 #include <dgsem/dtype_aliases.h>
 #include "BC.h"
@@ -47,6 +48,11 @@ namespace BCs{
  * `diffusive flux(average velocity, average heat flux, inner shear stress)` equals
  * `average(diffusive fluxes of ghost and inner states)`.
  * Mengaldo's paper provides the former in some sense.
+ *
+ * Because stage 1 requires calculating conservative state from pressure, density and velocity,
+ * this class requires a NavierStokes instance.
+ *
+ * @warning This class uses a raw pointer to a NavierStokes instance.
  */
 class InsulatedWall: public BC
 {
@@ -55,6 +61,12 @@ class InsulatedWall: public BC
      * The velocity of the wall. This is stored directly by value and not by reference.
      */
     const Tensor<1,dim> vel_pr_;
+    
+    /**
+     * Pointer to a NavierStokes instance. Required for stage 1. This variable is kept private
+     * because it is a raw pointer.
+     */
+    const NavierStokes* ns_ptr_;
 
     public:
     /**
@@ -64,8 +76,9 @@ class InsulatedWall: public BC
         const DoFHandler<dim>& dh,
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav,
-        const Tensor<1,dim>& vel_pr
-    ): BC(dh, gcv, gav), vel_pr_(vel_pr) {}
+        const Tensor<1,dim>& vel_pr,
+        const NavierStokes* ns_ptr
+    ): BC(dh, gcv, gav), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
 
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,

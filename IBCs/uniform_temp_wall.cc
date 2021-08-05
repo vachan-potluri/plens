@@ -34,7 +34,7 @@ void UniformTempWall::get_ghost_stage1(
 /**
  * Compressible NS: Ghost state has reversed velocity with all other variables unchanged, see eq.
  * (44) of Mengaldo et al (2014).
- * Euler: only tangential component reversed, see eq. (33) of Megaldo et al (2014).
+ * Euler: only normal component reversed, see eq. (33) of Megaldo et al (2014).
  *
  * @note Eq. (34) of Mengaldo et al. (2014) rightly shows the total energy to be unchanged. That's
  * because reversing an orthogonal component doesn't change the velocity magnitude.
