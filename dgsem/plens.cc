@@ -2713,6 +2713,73 @@ void PLENS::update_rk4()
 
 
 /**
+ * Like update_rk4(), the update function for TVD-RK3 algorithm. The detail is as follows
+ *
+ * @f[
+ * Q_i^1 =&\ Q_i^n + \Delta t R_i^n \\\\
+ * Q_i^2 =&\ \frac{3}{4}Q_i^n + \frac{1}{4}Q_i^1 + \frac{1}{4}\Delta t R_i^1 \\\\
+ * Q_i^{n+1} =&\ \frac{1}{3}Q_i^n + \frac{2}{3}Q_i^2 + \frac{2}{3}\Delta t R_i^2
+ * @f]
+ *
+ * For the previous time step solution (designated by superscript @f$n@f$), PLENS::g_cvars are
+ * used. This assumption holds because update() function modifies these variables before and after
+ * this function is called.
+ */
+void PLENS::update_rk3()
+{
+    // stage 1
+    calc_rhs();
+    // time step must be calculated after calling calc_rhs(), otherwise gcrk_mu would be unset and
+    // positivity would be unasserted
+    calc_time_step();
+    if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
+    pcout << "Current time: " << cur_time
+        << ", time step: " << time_step
+        << ", elapsed wall time: " << clk.wall_time() << "\n";
+    if(n_time_steps%write_freq == 0){
+        write();
+        pcout << "Writing solution\n";
+    }
+    pcout << "\tRK stage 1\n";
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            gcrk_cvars[var][i] = gcrk_cvars[var][i] + time_step*gcrk_rhs[var][i];
+        }
+        gcrk_cvars[var].compress(VectorOperation::insert);
+        gh_gcrk_cvars[var] = gcrk_cvars[var];
+    }
+    MPI_Barrier(mpi_comm);
+
+    // stage 2
+    calc_rhs();
+    pcout << "\tRK stage 2\n";
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            gcrk_cvars[var][i] = 0.75*g_cvars[var][i] + 0.25*gcrk_cvars[var][i] +
+                0.25*time_step*gcrk_rhs[var][i];
+        }
+        gcrk_cvars[var].compress(VectorOperation::insert);
+        gh_gcrk_cvars[var] = gcrk_cvars[var];
+    }
+    MPI_Barrier(mpi_comm);
+
+    // stage 3
+    calc_rhs();
+    pcout << "\tRK stage 3\n";
+    for(cvar var: cvar_list){
+        for(psize i: locally_owned_dofs){
+            gcrk_cvars[var][i] = 1.0/3*g_cvars[var][i] + 2.0/3*gcrk_cvars[var][i] +
+                2.0/3*time_step*gcrk_rhs[var][i];
+        }
+        gcrk_cvars[var].compress(VectorOperation::insert);
+        gh_gcrk_cvars[var] = gcrk_cvars[var];
+    }
+    MPI_Barrier(mpi_comm);
+}
+
+
+
+/**
  * Updates the solution for one time step. This is a wrapper class around update_rk4() and
  * update_rk3(). Either of them is called depending on the RK degree provided in input file.
  * PLENS::g_cvars is used like a buffer here before and after the update. 
@@ -2728,7 +2795,17 @@ void PLENS::update()
         gh_gcrk_cvars[var] = gcrk_cvars[var];
     }
 
-    update_rk4();
+    if(rk_order == 4) update_rk4();
+    else if(rk_order == 3) update_rk3();
+    else{
+        AssertThrow(
+            false,
+            StandardExceptions::ExcMessage(
+                "Oops! Something wrong. The variable rk_order has read in something other than "
+                "3 or 4. This should have been avoided by the ParameterHandler."
+            )
+        )
+    }
 
     for(psize i: locally_owned_dofs) rhoE_old[i] = g_cvars[4][i];
     rhoE_old.compress(VectorOperation::insert);
