@@ -427,8 +427,8 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "RK order",
             "4",
-            Patterns::Integer(4),
-            "Order of RK time integration. Currently only 4th order is supported."
+            Patterns::Integer(3,4),
+            "Order of RK time integration. Currently only 3rd and 4th order are supported."
         );
         prm.declare_entry(
             "Courant number",
@@ -1150,6 +1150,7 @@ void PLENS::read_time_settings()
 {
     prm.enter_subsection("time integration");
     {
+        rk_order = prm.get_integer("RK order");
         cur_time = prm.get_double("start time");
         end_time = prm.get_double("end time");
         Co = prm.get_double("Courant number");

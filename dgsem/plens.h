@@ -614,6 +614,12 @@ class PLENS
     const RK4Stage5Register3 rk4_coeffs;
 
     /**
+     * RK update order/degree. Takes value 3 or 4. Depending on this value, update() calls
+     * update_rk3() and update_rk4() respectively. The value is set in read_time_settings().
+     */
+    usi rk_order;
+
+    /**
      * Current simulation time.
      */
     double cur_time;
