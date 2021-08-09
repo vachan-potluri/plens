@@ -625,19 +625,23 @@ class PLENS
     usi rk_order;
 
     /**
-     * Current simulation time.
+     * Current simulation time. If local time stepping gets activated, this variable would lose its
+     * significance. It would have no physical meaning then. But algorithm would still compare this
+     * with PLENS::end_time to end the simulation. See @ref local_time_stepping.
      */
     double cur_time;
 
     /**
-     * Simulation end time.
+     * Simulation end time. Like PLENS::cur_time, this variable would lose significance once local
+     * time stepping gets activated. See @ref local_time_stepping.
      */
     double end_time;
 
     /**
      * Current (global) time step. If local time step has been activated, then this would be the
-     * minimum of PLENS::loc_time_steps over all cells. In that case, this variable will loose its
-     * relevance.
+     * minimum of PLENS::loc_time_steps over all cells. In that case, this variable will lose its
+     * relevance. If local time stepping gets activated, this variable would store the minimum time
+     * step over all cells. See @ref local_time_stepping.
      */
     double time_step;
 
