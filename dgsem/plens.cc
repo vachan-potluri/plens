@@ -2356,10 +2356,11 @@ void PLENS::calc_time_step()
     TimerOutput::Scope timer_section(timer, "Calculate time step");
     std::vector<psize> dof_ids(fe.dofs_per_cell);
 
-    double this_proc_step = 1e6; // stable time step (factored) for this process
+    double this_proc_step = 1e6; // stable time step for this process
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
+        double this_cell_step = 1e6; // stable time step for this cell
         cell->get_dof_indices(dof_ids);
         const double length = cell->minimum_vertex_distance();
 
@@ -2373,24 +2374,24 @@ void PLENS::calc_time_step()
                 fabs(cons[3]/cons[0])
             });
             // factoring out 1/N^2
-            double cur_step = length/(max_vel + a +
+            double cur_step = Co/(fe.degree*de.degree)*length/(max_vel + a +
                 fe.degree*fe.degree*gcrk_mu[i]/(length*cons[0])
             );
-            if(cur_step < this_proc_step) this_proc_step = cur_step;
+            if(cur_step < this_cell_step) this_cell_step = cur_step;
         }
+        loc_time_steps[cell->index()] = this_cell_step;
+
+        if(this_cell_step < this_proc_step) this_proc_step = this_cell_step;
     } // loop over owned cells
     MPI_Barrier(mpi_comm);
 
     // first perform reduction (into "time_step" of 0-th process)
     MPI_Reduce(&this_proc_step, &time_step, 1, MPI_DOUBLE, MPI_MIN, 0, mpi_comm);
 
-    // now multiply by Co/N^2 and broadcast
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
-        // use smaller Co for first few time steps
-        if(n_time_steps < 1) time_step *= 0.1*Co/(fe.degree*fe.degree);
-        else time_step *= Co/(fe.degree*fe.degree);
-    }
+    // now broadcast
     MPI_Bcast(&time_step, 1, MPI_DOUBLE, 0, mpi_comm);
+
+    // if criteria for local time stepping are not met, set local time steps equal to global value
 } // calc_time_step
 
 

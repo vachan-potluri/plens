@@ -302,6 +302,10 @@ class plens_test; // forward declaration
  * a generic algorithm.
  *
  * The algorithm currently used is from Kennedy, Carpenter & Lewis (2000).
+ *
+ * @subsection local_time_stepping Local time stepping
+ *
+ * Details will be added soon.
  */
 class PLENS
 {
@@ -631,9 +635,18 @@ class PLENS
     double end_time;
 
     /**
-     * Current time step.
+     * Current (global) time step. If local time step has been activated, then this would be the
+     * minimum of PLENS::loc_time_steps over all cells. In that case, this variable will loose its
+     * relevance.
      */
     double time_step;
+
+    /**
+     * Local time steps for all cells. See @ref local_time_stepping. If local stepping has not
+     * been asked for, or has not been activated, then all values in this map are set to
+     * PLENS::time_step
+     */
+    std::map<psize, double> loc_time_steps;
 
     /**
      * Courant number for the simulation.
