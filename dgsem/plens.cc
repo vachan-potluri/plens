@@ -439,7 +439,7 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "start time",
             "0",
-            Patterns::Double(),
+            Patterns::Double(0),
             "Simulation start time."
         );
         prm.declare_entry(
@@ -452,9 +452,23 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "end time",
             "1",
-            Patterns::Double(),
+            Patterns::Double(0),
             "Simulation end time. If 'start time' is non-zero, then the end time provided here is "
             "treated as the absolute end time, and not relative to start time."
+        );
+        prm.declare_entry(
+            "use local stepping",
+            "false",
+            Patterns::Bool(),
+            "If this is set to true, then local time stepping is activated when a certain "
+            "criterion is satisfied. Else, global stepping is used."
+        );
+        prm.declare_entry(
+            "local stepping threshold factor",
+            "1000",
+            Patterns::Double(0),
+            "If the steady state error is less than time step multiplied by this factor, then "
+            "local stepping is activated."
         );
     }
     prm.leave_subsection(); // time integration
