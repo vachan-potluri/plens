@@ -2422,7 +2422,7 @@ void PLENS::calc_time_step()
  */
 void PLENS::multiply_time_step_to_rhs()
 {
-    std::vector<psize> dof_ids;
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
 
