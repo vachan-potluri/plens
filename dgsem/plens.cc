@@ -2343,6 +2343,10 @@ void PLENS::calc_rhs()
  *
  * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the minimum vertex distance.
  *
+ * This function also confirms whether local time stepping has to be activated and populates
+ * PLENS::loc_time_steps accordingly. If not, the data in this map is replaced by PLENS::time_step.
+ * See @ref local_time_stepping for more details.
+ *
  * @remark It was noted during pens2D project that the actual expression of Hethaven which uses
  * @f$\mu@f$ in place of @f$\nu@f$ in the above formula is dimensionally incorrect.
  *

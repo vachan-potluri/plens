@@ -305,7 +305,39 @@ class plens_test; // forward declaration
  *
  * @subsection local_time_stepping Local time stepping
  *
- * Details will be added soon.
+ * To accelerate convergence to steady state, local time stepping is useful. Generally, there are
+ * different classifications for this.
+ *
+ * 1. Time accurate
+ * 2. Time inaccurate
+ *
+ * 1. Local update
+ * 2. Global update
+ *
+ * A time accurate local time stepping is generally done for space-time DG methods where solution
+ * has high order variation in time as well. This is used to communicate the conservative state
+ * data and thus the calculated flux is accurate in time. A time inaccurate stepping doesn't care
+ * for this.
+ *
+ * In a local update, only certain cells which have time deficit are updated. This is generally
+ * done for time accurate algorithms. For a global update, all cells are updated based on their
+ * individual stable time step.
+ *
+ * Here, a time inaccurate global update algorithm is used. PLENS::loc_time_steps stores the stable
+ * time step for every cell. However, if local time stepping is not requirested for (in prm file)
+ * or if the criterion for activation is not met, then all elements of PLENS::loc_time_steps are
+ * overr-written with the global time step (PLENS::time_step). The criterion is that steady state
+ * error must be smaller than PLENS::local_stepping_threshold times PLENS::time_step. All this is
+ * done in calc_time_step().
+ *
+ * To facilitate using multiple time steps in a domain, the function multiply_time_step_to_rhs()
+ * is written. Once this function is called, PLENS::gcrk_rhs gets multiplied dof-wise by
+ * PLENS::loc_time_steps.
+ *
+ * Once local time stepping is activated, PLENS::cur_time loses most of its significance. It
+ * becomes the accumulation of smallest time steps over time, which may not correspond to the time
+ * in any of the cells. Nevertheless, it is still compared with PLENS::end_time to end the
+ * simulation.
  */
 class PLENS
 {
