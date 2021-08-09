@@ -302,6 +302,42 @@ class plens_test; // forward declaration
  * a generic algorithm.
  *
  * The algorithm currently used is from Kennedy, Carpenter & Lewis (2000).
+ *
+ * @subsection local_time_stepping Local time stepping
+ *
+ * To accelerate convergence to steady state, local time stepping is useful. Generally, there are
+ * different classifications for this.
+ *
+ * 1. Time accurate
+ * 2. Time inaccurate
+ *
+ * 1. Local update
+ * 2. Global update
+ *
+ * A time accurate local time stepping is generally done for space-time DG methods where solution
+ * has high order variation in time as well. This is used to communicate the conservative state
+ * data and thus the calculated flux is accurate in time. A time inaccurate stepping doesn't care
+ * for this.
+ *
+ * In a local update, only certain cells which have time deficit are updated. This is generally
+ * done for time accurate algorithms. For a global update, all cells are updated based on their
+ * individual stable time step.
+ *
+ * Here, a time inaccurate global update algorithm is used. PLENS::loc_time_steps stores the stable
+ * time step for every cell. However, if local time stepping is not requirested for (in prm file)
+ * or if the criterion for activation is not met, then all elements of PLENS::loc_time_steps are
+ * overr-written with the global time step (PLENS::time_step). The criterion is that steady state
+ * error must be smaller than PLENS::local_stepping_threshold times PLENS::time_step. All this is
+ * done in calc_time_step().
+ *
+ * To facilitate using multiple time steps in a domain, the function multiply_time_step_to_rhs()
+ * is written. Once this function is called, PLENS::gcrk_rhs gets multiplied dof-wise by
+ * PLENS::loc_time_steps.
+ *
+ * Once local time stepping is activated, PLENS::cur_time loses most of its significance. It
+ * becomes the accumulation of smallest time steps over time, which may not correspond to the time
+ * in any of the cells. Nevertheless, it is still compared with PLENS::end_time to end the
+ * simulation.
  */
 class PLENS
 {
@@ -621,19 +657,32 @@ class PLENS
     usi rk_order;
 
     /**
-     * Current simulation time.
+     * Current simulation time. If local time stepping gets activated, this variable would lose its
+     * significance. It would have no physical meaning then. But algorithm would still compare this
+     * with PLENS::end_time to end the simulation. See @ref local_time_stepping.
      */
     double cur_time;
 
     /**
-     * Simulation end time.
+     * Simulation end time. Like PLENS::cur_time, this variable would lose significance once local
+     * time stepping gets activated. See @ref local_time_stepping.
      */
     double end_time;
 
     /**
-     * Current time step.
+     * Current (global) time step. If local time step has been activated, then this would be the
+     * minimum of PLENS::loc_time_steps over all cells. In that case, this variable will lose its
+     * relevance. If local time stepping gets activated, this variable would store the minimum time
+     * step over all cells. See @ref local_time_stepping.
      */
     double time_step;
+
+    /**
+     * Local time steps for all cells. See @ref local_time_stepping. If local stepping has not
+     * been asked for, or has not been activated, then all values in this map are set to
+     * PLENS::time_step.
+     */
+    std::map<psize, double> loc_time_steps;
 
     /**
      * Courant number for the simulation.
@@ -654,6 +703,19 @@ class PLENS
      * The write frequency
      */
     usi write_freq;
+
+    /**
+     * A boolean that indicates whether or not local stepping was requested. This does not indicate
+     * whether local stepping is actually used in this time step. That would depend on one more
+     * criterion, see @ref local_time_stepping.
+     */
+    bool requested_local_stepping;
+
+    /**
+     * The factor/threshold used to ascertain whether or not local stepping must be used. See @ref
+     * local_time_stepping.
+     */
+    double local_stepping_threshold;
 
     /**
      * A timer for wall time calculation in the simulation. Used in print statements
@@ -704,6 +766,7 @@ class PLENS
     ) const;
     void calc_rhs();
     void calc_time_step();
+    void multiply_time_step_to_rhs();
     void post_process();
     double calc_ss_error(Vector<double>& cell_ss_error) const;
     void do_solution_transfer(const std::string& filename);

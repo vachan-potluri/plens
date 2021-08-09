@@ -439,7 +439,7 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "start time",
             "0",
-            Patterns::Double(),
+            Patterns::Double(0),
             "Simulation start time."
         );
         prm.declare_entry(
@@ -452,9 +452,23 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "end time",
             "1",
-            Patterns::Double(),
+            Patterns::Double(0),
             "Simulation end time. If 'start time' is non-zero, then the end time provided here is "
             "treated as the absolute end time, and not relative to start time."
+        );
+        prm.declare_entry(
+            "request local stepping",
+            "false",
+            Patterns::Bool(),
+            "If this is set to true, then local time stepping is activated when a certain "
+            "criterion is satisfied. Else, global stepping is used."
+        );
+        prm.declare_entry(
+            "local stepping threshold factor",
+            "1000",
+            Patterns::Double(0),
+            "If the steady state error is less than time step multiplied by this factor, then "
+            "local stepping is activated."
         );
     }
     prm.leave_subsection(); // time integration
@@ -1171,6 +1185,8 @@ void PLENS::read_time_settings()
         end_time = prm.get_double("end time");
         Co = prm.get_double("Courant number");
         output_counter = prm.get_integer("starting output counter");
+        requested_local_stepping = prm.get_bool("request local stepping");
+        local_stepping_threshold = prm.get_double("local stepping threshold factor");
     }
     prm.leave_subsection();
 
@@ -2327,6 +2343,10 @@ void PLENS::calc_rhs()
  *
  * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the minimum vertex distance.
  *
+ * This function also confirms whether local time stepping has to be activated and populates
+ * PLENS::loc_time_steps accordingly. If not, the data in this map is replaced by PLENS::time_step.
+ * See @ref local_time_stepping for more details.
+ *
  * @remark It was noted during pens2D project that the actual expression of Hethaven which uses
  * @f$\mu@f$ in place of @f$\nu@f$ in the above formula is dimensionally incorrect.
  *
@@ -2342,10 +2362,11 @@ void PLENS::calc_time_step()
     TimerOutput::Scope timer_section(timer, "Calculate time step");
     std::vector<psize> dof_ids(fe.dofs_per_cell);
 
-    double this_proc_step = 1e6; // stable time step (factored) for this process
+    double this_proc_step = 1e6; // stable time step for this process
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
+        double this_cell_step = 1e6; // stable time step for this cell
         cell->get_dof_indices(dof_ids);
         const double length = cell->minimum_vertex_distance();
 
@@ -2359,25 +2380,64 @@ void PLENS::calc_time_step()
                 fabs(cons[3]/cons[0])
             });
             // factoring out 1/N^2
-            double cur_step = length/(max_vel + a +
+            double cur_step = Co/(fe.degree*fe.degree)*length/(max_vel + a +
                 fe.degree*fe.degree*gcrk_mu[i]/(length*cons[0])
             );
-            if(cur_step < this_proc_step) this_proc_step = cur_step;
+            if(cur_step < this_cell_step) this_cell_step = cur_step;
         }
+        loc_time_steps[cell->index()] = this_cell_step;
+
+        if(this_cell_step < this_proc_step) this_proc_step = this_cell_step;
     } // loop over owned cells
     MPI_Barrier(mpi_comm);
 
     // first perform reduction (into "time_step" of 0-th process)
     MPI_Reduce(&this_proc_step, &time_step, 1, MPI_DOUBLE, MPI_MIN, 0, mpi_comm);
 
-    // now multiply by Co/N^2 and broadcast
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
-        // use smaller Co for first few time steps
-        if(n_time_steps < 1) time_step *= 0.1*Co/(fe.degree*fe.degree);
-        else time_step *= Co/(fe.degree*fe.degree);
-    }
+    // now broadcast
     MPI_Bcast(&time_step, 1, MPI_DOUBLE, 0, mpi_comm);
+
+    // if criteria for local time stepping are not met, set local time steps equal to global value
+    Vector<double> cell_ss_error(triang.n_active_cells());
+    double ss_error = calc_ss_error(cell_ss_error);
+    if(!requested_local_stepping || ss_error > local_stepping_threshold*time_step){
+        pcout << "Global time stepping\n";
+        for(const auto &cell: dof_handler.active_cell_iterators()){
+            if(!(cell->is_locally_owned())) continue;
+
+            loc_time_steps[cell->index()] = time_step;
+        }
+    }
+    else{
+        pcout << "Local time stepping\n";
+    }
 } // calc_time_step
+
+
+
+/**
+ * Multiplies local time steps (PLENS::loc_time_steps) to the rhs (PLENS::gcrk_rhs). This is useful
+ * when local time stepping is activated and makes the update() function look cleaner. If this
+ * function is called, then time step need not be considered in update(). This function multiplies
+ * the time steps dof-wise for all owned dofs and modifies PLENS::gcrk_rhs.
+ *
+ * @pre calc_time_step() and calc_rhs() must be called prior to this. Otherwise, the operation
+ * being performed makes no sense.
+ */
+void PLENS::multiply_time_step_to_rhs()
+{
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        cell->get_dof_indices(dof_ids);
+        for(cvar var: cvar_list){
+            for(psize i: dof_ids){
+                gcrk_rhs[var][i] = gcrk_rhs[var][i]*loc_time_steps[cell->index()];
+            }
+        }
+    }
+}
 
 
 
@@ -2675,11 +2735,12 @@ void PLENS::update_rk4()
         write();
         pcout << "Writing solution\n";
     }
+    multiply_time_step_to_rhs();
     pcout << "\tRK stage 1\n";
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
             gcrk_cvars[var][i] = gcrk_cvars[var][i] +
-                time_step*rk4_coeffs.a_outer[0]*gcrk_rhs[var][i];
+                rk4_coeffs.a_outer[0]*gcrk_rhs[var][i];
             gprk_rhs[var][i] = gcrk_rhs[var][i];
         }
         gcrk_cvars[var].compress(VectorOperation::insert);
@@ -2689,10 +2750,11 @@ void PLENS::update_rk4()
 
     // stage 2
     calc_rhs();
+    multiply_time_step_to_rhs();
     pcout << "\tRK stage 2\n";
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
-            gcrk_cvars[var][i] = gcrk_cvars[var][i] + time_step*(
+            gcrk_cvars[var][i] = gcrk_cvars[var][i] + (
                 (rk4_coeffs.a_inner[0]-rk4_coeffs.a_outer[0])*gprk_rhs[var][i] +
                 rk4_coeffs.a_outer[1]*gcrk_rhs[var][i]
             );
@@ -2707,10 +2769,11 @@ void PLENS::update_rk4()
     // stages 3-5
     for(usi rk_stage=3; rk_stage<=5; rk_stage++){
         calc_rhs();
+        multiply_time_step_to_rhs();
         pcout << "\tRK stage " << rk_stage << "\n";
         for(cvar var: cvar_list){
             for(psize i: locally_owned_dofs){
-                gcrk_cvars[var][i] = gcrk_cvars[var][i] + time_step*(
+                gcrk_cvars[var][i] = gcrk_cvars[var][i] + (
                     (rk4_coeffs.b[rk_stage-3]-rk4_coeffs.a_inner[rk_stage-3])*gpprk_rhs[var][i] +
                     (rk4_coeffs.a_inner[rk_stage-2]-rk4_coeffs.a_outer[rk_stage-2])*
                         gprk_rhs[var][i] +
@@ -2756,10 +2819,11 @@ void PLENS::update_rk3()
         write();
         pcout << "Writing solution\n";
     }
+    multiply_time_step_to_rhs();
     pcout << "\tRK stage 1\n";
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
-            gcrk_cvars[var][i] = gcrk_cvars[var][i] + time_step*gcrk_rhs[var][i];
+            gcrk_cvars[var][i] = gcrk_cvars[var][i] + gcrk_rhs[var][i];
         }
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
@@ -2768,11 +2832,12 @@ void PLENS::update_rk3()
 
     // stage 2
     calc_rhs();
+    multiply_time_step_to_rhs();
     pcout << "\tRK stage 2\n";
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
             gcrk_cvars[var][i] = 0.75*g_cvars[var][i] + 0.25*gcrk_cvars[var][i] +
-                0.25*time_step*gcrk_rhs[var][i];
+                0.25*gcrk_rhs[var][i];
         }
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
@@ -2781,11 +2846,12 @@ void PLENS::update_rk3()
 
     // stage 3
     calc_rhs();
+    multiply_time_step_to_rhs();
     pcout << "\tRK stage 3\n";
     for(cvar var: cvar_list){
         for(psize i: locally_owned_dofs){
             gcrk_cvars[var][i] = 1.0/3*g_cvars[var][i] + 2.0/3*gcrk_cvars[var][i] +
-                2.0/3*time_step*gcrk_rhs[var][i];
+                2.0/3*gcrk_rhs[var][i];
         }
         gcrk_cvars[var].compress(VectorOperation::insert);
         gh_gcrk_cvars[var] = gcrk_cvars[var];
