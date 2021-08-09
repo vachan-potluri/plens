@@ -7,6 +7,7 @@ ADD_LIBRARY(IBCs SHARED
     symmetry.cc
     empty.cc
     periodic.cc
+    insulated_wall.cc
     IC.cc
     piecewise_function.cc
     from_archive.cc
