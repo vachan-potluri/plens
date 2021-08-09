@@ -2412,6 +2412,32 @@ void PLENS::calc_time_step()
 
 
 /**
+ * Multiplies local time steps (PLENS::loc_time_steps) to the rhs (PLENS::gcrk_rhs). This is useful
+ * when local time stepping is activated and makes the update() function look cleaner. If this
+ * function is called, then time step need not be considered in update(). This function multiplies
+ * the time steps dof-wise for all owned dofs and modifies PLENS::gcrk_rhs.
+ *
+ * @pre calc_time_step() and calc_rhs() must be called prior to this. Otherwise, the operation
+ * being performed makes no sense.
+ */
+void PLENS::multiply_time_step_to_rhs()
+{
+    std::vector<psize> dof_ids;
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        cell->get_dof_indices(dof_ids);
+        for(cvar var: cvar_list){
+            for(psize i: dof_ids){
+                gcrk_rhs[var][i] = gcrk_rhs[var][i]*loc_time_steps[cell->index()];
+            }
+        }
+    }
+}
+
+
+
+/**
  * Calculates pressure, velocity and temperature from gcrk_cvars. Populates PLENS::gcrk_p,
  * PLENS::gcrk_T and PLENS::gcrk_vel.
  *

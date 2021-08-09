@@ -730,6 +730,7 @@ class PLENS
     ) const;
     void calc_rhs();
     void calc_time_step();
+    void multiply_time_step_to_rhs();
     void post_process();
     double calc_ss_error(Vector<double>& cell_ss_error) const;
     void do_solution_transfer(const std::string& filename);
