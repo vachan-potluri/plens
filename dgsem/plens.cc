@@ -457,7 +457,7 @@ void PLENS::declare_parameters()
             "treated as the absolute end time, and not relative to start time."
         );
         prm.declare_entry(
-            "use local stepping",
+            "request local stepping",
             "false",
             Patterns::Bool(),
             "If this is set to true, then local time stepping is activated when a certain "
@@ -1185,6 +1185,8 @@ void PLENS::read_time_settings()
         end_time = prm.get_double("end time");
         Co = prm.get_double("Courant number");
         output_counter = prm.get_integer("starting output counter");
+        requested_local_stepping = prm.get_bool("request local stepping");
+        local_stepping_threshold = prm.get_double("local stepping threshold factor");
     }
     prm.leave_subsection();
 
@@ -2374,7 +2376,7 @@ void PLENS::calc_time_step()
                 fabs(cons[3]/cons[0])
             });
             // factoring out 1/N^2
-            double cur_step = Co/(fe.degree*de.degree)*length/(max_vel + a +
+            double cur_step = Co/(fe.degree*fe.degree)*length/(max_vel + a +
                 fe.degree*fe.degree*gcrk_mu[i]/(length*cons[0])
             );
             if(cur_step < this_cell_step) this_cell_step = cur_step;
@@ -2392,6 +2394,19 @@ void PLENS::calc_time_step()
     MPI_Bcast(&time_step, 1, MPI_DOUBLE, 0, mpi_comm);
 
     // if criteria for local time stepping are not met, set local time steps equal to global value
+    Vector<double> cell_ss_error(triang.n_active_cells());
+    double ss_error = calc_ss_error(cell_ss_error);
+    if(!requested_local_stepping || ss_error > local_stepping_threshold*time_step){
+        pcout << "Global time stepping\n";
+        for(const auto &cell: dof_handler.active_cell_iterators()){
+            if(!(cell->is_locally_owned())) continue;
+
+            loc_time_steps[cell->index()] = time_step;
+        }
+    }
+    else{
+        pcout << "Local time stepping\n";
+    }
 } // calc_time_step
 
 

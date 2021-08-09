@@ -644,7 +644,7 @@ class PLENS
     /**
      * Local time steps for all cells. See @ref local_time_stepping. If local stepping has not
      * been asked for, or has not been activated, then all values in this map are set to
-     * PLENS::time_step
+     * PLENS::time_step.
      */
     std::map<psize, double> loc_time_steps;
 
@@ -667,6 +667,19 @@ class PLENS
      * The write frequency
      */
     usi write_freq;
+
+    /**
+     * A boolean that indicates whether or not local stepping was requested. This does not indicate
+     * whether local stepping is actually used in this time step. That would depend on one more
+     * criterion, see @ref local_time_stepping.
+     */
+    bool requested_local_stepping;
+
+    /**
+     * The factor/threshold used to ascertain whether or not local stepping must be used. See @ref
+     * local_time_stepping.
+     */
+    double local_stepping_threshold;
 
     /**
      * A timer for wall time calculation in the simulation. Used in print statements
