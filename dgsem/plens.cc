@@ -1221,7 +1221,8 @@ void PLENS::run()
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
         std::ofstream file(filename, std::ios::app);
         file << "\n# FE degree " << fe.degree
-            << "\n# Mapping degree " << mapping_ptr->get_degree() << "\n";
+            << "\n# Mapping degree " << mapping_ptr->get_degree()
+            << "\n# Processors " << Utilities::MPI::n_mpi_processes(mpi_comm) << "\n";
         file.close();
     }
 
