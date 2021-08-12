@@ -1715,9 +1715,11 @@ void PLENS::assert_positivity() const
         try{
             ns_ptr->assert_positivity(cons);
         }
-        catch(...){
+        catch(std::exception &e){
             std::cout << "PLENS: Positivity assertion failed at dof location "
                 << dof_locations.at(i) << "\n";
+            std::cerr << e.what() << std::endl;
+            std::exit(EXIT_FAILURE);
         }
     }
 }

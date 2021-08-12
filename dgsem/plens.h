@@ -14,6 +14,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <cstdlib>
 
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/conditional_ostream.h>
