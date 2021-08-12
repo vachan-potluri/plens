@@ -41,6 +41,11 @@ sph_man_(nose_center)
  */
 void NoseCylinder::set(Triangulation<dim,dim> &triang)
 {
+    ConditionalOStream pcout(
+        std::cout,
+        (Utilities::MPI::this_mpi_process(triang.get_communicator())==0)
+    );
+    pcout << "Applying 'nose cylinder' manifold description\n";
     // manifold ids for cylindrical and spherical parts
     const int cyl_id(0), sph_id(1);
 

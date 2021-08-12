@@ -23,6 +23,11 @@ Cylinder::Cylinder(const Tensor<1,dim>& axis_dir, const Point<dim>& axis_point)
  */
 void Cylinder::set(Triangulation<dim,dim> &triang)
 {
+    ConditionalOStream pcout(
+        std::cout,
+        (Utilities::MPI::this_mpi_process(triang.get_communicator())==0)
+    );
+    pcout << "Applying 'cylinder' manifold description\n";
     triang.set_all_manifold_ids(0);
     triang.set_manifold(0, cyl_man_);
 }

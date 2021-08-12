@@ -12,10 +12,13 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria_accessor.h>
 
 #include "manifold_description.h"
+
+#include <iostream>
 
 using namespace dealii;
 

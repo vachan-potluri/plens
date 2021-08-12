@@ -66,4 +66,4 @@ def format_2to0(length, start_size, n_cells):
     ))
     print("Real positive roots for geometric ratio:\n\t{}".format(real_pos_roots))
 
-format_2to0(40e-3, 1e-3/2, 15)
+format_2to0(3.41e-2, 0.042e-2, 24)
