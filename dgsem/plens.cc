@@ -1712,7 +1712,13 @@ void PLENS::assert_positivity() const
     State cons;
     for(auto i: locally_owned_dofs){
         for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
-        ns_ptr->assert_positivity(cons);
+        try{
+            ns_ptr->assert_positivity(cons);
+        }
+        catch(...){
+            std::cout << "PLENS: Positivity assertion failed at dof location "
+                << dof_locations.at(i) << "\n";
+        }
     }
 }
 
