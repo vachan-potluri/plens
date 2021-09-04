@@ -2150,7 +2150,7 @@ void PLENS::calc_cell_ho_residual(
 void PLENS::calc_cell_lo_residual(
     const usi stage,
     const DoFHandler<dim>::active_cell_iterator& cell,
-    const locly_ord_surf_flux_term_t<double>& s2_surf_flux,
+    const locly_ord_surf_flux_term_t<double>& s_surf_flux,
     std::vector<State>& residual
 ) const
 {
@@ -2163,7 +2163,7 @@ void PLENS::calc_cell_lo_residual(
     AssertThrow(
         residual.size() == fe.dofs_per_cell,
         StandardExceptions::ExcMessage(
-            "Residual vector passed to calc_cell_lo_inv_residual() must have the size of dofs per "
+            "Residual vector passed to calc_cell_lo_residual() must have the size of dofs per "
             "cell."
         )
     );
@@ -2204,6 +2204,12 @@ void PLENS::calc_cell_lo_residual(
                         cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
                         cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
                     }
+                    Avars av_left, av_right;
+                    for(avar var: avar_list){
+                        av_left[var] = gcrk_avars[var][dof_ids[ldof_left]];
+                        av_right[var] = gcrk_avars[var][dof_ids[ldof_right]];
+                    }
+                    CAvars cav_left(&cons_left, &av_left), cav_right(&cons_right, &av_right);
 
                     // get normal between id-1 and id
                     Tensor<1,dim> normal_dir =
@@ -2212,7 +2218,7 @@ void PLENS::calc_cell_lo_residual(
                     normal_dir /= normal_norm; // unit vector now
 
                     // get the flux
-                    ns_ptr->get_inv_surf_flux(cons_left, cons_right, normal_dir, flux);
+                    ns_ptr->surf_flux_wrappers[stage_id](cav_left, cav_right, normal_dir, flux);
 
                     // add the contribution to residual (eq. B.47 of Hennemann et al (2021))
                     // the negative sign for the surface divergence term will be assigned later,
@@ -2252,7 +2258,7 @@ void PLENS::calc_cell_lo_residual(
                 State flux; // flux wrt contravariant vector direction
                 for(cvar var: cvar_list){
                     flux[var] = flux_sign*
-                        s2_surf_flux[var].at(cell->index())[face_id][face_dof_id];
+                        s_surf_flux[var].at(cell->index())[face_id][face_dof_id];
                     residual[ldof][var] += contrib_sign*flux[var]*normal_norm/
                         w_1d[lr_id*fe.degree];
                 }
@@ -2263,10 +2269,10 @@ void PLENS::calc_cell_lo_residual(
     // Scale by negative jacobian (-ve because divergence of flux has -ve sign on RHS)
     for(usi i=0; i<fe.dofs_per_cell; i++){
         for(cvar var: cvar_list){
-            residual[i][var] /= -metrics.at(cell->index()).detJ[i];
+            residual[i][var] /= stage_sign*metrics.at(cell->index()).detJ[i];
         }
     }
-} // calc_cell_lo_inv_residual
+} // calc_cell_lo_residual
 
 
 
@@ -2308,7 +2314,8 @@ void PLENS::calc_rhs()
     // initialise variables
     std::vector<State> ho_inv_residual(fe.dofs_per_cell),
         ho_dif_residual(fe.dofs_per_cell),
-        lo_inv_residual(fe.dofs_per_cell);
+        lo_inv_residual(fe.dofs_per_cell),
+        lo_dif_residual(fe.dofs_per_cell);
     std::vector<psize> dof_ids(fe.dofs_per_cell);
 
     for(const auto& cell: dof_handler.active_cell_iterators()){
@@ -2332,11 +2339,19 @@ void PLENS::calc_rhs()
         }
 
         {
-            TimerOutput::Scope timer_section(timer, "Calculate lo inviscid residual");
-            calc_cell_lo_inv_residual(
+            TimerOutput::Scope timer_section(timer, "Calculate stages 2&3 lo residual");
+            calc_cell_lo_residual(
+                2,
                 cell,
                 s2_surf_flux,
                 lo_inv_residual
+            );
+
+            calc_cell_lo_residual(
+                3,
+                cell,
+                s3_surf_flux,
+                lo_dif_residual
             );
         }
 
@@ -2345,7 +2360,8 @@ void PLENS::calc_rhs()
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list){
-                gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
+                gcrk_rhs[var][dof_ids[i]] = alpha*lo_dif_residual[i][var] +
+                    (1-alpha)*ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
             }

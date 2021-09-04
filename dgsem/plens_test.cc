@@ -606,7 +606,7 @@ void plens_test::calc_cell_lo_inv_residual_test() const
     std::vector<State> ho_residual(problem.fe.dofs_per_cell),
         lo_residual(problem.fe.dofs_per_cell);
     problem.calc_cell_ho_residual(2, cell, s2_surf_flux, ho_residual);
-    problem.calc_cell_lo_inv_residual(cell, s2_surf_flux, lo_residual);
+    problem.calc_cell_lo_residual(2, cell, s2_surf_flux, lo_residual);
 
     problem.pcout << "Cell: " << cell->index() << "\n";
     problem.pcout << "center: " << cell->center() << "\n";
@@ -952,7 +952,8 @@ void plens_test::time() const
 
                     {
                         TimerOutput::Scope timer_section(timer, "lo inv residual");
-                        problem.calc_cell_lo_inv_residual(
+                        problem.calc_cell_lo_residual(
+                            2,
                             cell,
                             s2_surf_flux,
                             lo_inv_residual
