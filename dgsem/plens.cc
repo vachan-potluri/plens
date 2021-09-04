@@ -2147,12 +2147,19 @@ void PLENS::calc_cell_ho_residual(
  * @pre `s2_surf_flux` must be stage 2's surface flux
  * @pre `residual` Must have the size `fe.dofs_per_cell`
  */
-void PLENS::calc_cell_lo_inv_residual(
+void PLENS::calc_cell_lo_residual(
+    const usi stage,
     const DoFHandler<dim>::active_cell_iterator& cell,
     const locly_ord_surf_flux_term_t<double>& s2_surf_flux,
     std::vector<State>& residual
 ) const
 {
+    AssertThrow(
+        stage == 2 || stage == 3,
+        StandardExceptions::ExcMessage(
+            "Stage parameter passed to calc_cell_ho_residual() must be 2 or 3."
+        )
+    );
     AssertThrow(
         residual.size() == fe.dofs_per_cell,
         StandardExceptions::ExcMessage(
@@ -2160,6 +2167,10 @@ void PLENS::calc_cell_lo_inv_residual(
             "cell."
         )
     );
+
+    const usi stage_id = stage-1;
+    // -1 for stage 2 (stage id 1) and +1 for stage 3 (stage id 2)
+    const double stage_sign = std::pow(-1, stage_id);
 
     // reset values in residual to 0
     for(usi i=0; i<fe.dofs_per_cell; i++){
