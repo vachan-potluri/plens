@@ -1912,9 +1912,9 @@ void PLENS::calc_blender()
         gcrk_alpha[cell->global_active_cell_index()] = blender_calc.get_blender(cell);
 
         // override for boundary cells in first time step
-        if(n_time_steps == 0 && cell->at_boundary()){
-            gcrk_alpha[cell->global_active_cell_index()] = 1;
-        }
+        // if(n_time_steps == 0 && cell->at_boundary()){
+        //     gcrk_alpha[cell->global_active_cell_index()] = 1;
+        // }
     } // loop over owned cells
     gcrk_alpha.compress(VectorOperation::insert);
     gh_gcrk_alpha = gcrk_alpha; // communicate
