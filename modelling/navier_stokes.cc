@@ -630,12 +630,15 @@ void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) c
     State lf, rf; // left and right conservative fluxes
     double al = get_a(lcs), ar = get_a(rcs); // left and right sound speeds
     double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // left & right flow speeds
+    double vl = lcs[2]/lcs[0], vr = rcs[2]/rcs[0],
+        wl = lcs[3]/lcs[0], wr = rcs[3]/rcs[0]; // transverse flow speeds
     double S; // the "single wave" speed
     
     get_inv_flux(lcs, xdir, lf);
     get_inv_flux(rcs, xdir, rf);
     
-    S = std::max(fabs(ul)+al, fabs(ur)+ar);
+    S = std::max(fabs(ul)+al, fabs(ur)+ar) +
+        0.05*sqrt((vl-vr)*(vl-vr) + (wl-wr)*(wl-wr));
     
     for(cvar var: cvar_list) f[var] = 0.5*(lf[var] + rf[var]) - 0.5*S*(rcs[var] - lcs[var]);
 }
