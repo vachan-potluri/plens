@@ -638,7 +638,7 @@ void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) c
     get_inv_flux(rcs, xdir, rf);
     
     S = std::max(fabs(ul)+al, fabs(ur)+ar) +
-        0.05*sqrt((vl-vr)*(vl-vr) + (wl-wr)*(wl-wr));
+        0.00*sqrt((vl-vr)*(vl-vr) + (wl-wr)*(wl-wr));
     
     for(cvar var: cvar_list) f[var] = 0.5*(lf[var] + rf[var]) - 0.5*S*(rcs[var] - lcs[var]);
 }
