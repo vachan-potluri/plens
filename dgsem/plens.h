@@ -30,6 +30,7 @@
 #include <deal.II/base/table_indices.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/function_parser.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/grid/grid_in.h>
@@ -686,7 +687,14 @@ class PLENS
     std::map<psize, double> loc_time_steps;
 
     /**
-     * Courant number for the simulation.
+     * The function that dynamically evaluates Courant number (PLENS::Co) based on the simulation
+     * time (PLENS::cur_time). This will be properly initialised in PLENS::read_time_settings().
+     * This function will be used in PLENS::calc_time_step() to set the Courant number.
+     */
+     FunctionParser<dim> courant_function;
+
+    /**
+     * Courant number for the simulation at the current time. This is obtained by
      */
     double Co;
 
