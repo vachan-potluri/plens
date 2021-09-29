@@ -433,8 +433,8 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "Courant number",
             "0.1",
-            Patterns::Double(1e-8,1),
-            "Courant number. Range: [1e-8, 1]."
+            Patterns::Anything(),
+            "Courant number. Can be a valid function of simulation time (t)."
         );
         prm.declare_entry(
             "start time",
@@ -1183,10 +1183,15 @@ void PLENS::read_time_settings()
         rk_order = prm.get_integer("RK order");
         cur_time = prm.get_double("start time");
         end_time = prm.get_double("end time");
-        Co = prm.get_double("Courant number");
         output_counter = prm.get_integer("starting output counter");
         requested_local_stepping = prm.get_bool("request local stepping");
         local_stepping_threshold = prm.get_double("local stepping threshold factor");
+
+        // setting Courant number function
+        std::string courant_expression = prm.get("Courant number");
+        std::string variables("x,y,z,t"); // x,y,z are just dummy, not used during evaluation
+        std::map<std::string, double> constants; // empty
+        courant_function.initialize(variables, courant_expression, constants, true);
     }
     prm.leave_subsection();
 
@@ -2375,6 +2380,16 @@ void PLENS::calc_time_step()
 {
     TimerOutput::Scope timer_section(timer, "Calculate time step");
     std::vector<psize> dof_ids(fe.dofs_per_cell);
+
+    // first get the Courant number
+    courant_function.set_time(cur_time);
+    Co = courant_function.value(Point<dim>());
+    if(Co >= 1){
+        pcout << "WARNING: Courant number calculated from given function is greater than 1: "
+            << Co << ", capping it at 0.9\n";
+        Co = 0.9;
+    }
+    pcout << "Courant number: " << Co << "\n";
 
     double this_proc_step = 1e6; // stable time step for this process
     for(const auto& cell: dof_handler.active_cell_iterators()){
