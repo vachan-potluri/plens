@@ -89,9 +89,9 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "format",
             "msh",
-            Patterns::Selection("msh|vtk"),
+            Patterns::Selection("msh|vtk|unv"),
             "Format of mesh file. Only those that permit setting boundary id are of use. "
-            "Options: msh|vtk"
+            "Options: msh|vtk|unv"
         );
 
         prm.declare_entry(
@@ -553,7 +553,8 @@ void PLENS::read_mesh()
 
     // set format
     if(format == "msh") fmt = GridIn<dim>::Format::msh;
-    else fmt = GridIn<dim>::Format::vtk;
+    else if(format == "vtk") fmt = GridIn<dim>::Format::vtk;
+    else fmt = GridIn<dim>::Format::unv;
 
     // common code for straight/curved meshes
     std::ifstream file(filename);
