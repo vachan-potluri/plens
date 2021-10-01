@@ -531,7 +531,9 @@ void PLENS::declare_parameters()
  *    must be fused in the Shaper module. Only after fusing, groups must be defined. And later,
  *    mesh has to be generated on this fused object, not on individual objects.
  * 2. For boundaries, defining face groups in Shaper module is not sufficient. They must be
- *    redefined in Mesh module for them to reflect in the `.unv` file.
+ *    redefined in Mesh module for them to reflect in the `.unv` file. And such boundary names in
+ *    the mesh module must be integers. Dealii assigns these boundary ids to the resepctive
+ *    boundaries.
  *
  * For straight edged meshes, the procedure is simple. PLENS::mapping_ptr is set using
  * MappingQGeneric<dim>(1).
