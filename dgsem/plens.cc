@@ -535,6 +535,15 @@ void PLENS::declare_parameters()
  *    the mesh module must be integers. Dealii assigns these boundary ids to the resepctive
  *    boundaries.
  *
+ * @note When using exporting to a unv file, Salome prints all the groups present in the mesh
+ * module. These groups can either be ones that directly come over from shaper/geometry or the ones
+ * which are newly created in the mesh module. Groups of boundary faces are a subset of these
+ * "all groups". It is necessary that all groups (including non-boundary types) have an integer
+ * name. If this is not the case, dealii throws ExceptionIO, without any sort of explanation. To
+ * circumvent this, either delete the node/edge/volume/element groups in the mesh module, or rename
+ * them to integers. In most cases, groups defined in shaper/geometry module would be carried over
+ * to the mesh module. They must either be deleted or renamed to integers.
+ *
  * For straight edged meshes, the procedure is simple. PLENS::mapping_ptr is set using
  * MappingQGeneric<dim>(1).
  *
