@@ -2305,20 +2305,21 @@ void PLENS::calc_cell_lo_inv_residual(
  */
 void PLENS::calc_rhs()
 {
+    TimerOutput::Scope timer_section(timer, "Calc RHS");
     assert_positivity();
     {
-        TimerOutput::Scope timer_section(timer, "Calculate auxiliary variables");
+        TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate auxiliary variables");
         calc_aux_vars();
     }
     {
-        TimerOutput::Scope timer_section(timer, "Calculate blender");
+        TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate blender");
         calc_blender();
     }
     
     // calculate stages 2 & 3 flux
     locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux;
     {
-        TimerOutput::Scope timer_section(timer, "Calculate stages 2&3 surface fluxes");
+        TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate stages 2&3 surface fluxes");
         calc_surf_flux(2, s2_surf_flux);
         calc_surf_flux(3, s3_surf_flux);
     }
@@ -2333,7 +2334,7 @@ void PLENS::calc_rhs()
         if(!(cell->is_locally_owned())) continue;
 
         {
-            TimerOutput::Scope timer_section(timer, "Calculate stages 2&3 ho residual");
+            TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate stages 2&3 ho residual");
             calc_cell_ho_residual(
                 2,
                 cell,
@@ -2350,7 +2351,7 @@ void PLENS::calc_rhs()
         }
 
         {
-            TimerOutput::Scope timer_section(timer, "Calculate lo inviscid residual");
+            TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate lo inviscid residual");
             calc_cell_lo_inv_residual(
                 cell,
                 s2_surf_flux,
@@ -2479,6 +2480,7 @@ void PLENS::calc_time_step()
  */
 void PLENS::multiply_time_step_to_rhs()
 {
+    TimerOutput::Scope timer_section(timer, "Multiply time step to RHS");
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
@@ -2649,6 +2651,7 @@ void PLENS::do_solution_transfer(const std::string& filename)
  */
 void PLENS::write()
 {
+    TimerOutput::Scope timer_section(timer, "Write");
     timer.print_wall_time_statistics(mpi_comm);
     post_process();
     std::string op_dir, base_filename;
