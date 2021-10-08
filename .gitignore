@@ -7,3 +7,5 @@ testing/*
 # Validation dir
 validation/*
 
+# vtune dir (for some reason, vtune is unable to open projects in testing/profiling)
+vtune/*
