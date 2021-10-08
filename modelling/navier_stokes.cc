@@ -682,7 +682,7 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
     if(M12 > 0){
         double m12 = a12*M12*lcs[0]; // mass flow rate
         f[0] = m12;
-        f[1] = m12*ul;
+        f[1] = m12*ul + p12;
         f[2] = m12*lcs[2]/lcs[0];
         f[3] = m12*lcs[3]/lcs[0];
         f[4] = m12*Hl;
@@ -690,7 +690,7 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
     else{
         double m12 = a12*M12*rcs[0]; // mass flow rate
         f[0] = m12;
-        f[1] = m12*ur;
+        f[1] = m12*ur + p12;
         f[2] = m12*rcs[2]/rcs[0];
         f[3] = m12*rcs[3]/rcs[0];
         f[4] = m12*Hr;
