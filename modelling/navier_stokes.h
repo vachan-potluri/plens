@@ -17,6 +17,7 @@
 #include "state.h"
 #include "avars.h"
 #include "cavars.h"
+#include "ausm_functions.h"
 
 #ifdef DEBUG
 #include <iostream>

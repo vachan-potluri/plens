@@ -658,12 +658,43 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
 {
     double pl = get_p(lcs), pr = get_p(rcs); // pressures
     double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // velocities
-    double astl = sqrt(2*(gma_-1)/(gma_+1)*(lcs[4]+pl)/lcs[0]),
-        astr = sqrt(2*(gma_-1)/(gma_+1)*(rcs[4]+pr)/rcs[0]); // critical speed of sounds ('st'ar)
+    double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0];
+
+    double astl = sqrt(2*(gma_-1)/(gma_+1)*Hl),
+        astr = sqrt(2*(gma_-1)/(gma_+1)*Hr); // critical speed of sounds ('st'ar)
     double ahl = astl*astl/std::max(astl, ul),
         ahr = astr*astr/std::max(astr, -ur); // 'h'at velocities (eq 30 in Liou 2006)
     double a12 = std::min(ahl, ahr); // a_1/2
+
     double Ml = ul/a12, Mr = ur/a12; // Mach numbers
+    double Mavgsq = 0.5*(Ml*Ml + Mr*Mr);
+
+    double M12 = ausm::mach_split_4_pos(Ml) + ausm::mach_split_4_neg(Mr) -
+        ausm::Kp/ausm::fa*std::max(1-ausm::sigma*Mavgsq, 0.0)*2*(pr-pl)/(a12*a12*(lcs[0]+rcs[0]));
+
+    double p_split_pos = ausm::pressure_split_5_pos(Ml),
+        p_split_neg = ausm::pressure_split_5_neg(Mr);
+    
+    double p12 = p_split_pos*pl + p_split_neg*pr -
+        ausm::Ku*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
+    
+    // set the final flux
+    if(M12 > 0){
+        double m12 = a12*M12*lcs[0]; // mass flow rate
+        f[0] = m12;
+        f[1] = m12*ul;
+        f[2] = m12*lcs[2]/lcs[0];
+        f[3] = m12*lcs[3]/lcs[0];
+        f[4] = m12*Hl;
+    }
+    else{
+        double m12 = a12*M12*rcs[0]; // mass flow rate
+        f[0] = m12;
+        f[1] = m12*ur;
+        f[2] = m12*rcs[2]/rcs[0];
+        f[3] = m12*rcs[3]/rcs[0];
+        f[4] = m12*Hr;
+    }
 }
 
 
