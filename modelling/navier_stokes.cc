@@ -144,9 +144,14 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->hllc_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::rusanov){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->rusanov_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->ausm_plus_up_xflux(lcs, rcs, f);
         };
     }
 }
@@ -638,6 +643,27 @@ void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) c
     S = std::max(fabs(ul)+al, fabs(ur)+ar);
     
     for(cvar var: cvar_list) f[var] = 0.5*(lf[var] + rf[var]) - 0.5*S*(rcs[var] - lcs[var]);
+}
+
+
+
+/**
+ * @brief AUSM+-up flux function
+ *
+ * See Liou (2006), JCP, or Anant's thesis.
+ *
+ * @pre @p lcs and @p rcs must pass the test of NavierStokes::assert_positivity()
+ */
+void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State &f) const
+{
+    double pl = get_p(lcs), pr = get_p(rcs); // pressures
+    double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // velocities
+    double astl = sqrt(2*(gma_-1)/(gma_+1)*(lcs[4]+pl)/lcs[0]),
+        astr = sqrt(2*(gma_-1)/(gma_+1)*(rcs[4]+pr)/rcs[0]); // critical speed of sounds ('st'ar)
+    double ahl = astl*astl/std::max(astl, ul),
+        ahr = astr*astr/std::max(astr, -ur); // 'h'at velocities (eq 30 in Liou 2006)
+    double a12 = std::min(ahl, ahr); // a_1/2
+    double Ml = ul/a12, Mr = ur/a12; // Mach numbers
 }
 
 

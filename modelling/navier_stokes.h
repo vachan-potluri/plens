@@ -157,7 +157,8 @@ class NavierStokes
     // Choices for inviscid surface and volume flux scheme
     enum class inv_surf_flux_scheme{
         hllc,
-        rusanov
+        rusanov,
+        ausm_plus_up
     };
     enum class inv_vol_flux_scheme{
         chandrashekhar
@@ -179,6 +180,7 @@ class NavierStokes
     // inv surf fluxes
     void hllc_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_xflux(const State &lcs, const State &rcs, State &f) const;
+    void ausm_plus_up_xflux(const State &lcs, const State &rcs, State &f) const;
     
     void chandrashekhar_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
