@@ -1963,11 +1963,13 @@ void PLENS::calc_blender()
         // override for wall boundary cells
         if(cell->at_boundary()){
             for(usi f=0; f<n_faces_per_cell; f++){
-                const usi face_bid = cell->face(f)->boundary_id();
-                const std::string bc_type = bc_list.at(face_bid)->type;
-                if(bc_type == "insulated wall" || bc_type == "uniform temp wall"){
-                    gcrk_alpha[cell->global_active_cell_index()] =
-                        std::max(wall_blender_limit, blender_value);
+                if(cell->face(f)->at_boundary()){
+                    const usi face_bid = cell->face(f)->boundary_id();
+                    const std::string bc_type = bc_list.at(face_bid)->type;
+                    if(bc_type == "insulated wall" || bc_type == "uniform temp wall"){
+                        gcrk_alpha[cell->global_active_cell_index()] =
+                            std::max(wall_blender_limit, blender_value);
+                    }
                 }
             }
         }
