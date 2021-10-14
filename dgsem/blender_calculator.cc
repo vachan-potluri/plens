@@ -125,6 +125,15 @@ double BlenderCalculator::get_blender(
     if(alpha_tilde < alpha_min) return alpha_min;
     else if(alpha_tilde < alpha_max) return alpha_tilde;
     else return alpha_max;
+
+    // Ching et al (2019), JCP, detection algo
+    // double trouble = 0;
+    // for(usi i=1; i<n_dofs_per_cell; i++) trouble += modes[i]*modes[i];
+    // trouble /= (modes[0]*modes[0] + 1e-8);
+
+    // if(trouble < 0.1) return 0;
+    // else if(trouble < 0.15) return 3*(trouble-0.1)/trouble;
+    // else return 1;
 }
 
 
