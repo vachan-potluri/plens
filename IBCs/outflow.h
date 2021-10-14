@@ -77,7 +77,7 @@ class Outflow: public BC
         const std::array<LA::MPI::Vector, 9>& gav,
         const double p_pr,
         const NavierStokes* ns_ptr
-    ): BC(dh, gcv, gav), p_pr_(p_pr), ns_ptr_(ns_ptr) {}
+    ): BC("outflow", dh, gcv, gav), p_pr_(p_pr), ns_ptr_(ns_ptr) {}
     
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,

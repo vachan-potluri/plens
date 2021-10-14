@@ -63,7 +63,7 @@ class UniformInflow: public BC
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav,
         const State& cons_pr
-    ): BC(dh, gcv, gav), cons_pr_(cons_pr) {}
+    ): BC("uniform inflow", dh, gcv, gav), cons_pr_(cons_pr) {}
     
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,

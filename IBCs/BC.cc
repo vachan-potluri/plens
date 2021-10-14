@@ -12,10 +12,12 @@ using namespace BCs;
  * BC::form_cell_map() and BC::set_wrappers().
  */
 BC::BC(
+    const std::string& bc_type,
     const DoFHandler<dim>& dh,
     const std::array<LA::MPI::Vector, 5>& gcv,
     const std::array<LA::MPI::Vector, 9>& gav
 ):
+type(bc_type),
 dof_handler(dh),
 g_cvars(gcv),
 g_avars(gav),

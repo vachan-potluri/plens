@@ -78,7 +78,7 @@ class InsulatedWall: public BC
         const std::array<LA::MPI::Vector, 9>& gav,
         const Tensor<1,dim>& vel_pr,
         const NavierStokes* ns_ptr
-    ): BC(dh, gcv, gav), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
+    ): BC("insulated wall", dh, gcv, gav), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
 
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,

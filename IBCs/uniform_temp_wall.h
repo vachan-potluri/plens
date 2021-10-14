@@ -84,7 +84,7 @@ class UniformTempWall: public BC
         const double T_pr,
         const Tensor<1,dim>& vel_pr,
         const NavierStokes* ns_ptr
-    ): BC(dh, gcv, gav), T_pr_(T_pr), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
+    ): BC("uniform temp wall", dh, gcv, gav), T_pr_(T_pr), vel_pr_(vel_pr), ns_ptr_(ns_ptr) {}
     
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,

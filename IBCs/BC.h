@@ -21,6 +21,7 @@
 #include <array>
 #include <map>
 #include <functional>
+#include <string>
 
 #ifdef DEBUG
 #include <deal.II/base/mpi.h>
@@ -103,6 +104,7 @@ class BC
 {
     public:
     static constexpr int dim = 3; // dimension
+    const std::string type;
     
     const DoFHandler<dim>& dof_handler;
     const FaceDoFInfo fdi;
@@ -140,6 +142,7 @@ class BC
     
     public:
     BC(
+        const std::string& bc_type,
         const DoFHandler<dim>& dh,
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav
