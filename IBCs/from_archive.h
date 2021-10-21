@@ -114,6 +114,7 @@ class FromArchive: public IC
         std::array<LA::MPI::Vector, 5> &gcv,
         const MPI_Comm &mpi_comm,
         const std::string &ar_mesh_filename,
+        const std::string &ar_mesh_format,
         const std::unique_ptr<ManifoldDescriptions::ManifoldDescription> &ar_mfld_desc_ptr,
         const std::unique_ptr<MappingQGeneric<dim>> &ar_mapping_ptr,
         const usi ar_fe_degree,

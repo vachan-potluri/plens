@@ -370,6 +370,13 @@ void PLENS::declare_parameters()
         );
 
         prm.declare_entry(
+            "archive mesh format",
+            "msh",
+            Patterns::Selection("msh|vtk|unv"),
+            "Relevant for: 'from archive'. The format of archive's mesh. Options: 'msh|vtk|unv'."
+        );
+
+        prm.declare_entry(
             "archive fe degree",
             "1",
             Patterns::Integer(1,9),
@@ -955,6 +962,7 @@ void PLENS::set_IC()
         }
         else if(type == "from archive"){
             const std::string ar_mesh_filename = prm.get("archive mesh file name");
+            const std::string ar_mesh_format = prm.get("archive mesh format");
             const std::string ar_filename = prm.get("file name");
             const usi ar_fe_degree = prm.get_integer("archive fe degree");
             ic_ptr = std::make_unique<ICs::FromArchive>(
@@ -963,6 +971,7 @@ void PLENS::set_IC()
                 g_cvars,
                 mpi_comm,
                 ar_mesh_filename,
+                ar_mesh_format,
                 mfld_desc_ptr,
                 mapping_ptr,
                 ar_fe_degree,
