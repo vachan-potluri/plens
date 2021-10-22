@@ -4,9 +4,11 @@
 
 import os
 import numpy as np
+from operator import itemgetter
+from itertools import groupby
 
 # result directory
-res_dir = "/home/vachan/Documents/Work/plens/validation/hypersonic_bl1/N3/trial2/result"
+res_dir = "/home/vachan/Documents/Work/plens/validation/carter_M3_sbli/group1/N2/result"
 
 # base name of the output files
 output_basename = "output"
@@ -20,10 +22,10 @@ ar_extensions = ["ar", "ar_fixed.data", "ar.info"]
 
 # start and end counters of __all__ the outputs
 start_counter = 0
-end_counter = 1539
+end_counter = 1423
 
 # the counters of outputs to be retained
-retain_counters = np.linspace(start_counter, end_counter, 100)
+retain_counters = np.arange(start_counter, end_counter, 10)
 retain_counters = np.append(retain_counters, np.array([end_counter]))
 
 # the counters to be deleted
@@ -45,8 +47,15 @@ while cur_counter <= end_counter:
     cur_counter += 1
 
 # print message and take confirmation
+delete_ranges = []
+for key, group in groupby(enumerate(delete_counters), lambda index: index[0] - index[1]):
+    group = list(map(itemgetter(1), group))
+    if len(group) > 1:
+        delete_ranges.append(range(group[0], group[-1]))
+    else:
+        delete_ranges.append(group[0])
 print("The following counters will be deleted")
-print(delete_counters)
+print(delete_ranges)
 print("The remaining counters will be retained")
 
 response = input("Proceed with the deletion? [Y/n]: ")
