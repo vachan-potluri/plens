@@ -47,6 +47,7 @@ while cur_counter <= end_counter:
     cur_counter += 1
 
 # print message and take confirmation
+# https://stackoverflow.com/a/2154437
 delete_ranges = []
 for key, group in groupby(enumerate(delete_counters), lambda index: index[0] - index[1]):
     group = list(map(itemgetter(1), group))
