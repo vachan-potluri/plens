@@ -648,6 +648,14 @@ class PLENS
     BlenderCalculator blender_calc;
 
     /**
+     * A function of simulation time which specifies the limit of blender value (PLENS::gcrk_alpha)
+     * on wall BCs. This is evaluated and used in calc_blender(). For cells adjacent to wall, the
+     * blender value is set to be the maximum of this function value and the value returned by
+     * BlenderCalculator::get_blender().
+     */
+    FunctionParser<dim> wall_blender_limit_function;
+
+    /**
      * The class instance containing RK4 coefficients.
      */
     const RK4Stage5Register3 rk4_coeffs;

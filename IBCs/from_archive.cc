@@ -40,6 +40,7 @@ FromArchive::FromArchive(
     std::array<LA::MPI::Vector, 5> &gcv,
     const MPI_Comm &mpi_comm,
     const std::string &ar_mesh_filename,
+    const std::string &ar_mesh_format,
     const std::unique_ptr<ManifoldDescriptions::ManifoldDescription> &ar_mfld_desc_ptr,
     const std::unique_ptr<MappingQGeneric<dim>> &ar_mapping_ptr,
     const usi ar_fe_degree,
@@ -63,7 +64,22 @@ ar_dof_handler_(ar_triang_)
             "Unable to open mesh file specified for archived solution."
         )
     );
-    grid_in.read_msh(ar_mesh_file);
+
+    // set format
+    GridIn<dim>::Format fmt;
+    if(ar_mesh_format == "msh") fmt = GridIn<dim>::Format::msh;
+    else if(ar_mesh_format == "vtk") fmt = GridIn<dim>::Format::vtk;
+    else if(ar_mesh_format == "unv") fmt = GridIn<dim>::Format::unv;
+    else{
+        AssertThrow(
+            false,
+            StandardExceptions::ExcMessage(
+                "Currently ICs::FromArchive can only read archive meshes in these formats: "
+                "'msh|vtk|unv'."
+            )
+        );
+    }
+    grid_in.read(ar_mesh_file, fmt);
     ar_mesh_file.close();
 
     if(ar_mfld_desc_ptr != nullptr) ar_mfld_desc_ptr->set(ar_triang_); 

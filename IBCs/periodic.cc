@@ -22,7 +22,7 @@ Periodic::Periodic(
     const std::vector<GridTools::PeriodicFacePair<
         parallel::distributed::Triangulation<dim>::cell_iterator>>& pairs,
     const usi id
-): BC(dh, gcv, gav), per_pairs(pairs), fid(id)
+): BC("periodic", dh, gcv, gav), per_pairs(pairs), fid(id)
 {
     AssertThrow(
         fid == 0 || fid == 1,

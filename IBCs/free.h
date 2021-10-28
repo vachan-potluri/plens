@@ -45,7 +45,7 @@ class Free: public BC
         const DoFHandler<dim>& dh,
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav
-    ): BC(dh, gcv, gav) {}
+    ): BC("free", dh, gcv, gav) {}
     
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,

@@ -75,7 +75,7 @@ class Symmetry: public BC
         const std::array<LA::MPI::Vector, 5>& gcv,
         const std::array<LA::MPI::Vector, 9>& gav,
         const NavierStokes* ns_ptr
-    ): BC(dh, gcv, gav), ns_ptr_(ns_ptr) {}
+    ): BC("symmetry", dh, gcv, gav), ns_ptr_(ns_ptr) {}
     
     virtual void get_ghost_stage1(
         const FaceLocalDoFData &ldd,

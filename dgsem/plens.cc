@@ -370,6 +370,13 @@ void PLENS::declare_parameters()
         );
 
         prm.declare_entry(
+            "archive mesh format",
+            "msh",
+            Patterns::Selection("msh|vtk|unv"),
+            "Relevant for: 'from archive'. The format of archive's mesh. Options: 'msh|vtk|unv'."
+        );
+
+        prm.declare_entry(
             "archive fe degree",
             "1",
             Patterns::Integer(1,9),
@@ -418,6 +425,12 @@ void PLENS::declare_parameters()
             "0.5",
             Patterns::Double(0.5,1),
             "Maximum value of blender (alpha max). See WJ-24-May-2021. Range: [0.5, 1]."
+        );
+        prm.declare_entry(
+            "wall blender limit",
+            "0.95",
+            Patterns::Anything(),
+            "A limit on the blender value at the wall. Can be a function of simulation time (t)."
         );
     }
     prm.leave_subsection(); // blender parameters
@@ -949,6 +962,7 @@ void PLENS::set_IC()
         }
         else if(type == "from archive"){
             const std::string ar_mesh_filename = prm.get("archive mesh file name");
+            const std::string ar_mesh_format = prm.get("archive mesh format");
             const std::string ar_filename = prm.get("file name");
             const usi ar_fe_degree = prm.get_integer("archive fe degree");
             ic_ptr = std::make_unique<ICs::FromArchive>(
@@ -957,6 +971,7 @@ void PLENS::set_IC()
                 g_cvars,
                 mpi_comm,
                 ar_mesh_filename,
+                ar_mesh_format,
                 mfld_desc_ptr,
                 mapping_ptr,
                 ar_fe_degree,
@@ -1912,7 +1927,7 @@ void PLENS::calc_aux_vars()
  */
 void PLENS::calc_blender()
 {
-    // first update gcrk_blender_var
+    // first update gcrk_blender_var and read wall blender limit
     prm.enter_subsection("blender parameters");
     {
         const std::string var_name = prm.get("variable");
@@ -1932,19 +1947,41 @@ void PLENS::calc_blender()
                 gcrk_blender_var[i] = ns_ptr->get_p(cons)*cons[0];
             }
         }
+
+        std::string wall_blender_limit_expression = prm.get("wall blender limit");
+        std::string variables("x,y,z,t"); // x,y,z are just dummy, not used during evaluation
+        std::map<std::string, double> constants; // empty
+        wall_blender_limit_function.initialize(
+            variables, wall_blender_limit_expression, constants, true
+        );
     }
     prm.leave_subsection();
 
-    // now populate gcrk_alpha
+    // evaluate the wall blender limit
+    wall_blender_limit_function.set_time(cur_time);
+    const double wall_blender_limit = wall_blender_limit_function.value(Point<dim>());
+    pcout << "Wall blender limit: " << wall_blender_limit << "\n";
+
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
-        gcrk_alpha[cell->global_active_cell_index()] = blender_calc.get_blender(cell);
+        const double blender_value = blender_calc.get_blender(cell);
+        gcrk_alpha[cell->global_active_cell_index()] = blender_value;
+        // gcrk_alpha[cell->global_active_cell_index()] = 1.0;
 
-        // override for boundary cells in first time step
-        // if(n_time_steps == 0 && cell->at_boundary()){
-        //     gcrk_alpha[cell->global_active_cell_index()] = 1;
-        // }
+        // override for wall boundary cells
+        if(cell->at_boundary()){
+            for(usi f=0; f<n_faces_per_cell; f++){
+                if(cell->face(f)->at_boundary()){
+                    const usi face_bid = cell->face(f)->boundary_id();
+                    const std::string bc_type = bc_list.at(face_bid)->type;
+                    if(bc_type == "insulated wall" || bc_type == "uniform temp wall"){
+                        gcrk_alpha[cell->global_active_cell_index()] =
+                            std::max(wall_blender_limit, blender_value);
+                    }
+                }
+            }
+        }
     } // loop over owned cells
     gcrk_alpha.compress(VectorOperation::insert);
     gh_gcrk_alpha = gcrk_alpha; // communicate
@@ -2365,7 +2402,10 @@ void PLENS::calc_rhs()
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list){
-                gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
+                // gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
+                //     alpha*lo_inv_residual[i][var] +
+                //     (1-alpha)*ho_inv_residual[i][var];
+                gcrk_rhs[var][dof_ids[i]] = (1-alpha)*ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
             }
