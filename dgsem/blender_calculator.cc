@@ -122,7 +122,7 @@ double BlenderCalculator::get_blender(
     );
     const double alpha_tilde = 1/( 1 + exp(-sharpness_factor*(trouble/threshold-1)) );
 
-    if(alpha_tilde < alpha_min) return alpha_min;
+    if(alpha_tilde < alpha_min) return 0;
     else if(alpha_tilde < alpha_max) return alpha_tilde;
     else return alpha_max;
 
