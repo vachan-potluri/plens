@@ -330,7 +330,7 @@ class NavierStokes
      * Sets the value of flux blender (NavierStokes::flux_blender_value). Range checks are done on
      * @p a and is clipped to lie in @f$[0,1]@f$.
      */
-    inline double set_flux_blender_value(const double a)
+    inline void set_flux_blender_value(const double a)
     {
         if(a <= 0) flux_blender_value = 0;
         else if(a <= 1) flux_blender_value = a;
