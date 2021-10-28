@@ -159,7 +159,8 @@ class NavierStokes
     enum class inv_surf_flux_scheme{
         hllc,
         rusanov,
-        ausm_plus_up
+        ausm_plus_up,
+        rusanov_hllc_blend
     };
     enum class inv_vol_flux_scheme{
         chandrashekhar
@@ -175,6 +176,12 @@ class NavierStokes
     
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
+
+    /**
+     * Value of flux blender used in rusanov_hllc_blend_xflux(). This can be set via
+     * set_flux_blender_value().
+     */
+    double flux_blender_value;
     
     std::function< void (const State&, const State&, State&) > inv_surf_xflux;
     
@@ -182,6 +189,7 @@ class NavierStokes
     void hllc_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_xflux(const State &lcs, const State &rcs, State &f) const;
     void ausm_plus_up_xflux(const State &lcs, const State &rcs, State &f) const;
+    void rusanov_hllc_blend_xflux(const State &lcs, const State &rcs, State &f) const;
     
     void chandrashekhar_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
@@ -317,6 +325,17 @@ class NavierStokes
      * than that. The tolerance may be changed here in future if required.
      */
     inline bool is_inviscid() const {return mu0_<1e-16;}
+
+    /**
+     * Sets the value of flux blender (NavierStokes::flux_blender_value). Range checks are done on
+     * @p a and is clipped to lie in @f$[0,1]@f$.
+     */
+    inline double set_flux_blender_value(const double a)
+    {
+        if(a <= 0) flux_blender_value = 0;
+        else if(a <= 1) flux_blender_value = a;
+        else flux_blender_value = 1;
+    }
     
     #ifdef DEBUG
     static void test();

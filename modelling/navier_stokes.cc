@@ -20,7 +20,7 @@ NavierStokes::NavierStokes(
     const inv_vol_flux_scheme ivfs,
     const dif_surf_flux_scheme dsfs,
     const dif_vol_flux_scheme dvfs
-)
+): flux_blender_value(1)
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
     set_aux_surf_flux_scheme(asfs);
@@ -50,7 +50,7 @@ NavierStokes::NavierStokes(
     const inv_vol_flux_scheme ivfs,
     const dif_surf_flux_scheme dsfs,
     const dif_vol_flux_scheme dvfs
-)
+): flux_blender_value(1)
 {
     bool gas_supported = (gas_name=="air" || gas_name=="N2" || gas_name=="nitrogen");
     AssertThrow(
@@ -149,9 +149,14 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->rusanov_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::ausm_plus_up){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->ausm_plus_up_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->rusanov_hllc_blend_xflux(lcs, rcs, f);
         };
     }
 }
@@ -695,6 +700,24 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
         f[3] = m12*rcs[3]/rcs[0];
         f[4] = m12*Hr;
     }
+}
+
+
+
+/**
+ * Blended Rusanov-HLLC flux function. Rusanov flux is given weight NavierStokes::flux_blender_value
+ * and HLLC is given the complementary weight.
+ *
+ * @pre The value of NavierStokes::flux_blender_value must be appropriately set using
+ * set_flux_blender_value() before using this function.
+ */
+void NavierStokes::rusanov_hllc_blend_xflux(const State &lcs, const State &rcs, State &f) const
+{
+    State f_rusanov, f_hllc;
+    rusanov_xflux(lcs, rcs, f_rusanov);
+    hllc_xflux(lcs, rcs, f_hllc);
+    for(cvar var: cvar_list) f[var] = flux_blender_value*f_rusanov[var] +
+        (1-flux_blender_value)*f_hllc[var];
 }
 
 
