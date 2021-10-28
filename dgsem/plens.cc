@@ -2405,7 +2405,8 @@ void PLENS::calc_rhs()
                 // gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
                 //     alpha*lo_inv_residual[i][var] +
                 //     (1-alpha)*ho_inv_residual[i][var];
-                gcrk_rhs[var][dof_ids[i]] = (1-alpha)*ho_dif_residual[i][var] +
+                gcrk_rhs[var][dof_ids[i]] = (1-alpha/blender_calc.get_blender_max_value())*
+                    ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
             }
