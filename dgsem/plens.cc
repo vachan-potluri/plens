@@ -1435,7 +1435,10 @@ void PLENS::calc_metric_terms()
  * In all stages, the ghosted version of required vectors are also used.
  *
  * @pre This function assumes that `gh_gcrk_cvars` and `gh_gcrk_avars` are ready to use. Also,
- * assumes that the entire setup (including BCs) is complete.
+ *      assumes that the entire setup (including BCs) is complete.
+ * @pre If blended flux functions are being used, then calc_blender() must be called before this
+ *      function because PLENS::gh_gcrk_alpha will be used as the flux blender. Average of owner's
+ *      and neighbor's alpha values is used as the flux blender value.
  *
  * @note This function resizes `surf_flux_term`.
  */
@@ -1491,6 +1494,9 @@ void PLENS::calc_surf_flux(
 
             if(face->at_boundary()){
                 // boundary face, use BC objects for flux
+                // set flux blender value
+                ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
+                
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     FaceLocalDoFData ldd(cell->index(), face_id, face_dof);
                     usi bid = face->boundary_id();
@@ -1523,6 +1529,12 @@ void PLENS::calc_surf_flux(
                 const auto &neighbor = cell->neighbor(face_id);
                 usi face_id_nei = cell->neighbor_of_neighbor(face_id);
                 neighbor->get_dof_indices(dof_ids_nei);
+
+                // set flux blender value
+                ns_ptr->set_flux_blender_value(0.5*(
+                    gh_gcrk_alpha[cell->global_active_cell_index()] +
+                    gh_gcrk_alpha[neighbor->global_active_cell_index()]
+                ));
 
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
@@ -1561,6 +1573,12 @@ void PLENS::calc_surf_flux(
                 const auto &neighbor = cell->neighbor(face_id);
                 usi face_id_nei = cell->neighbor_of_neighbor(face_id);
                 neighbor->get_dof_indices(dof_ids_nei);
+
+                // set flux blender value
+                ns_ptr->set_flux_blender_value(0.5*(
+                    gh_gcrk_alpha[cell->global_active_cell_index()] +
+                    gh_gcrk_alpha[neighbor->global_active_cell_index()]
+                ));
 
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
@@ -2214,6 +2232,8 @@ void PLENS::calc_cell_ho_residual(
  *
  * @pre `s2_surf_flux` must be stage 2's surface flux
  * @pre `residual` Must have the size `fe.dofs_per_cell`
+ * @pre If a blended flux is being used, then calc_blender() must be called before this function
+ *      because PLENS::gcrk_alpha for @p cell will be used as the flux blender value.
  */
 void PLENS::calc_cell_lo_inv_residual(
     const DoFHandler<dim>::active_cell_iterator& cell,
@@ -2236,6 +2256,9 @@ void PLENS::calc_cell_lo_inv_residual(
 
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
+
+    // set the flux blender value for NS object
+    ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
 
     // First the internal contributions
     for(usi dir=0; dir<dim; dir++){
