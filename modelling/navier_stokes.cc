@@ -154,9 +154,14 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->ausm_plus_up_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::rusanov_hllc_blend){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->rusanov_hllc_blend_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->rusanov_ausm_plus_up_blend_xflux(lcs, rcs, f);
         };
     }
 }
@@ -718,6 +723,25 @@ void NavierStokes::rusanov_hllc_blend_xflux(const State &lcs, const State &rcs, 
     hllc_xflux(lcs, rcs, f_hllc);
     for(cvar var: cvar_list) f[var] = flux_blender_value*f_rusanov[var] +
         (1-flux_blender_value)*f_hllc[var];
+}
+
+
+
+/**
+ * Blended Rusanov-AUSM+-up flux function. Rusanov gets weight NavierStokes::flux_blender_value, and
+ * AUSM+-up gets the complement.
+ *
+ * @pre The value of NavierStokes::flux_blender_value must be appropriately set using
+ * set_flux_blender_value() before using this function.
+ */
+void NavierStokes::rusanov_ausm_plus_up_blend_xflux(const State &lcs, const State &rcs, State &f)
+const
+{
+    State f_rusanov, f_ausm;
+    rusanov_xflux(lcs, rcs, f_rusanov);
+    ausm_plus_up_xflux(lcs, rcs, f_ausm);
+    for(cvar var: cvar_list) f[var] = flux_blender_value*f_rusanov[var] +
+        (1-flux_blender_value)*f_ausm[var];
 }
 
 
