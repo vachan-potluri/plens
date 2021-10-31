@@ -1010,8 +1010,13 @@ void NavierStokes::test()
         t.new_block("testing ausm_plus_up_xflux()");
         NavierStokes ns("air");
         State lcs = {1,0,0,0,1000/0.4}, rcs = {1,0,0,0,0.01/0.4}, f;
+
         ns.ausm_plus_up_xflux(lcs, rcs, f);
         std::cout << "AUSM+-up x flux: ";
+        utilities::print_state(f);
+
+        ns.hllc_xflux(lcs, rcs, f);
+        std::cout << "HLLC x flux: ";
         utilities::print_state(f);
     }
 }
