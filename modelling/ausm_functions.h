@@ -12,7 +12,7 @@ namespace ausm
 
 constexpr double fa = 1.0;
 
-constexpr double alpha = 3/16*(-4 + 5*fa*fa);
+constexpr double alpha = 3.0/16*(-4.0 + 5*fa*fa);
 
 constexpr double beta = 0.125;
 
