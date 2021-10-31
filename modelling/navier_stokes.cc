@@ -668,7 +668,7 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
 {
     double pl = get_p(lcs), pr = get_p(rcs); // pressures
     double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // velocities
-    double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0];
+    double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0]; // total/stagnation enthalpies
 
     double astl = sqrt(2*(gma_-1)/(gma_+1)*Hl),
         astr = sqrt(2*(gma_-1)/(gma_+1)*Hr); // critical speed of sounds ('st'ar)
@@ -1004,6 +1004,15 @@ void NavierStokes::test()
             std::cout << "Stage " << stage << " flux:";
             utilities::print_state(f);
         }
+    }
+
+    {
+        t.new_block("testing ausm_plus_up_xflux()");
+        NavierStokes ns("air");
+        State lcs = {1,0,0,0,1000/0.4}, rcs = {1,0,0,0,0.01/0.4}, f;
+        ns.ausm_plus_up_xflux(lcs, rcs, f);
+        std::cout << "AUSM+-up x flux: ";
+        utilities::print_state(f);
     }
 }
 
