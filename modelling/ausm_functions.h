@@ -59,7 +59,7 @@ inline double mach_split_4_neg(const double M)
 inline double pressure_split_5_pos(const double M)
 {
     if(fabs(M) >= 1){
-        return mach_split_2_pos(M)/M;
+        return mach_split_1_pos(M)/M;
     }
     else{
         return 0.25*(M+1)*(M+1)*(2-M) + alpha*M*(M*M-1)*(M*M-1);
@@ -69,7 +69,7 @@ inline double pressure_split_5_pos(const double M)
 inline double pressure_split_5_neg(const double M)
 {
     if(fabs(M) >= 1){
-        return mach_split_2_neg(M)/M;
+        return mach_split_1_neg(M)/M;
     }
     else{
         return 0.25*(M-1)*(M-1)*(2+M) - alpha*M*(M*M-1)*(M*M-1);
