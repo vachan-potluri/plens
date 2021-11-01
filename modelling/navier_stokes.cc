@@ -686,7 +686,7 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
         p_split_neg = ausm::pressure_split_5_neg(Mr);
     
     double p12 = p_split_pos*pl + p_split_neg*pr -
-        ausm::Ku*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
+        ausm::Ku*ausm::fa*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
     
     // set the final flux
     if(M12 > 0){
