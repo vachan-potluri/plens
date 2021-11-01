@@ -37,7 +37,7 @@ for filename in os.listdir("."):
         filename_list = np.append(filename_list, [filename])
 
 indices = counter_list.argsort()
-print("Found counters\n{}".format(counter_list))
+print("Found counters\n{}".format(counter_list[indices]))
 
 pvd_file = open("dummy.pvd", "w")
 pvd_file.write(pvd_header)
