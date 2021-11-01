@@ -598,7 +598,7 @@ void NavierStokes::get_xK(
     K(1,3) = 0;
     K(2,3) = 0;
     K(3,3) = 1;
-    K(4,3) = vel[3];
+    K(4,3) = vel[2];
 
     // 5th col
     K(0,4) = 1;
@@ -611,7 +611,8 @@ void NavierStokes::get_xK(
 
 /**
  * Gives the inverse of x-directional right eigen vector matrix as @p Kinv. All other details and
- * requirements are exactly as for get_xK().
+ * requirements are exactly as for get_xK(). This function depends on NavierStoes::gma_ and thus
+ * cannot be static.
  */
 void NavierStokes::get_xKinv(
     const dealii::Tensor<1,dim> &vel,
@@ -650,6 +651,13 @@ void NavierStokes::get_xKinv(
     for(int d=0; d<dim; d++) Kinv(0,1+d) = -vel[d];
     Kinv(0,1) += a/(gma_-1);
     Kinv(0,4) = 1;
+
+    const double factor = 0.5*(gma_-1)/(a*a);
+    for(int i=0; i<dim+2; i++){
+        for(int j=0; j<dim+2; j++){
+            Kinv(i,j) *= factor;
+        }
+    }
 }
 
 
