@@ -161,7 +161,8 @@ class NavierStokes
         rusanov,
         ausm_plus_up,
         rusanov_hllc_blend,
-        rusanov_ausm_plus_up_blend
+        rusanov_ausm_plus_up_blend,
+        modified_sw
     };
     enum class inv_vol_flux_scheme{
         chandrashekhar
@@ -192,6 +193,7 @@ class NavierStokes
     void ausm_plus_up_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_hllc_blend_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_ausm_plus_up_blend_xflux(const State &lcs, const State &rcs, State &f) const;
+    void modified_sw_xflux(const State &lcs, const State &rcs, State &f) const;
     
     void chandrashekhar_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
@@ -352,6 +354,16 @@ class NavierStokes
         else if(a <= 1) flux_blender_value = a;
         else flux_blender_value = 1;
     }
+
+    /**
+     * The pos operation
+     */
+    inline static double pos(const double x) {return 0.5*(x+fabs(x));}
+
+    /**
+     * The neg operation
+     */
+    inline static double neg(const double x) {return 0.5*(x-fabs(x));}
     
     #ifdef DEBUG
     static void test();

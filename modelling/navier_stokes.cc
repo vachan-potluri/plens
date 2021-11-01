@@ -159,9 +159,14 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->rusanov_hllc_blend_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::rusanov_ausm_plus_up_blend){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->rusanov_ausm_plus_up_blend_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->modified_sw_xflux(lcs, rcs, f);
         };
     }
 }
@@ -852,6 +857,84 @@ const
     ausm_plus_up_xflux(lcs, rcs, f_ausm);
     for(cvar var: cvar_list) f[var] = flux_blender_value*f_rusanov[var] +
         (1-flux_blender_value)*f_ausm[var];
+}
+
+
+
+/**
+ * Modified Steger-Warming flux. See Druguet, Candler & Nompelis (2005). Algo:
+ * - Calculate omega based on left and right pressure values
+ * - Using omega, calculate pos and neg states based on which Jacobian matrices will be constructed
+ * - Calculate pos and neg eigen values with epsilon-based correction
+ * - Using pos and neg states, and using pos and neg eigen values, calculate the pos and neg
+ *   Jacobian matrices using get_xK() and get_xKinv()
+ * - Calculate the final flux
+ */
+void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &f) const
+{
+    // Calculate omega
+    const double pl = get_p(lcs), pr = get_p(rcs);
+    const double sigma2 = 0.5;
+    const double omega = 0.5/( 1 + std::pow(sigma2*(pr-pl)/std::min(pl,pr), 2) );
+
+    // pos and neg states which are inputs for calculating pos and neg jacobians
+    // these are also used to calculate pos and neg eigenvalues
+    dealii::Tensor<1,dim> vel_pos, vel_neg;
+    for(int d=0; d<dim; d++){
+        vel_pos[d] = (1-omega)*lcs[1+d]/lcs[0] + omega*rcs[1+d]/rcs[0];
+        vel_neg[d] = (1-omega)*rcs[1+d]/rcs[0] + omega*lcs[1+d]/lcs[0];
+    }
+
+    const double rho_pos = (1-omega)*lcs[0] + omega*rcs[0],
+        rho_neg = (1-omega)*rcs[0] + omega*lcs[0];
+    const double p_pos = (1-omega)*pl + omega*pr,
+        p_neg = (1-omega)*pr + omega*pl;
+    const double a_pos = std::sqrt(gma_*p_pos/rho_pos),
+        a_neg = std::sqrt(gma_*p_neg/rho_neg);
+    const double H_pos = gma_*p_pos/((gma_-1)*rho_pos) + dealii::scalar_product(vel_pos, vel_pos),
+        H_neg = gma_*p_neg/((gma_-1)*rho_neg) + dealii::scalar_product(vel_neg, vel_neg);
+
+    // pos and neg eigenvector matrices
+    dealii::FullMatrix<double> K_pos(dim+2), Kinv_pos(dim+2), K_neg(dim+2), Kinv_neg(dim+2);
+    get_xK(vel_pos, a_pos, H_pos, K_pos);
+    get_xK(vel_neg, a_neg, H_neg, K_neg);
+    get_xKinv(vel_pos, a_pos, H_pos, Kinv_pos);
+    get_xKinv(vel_neg, a_neg, H_neg, Kinv_neg);
+
+    // pos and neg eigenvalues, and their correction
+    std::array<double, dim+2> eig_pos, eig_neg;
+    eig_pos[0] = pos(vel_pos[0] - a_pos);
+    for(int d=0; d<dim; d++) eig_pos[1+d] = pos(vel_pos[0]);
+    eig_pos[4] = pos(vel_pos[0] + a_pos);
+    eig_neg[0] = neg(vel_neg[0] - a_neg);
+    for(int d=0; d<dim; d++) neg(eig_neg[1+d] = vel_neg[0]);
+    eig_neg[4] = neg(vel_neg[0] + a_neg);
+
+    const double eps = 0.3;
+    for(int i=0; i<dim+2; i++){
+        eig_pos[i] = 0.5*(eig_pos[i] + sqrt(pow(eig_pos[i], 2) + pow(eps*a_pos, 2)));
+        eig_neg[i] = 0.5*(eig_neg[i] - sqrt(pow(eig_neg[i], 2) + pow(eps*a_neg, 2)));
+    }
+
+    dealii::FullMatrix<double> A_pos(dim+2), A_neg(dim+2);
+    A_pos = 0;
+    A_neg = 0;
+    for(int i=0; i<dim+2; i++){
+        for(int j=0; j<dim+2; j++){
+            for(int k=0; k<dim+2; k++){
+                A_pos(i,j) += K_pos(i,k)*eig_pos[k]*Kinv_pos(k,j);
+                A_neg(i,j) += K_neg(i,k)*eig_neg[k]*Kinv_neg(k,j);
+            }
+        }
+    }
+
+    // calculate the flux
+    for(int i=0; i<dim+2; i++){
+        f[i] = 0;
+        for(int j=0; j<dim+2; j++){
+            f[i] += A_pos(i,j)*lcs[j] + A_neg(i,j)*rcs[j];
+        }
+    }
 }
 
 
