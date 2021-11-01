@@ -23,9 +23,9 @@ constexpr double Ku = 0.75;
 constexpr double sigma = 1.0;
 
 // eq 18 of Liou (2006)
-inline double mach_split_1_pos(const double M) {return (M>0 ? M : 0);}
+inline double mach_split_1_pos(const double M) {return 0.5*(M+fabs(M));}
 
-inline double mach_split_1_neg(const double M) {return (M>0 ? 0 : M);}
+inline double mach_split_1_neg(const double M) {return 0.5*(M-fabs(M));}
 
 // eq 19 of Liou (2006)
 inline double mach_split_2_pos(const double M) {return 0.25*(M+1)*(M+1);}
