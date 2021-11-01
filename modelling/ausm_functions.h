@@ -40,7 +40,9 @@ inline double mach_split_4_pos(const double M)
     }
     else{
         // expanded form
-        return 0.25*(M+1)*(M+1) + beta*(M*M-1)*(M*M-1);
+        // return 0.25*(M+1)*(M+1) + beta*(M*M-1)*(M*M-1);
+        // original form
+        return mach_split_2_pos(M)*(1-16*beta*mach_split_2_neg(M));
     }
 }
 
@@ -51,7 +53,9 @@ inline double mach_split_4_neg(const double M)
     }
     else{
         // expanded form
-        return -(0.25*(M-1)*(M-1) + beta*(M*M-1)*(M*M-1));
+        // return -(0.25*(M-1)*(M-1) + beta*(M*M-1)*(M*M-1));
+        // original form
+        return mach_split_2_neg(M)*(1+16*beta*mach_split_2_pos(M));
     }
 }
 
@@ -62,7 +66,10 @@ inline double pressure_split_5_pos(const double M)
         return mach_split_1_pos(M)/M;
     }
     else{
-        return 0.25*(M+1)*(M+1)*(2-M) + alpha*M*(M*M-1)*(M*M-1);
+        // expanded form
+        // return 0.25*(M+1)*(M+1)*(2-M) + alpha*M*(M*M-1)*(M*M-1);
+        // original form
+        mach_split_2_pos(M)*( (2-M) - 16*alpha*M*mach_split_2_neg(M) );
     }
 }
 
@@ -72,7 +79,10 @@ inline double pressure_split_5_neg(const double M)
         return mach_split_1_neg(M)/M;
     }
     else{
-        return 0.25*(M-1)*(M-1)*(2+M) - alpha*M*(M*M-1)*(M*M-1);
+        // expanded form
+        // return 0.25*(M-1)*(M-1)*(2+M) - alpha*M*(M*M-1)*(M*M-1);
+        // original form
+        mach_split_2_neg(M)*( (-2-M) + 16*alpha*M*mach_split_2_pos(M) );
     }
 }
 
