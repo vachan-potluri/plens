@@ -609,6 +609,51 @@ void NavierStokes::get_xK(
 
 
 
+/**
+ * Gives the inverse of x-directional right eigen vector matrix as @p Kinv. All other details and
+ * requirements are exactly as for get_xK().
+ */
+void NavierStokes::get_xKinv(
+    const dealii::Tensor<1,dim> &vel,
+    const double a,
+    const double H,
+    dealii::FullMatrix<double> &Kinv
+) const
+{
+    // 1st row
+    Kinv(0,0) = H + a*(vel[0]-a)/(gma_-1);
+    for(int d=0; d<dim; d++) Kinv(0,1+d) = -vel[d];
+    Kinv(0,1) -= a/(gma_-1);
+    Kinv(0,4) = 1;
+
+    // 2nd row
+    Kinv(1,0) = 2*(2*a*a/(gma_-1) - H);
+    for(int d=0; d<dim; d++) Kinv(1,1+d) = 2*vel[d];
+    Kinv(1,4) = -2;
+
+    // 3rd row
+    Kinv(2,0) = -2*vel[1]*a*a/(gma_-1);
+    Kinv(2,1) = 0;
+    Kinv(2,2) = 2*a*a/(gma_-1);
+    Kinv(2,3) = 0;
+    Kinv(2,4) = 0;
+
+    // 4th row
+    Kinv(3,0) = -2*vel[2]*a*a/(gma_-1);
+    Kinv(3,1) = 0;
+    Kinv(3,2) = 0;
+    Kinv(3,3) = 2*a*a/(gma_-1);
+    Kinv(3,4) = 0;
+
+    // 5th row
+    Kinv(0,0) = H - a*(vel[0]+a)/(gma_-1);
+    for(int d=0; d<dim; d++) Kinv(0,1+d) = -vel[d];
+    Kinv(0,1) += a/(gma_-1);
+    Kinv(0,4) = 1;
+}
+
+
+
 // # # # # # # # # # Private Functions # # # # # # # # # # # #
 
 

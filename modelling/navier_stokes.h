@@ -280,6 +280,13 @@ class NavierStokes
         const double H,
         dealii::FullMatrix<double> &K
     ) const;
+
+    void get_xKinv(
+        const dealii::Tensor<1,dim> &vel,
+        const double a,
+        const double H,
+        dealii::FullMatrix<double> &K
+    ) const;
     
     /**
      * Gives @f$\gamma@f$ value held by this instance
