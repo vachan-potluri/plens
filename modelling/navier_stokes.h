@@ -273,6 +273,13 @@ class NavierStokes
     
     static void get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st);
     static void get_dif_flux(const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f);
+
+    void get_xK(
+        const dealii::Tensor<1,dim> &vel,
+        const double a,
+        const double H,
+        dealii::FullMatrix<double> &K
+    ) const;
     
     /**
      * Gives @f$\gamma@f$ value held by this instance

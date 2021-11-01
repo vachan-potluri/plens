@@ -552,6 +552,63 @@ void NavierStokes::get_dif_flux(
 
 
 
+/**
+ * Gives the x-directional right eigen vector matrix as @p K. The matrix itself is nothing but a
+ * horizontal concatenation of right eigen vectors related to x-directional inviscid flux. See
+ * Toro, 3rd ed, sec 3.2.2.
+ *
+ * @param[in] vel Velocity vector
+ * @param[in] a Speed of sound
+ * @param[in] H Total enthalpy (@f$ e + \frac{\vec{u} \cdot \vec{u}}{2} + \frac{p}{\rho} @f$)
+ * @param[out] K The right eigen vector matrix
+ *
+ * @pre @p K must be a square matrix of size 5. No assertions on this are made. So the behaviour
+ * maybe unexpected when this condition is not met.
+ *
+ * @note Although in principle this function can be static, it is not being done because get_xKinv
+ * cannot be static.
+ */
+void NavierStokes::get_xK(
+    const dealii::Tensor<1,dim> &vel,
+    const double a,
+    const double H,
+    dealii::FullMatrix<double> &K
+) const
+{
+    // 1st col
+    K(0,0) = 1;
+    for(int d=0; d<dim; d++) K(1+d, 0) = vel[d];
+    K(1,0) -= a;
+    K(4,0) = H - vel[0]*a;
+
+    // 2nd col
+    K(0,1) = 1;
+    for(int d=0; d<dim; d++) K(1+d, 1) = vel[d];
+    K(4,1) = 0.5*(vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2]);
+
+    // 3rd col
+    K(0,2) = 0;
+    K(1,2) = 0;
+    K(2,2) = 1;
+    K(3,2) = 0;
+    K(4,2) = vel[1];
+
+    // 4th col
+    K(0,3) = 0;
+    K(1,3) = 0;
+    K(2,3) = 0;
+    K(3,3) = 1;
+    K(4,3) = vel[3];
+
+    // 5th col
+    K(0,4) = 1;
+    for(int d=0; d<dim; d++) K(1+d, 4) = vel[d];
+    K(1,4) += a;
+    K(4,4) = H + vel[0]*a;
+}
+
+
+
 // # # # # # # # # # Private Functions # # # # # # # # # # # #
 
 
