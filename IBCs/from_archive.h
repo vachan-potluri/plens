@@ -10,10 +10,12 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/utilities.h>
+#include <deal.II/base/bounding_box.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/grid/grid_in.h>
+#include <deal.II/grid/grid_tools.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/fe/fe.h>
