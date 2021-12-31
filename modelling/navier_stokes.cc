@@ -907,7 +907,7 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
     for(int d=0; d<dim; d++) eig_pos[1+d] = pos(vel_pos[0]);
     eig_pos[4] = pos(vel_pos[0] + a_pos);
     eig_neg[0] = neg(vel_neg[0] - a_neg);
-    for(int d=0; d<dim; d++) neg(eig_neg[1+d] = vel_neg[0]);
+    for(int d=0; d<dim; d++) eig_neg[1+d] = neg(vel_neg[0]);
     eig_neg[4] = neg(vel_neg[0] + a_neg);
 
     const double eps = 0.3;
