@@ -589,7 +589,7 @@ void NavierStokes::get_xK(
     // 2nd col
     K(0,1) = 1;
     for(int d=0; d<dim; d++) K(1+d, 1) = vel[d];
-    K(4,1) = 0.5*(vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2]);
+    K(4,1) = 0.5*dealii::scalar_product(vel, vel);
 
     // 3rd col
     K(0,2) = 0;
