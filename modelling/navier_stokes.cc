@@ -652,10 +652,10 @@ void NavierStokes::get_xKinv(
     Kinv(3,4) = 0;
 
     // 5th row
-    Kinv(0,0) = H - a*(vel[0]+a)/(gma_-1);
-    for(int d=0; d<dim; d++) Kinv(0,1+d) = -vel[d];
-    Kinv(0,1) += a/(gma_-1);
-    Kinv(0,4) = 1;
+    Kinv(4,0) = H - a*(vel[0]+a)/(gma_-1);
+    for(int d=0; d<dim; d++) Kinv(4,1+d) = -vel[d];
+    Kinv(4,1) += a/(gma_-1);
+    Kinv(4,4) = 1;
 
     const double factor = 0.5*(gma_-1)/(a*a);
     for(int i=0; i<dim+2; i++){
