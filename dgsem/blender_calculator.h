@@ -140,6 +140,11 @@ class BlenderCalculator
         const DoFHandler<dim>::active_cell_iterator& cell
     ) const;
 
+    /**
+     * Returns the value of @f$\alpha_\text{max}@f$ (stored in BlenderCalculator::alpha_max).
+     */
+    inline double get_blender_max_value() const {return alpha_max;}
+
     #ifdef DEBUG
     static void test();
     #endif

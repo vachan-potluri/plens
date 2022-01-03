@@ -20,7 +20,7 @@ NavierStokes::NavierStokes(
     const inv_vol_flux_scheme ivfs,
     const dif_surf_flux_scheme dsfs,
     const dif_vol_flux_scheme dvfs
-)
+): flux_blender_value(1)
 {
     set_modelling_params(gma, M, Pr, mu0, T0, S);
     set_aux_surf_flux_scheme(asfs);
@@ -50,7 +50,7 @@ NavierStokes::NavierStokes(
     const inv_vol_flux_scheme ivfs,
     const dif_surf_flux_scheme dsfs,
     const dif_vol_flux_scheme dvfs
-)
+): flux_blender_value(1)
 {
     bool gas_supported = (gas_name=="air" || gas_name=="N2" || gas_name=="nitrogen");
     AssertThrow(
@@ -149,9 +149,24 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->rusanov_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::ausm_plus_up){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->ausm_plus_up_xflux(lcs, rcs, f);
+        };
+    }
+    else if(isfs == inv_surf_flux_scheme::rusanov_hllc_blend){
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->rusanov_hllc_blend_xflux(lcs, rcs, f);
+        };
+    }
+    else if(isfs == inv_surf_flux_scheme::rusanov_ausm_plus_up_blend){
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->rusanov_ausm_plus_up_blend_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->modified_sw_xflux(lcs, rcs, f);
         };
     }
 }
@@ -542,6 +557,116 @@ void NavierStokes::get_dif_flux(
 
 
 
+/**
+ * Gives the x-directional right eigen vector matrix as @p K. The matrix itself is nothing but a
+ * horizontal concatenation of right eigen vectors related to x-directional inviscid flux. See
+ * Toro, 3rd ed, sec 3.2.2.
+ *
+ * @param[in] vel Velocity vector
+ * @param[in] a Speed of sound
+ * @param[in] H Total enthalpy (@f$ e + \frac{\vec{u} \cdot \vec{u}}{2} + \frac{p}{\rho} @f$)
+ * @param[out] K The right eigen vector matrix
+ *
+ * @pre @p K must be a square matrix of size 5. No assertions on this are made. So the behaviour
+ * maybe unexpected when this condition is not met.
+ *
+ * @note Although in principle this function can be static, it is not being done because get_xKinv
+ * cannot be static.
+ */
+void NavierStokes::get_xK(
+    const dealii::Tensor<1,dim> &vel,
+    const double a,
+    const double H,
+    dealii::FullMatrix<double> &K
+) const
+{
+    // 1st col
+    K(0,0) = 1;
+    for(int d=0; d<dim; d++) K(1+d, 0) = vel[d];
+    K(1,0) -= a;
+    K(4,0) = H - vel[0]*a;
+
+    // 2nd col
+    K(0,1) = 1;
+    for(int d=0; d<dim; d++) K(1+d, 1) = vel[d];
+    K(4,1) = 0.5*dealii::scalar_product(vel, vel);
+
+    // 3rd col
+    K(0,2) = 0;
+    K(1,2) = 0;
+    K(2,2) = 1;
+    K(3,2) = 0;
+    K(4,2) = vel[1];
+
+    // 4th col
+    K(0,3) = 0;
+    K(1,3) = 0;
+    K(2,3) = 0;
+    K(3,3) = 1;
+    K(4,3) = vel[2];
+
+    // 5th col
+    K(0,4) = 1;
+    for(int d=0; d<dim; d++) K(1+d, 4) = vel[d];
+    K(1,4) += a;
+    K(4,4) = H + vel[0]*a;
+}
+
+
+
+/**
+ * Gives the inverse of x-directional right eigen vector matrix as @p Kinv. All other details and
+ * requirements are exactly as for get_xK(). This function depends on NavierStoes::gma_ and thus
+ * cannot be static.
+ */
+void NavierStokes::get_xKinv(
+    const dealii::Tensor<1,dim> &vel,
+    const double a,
+    const double H,
+    dealii::FullMatrix<double> &Kinv
+) const
+{
+    // 1st row
+    Kinv(0,0) = H + a*(vel[0]-a)/(gma_-1);
+    for(int d=0; d<dim; d++) Kinv(0,1+d) = -vel[d];
+    Kinv(0,1) -= a/(gma_-1);
+    Kinv(0,4) = 1;
+
+    // 2nd row
+    Kinv(1,0) = 2*(2*a*a/(gma_-1) - H);
+    for(int d=0; d<dim; d++) Kinv(1,1+d) = 2*vel[d];
+    Kinv(1,4) = -2;
+
+    // 3rd row
+    Kinv(2,0) = -2*vel[1]*a*a/(gma_-1);
+    Kinv(2,1) = 0;
+    Kinv(2,2) = 2*a*a/(gma_-1);
+    Kinv(2,3) = 0;
+    Kinv(2,4) = 0;
+
+    // 4th row
+    Kinv(3,0) = -2*vel[2]*a*a/(gma_-1);
+    Kinv(3,1) = 0;
+    Kinv(3,2) = 0;
+    Kinv(3,3) = 2*a*a/(gma_-1);
+    Kinv(3,4) = 0;
+
+    // 5th row
+    Kinv(4,0) = H - a*(vel[0]+a)/(gma_-1);
+    for(int d=0; d<dim; d++) Kinv(4,1+d) = -vel[d];
+    Kinv(4,1) += a/(gma_-1);
+    Kinv(4,4) = 1;
+
+    const double factor = 0.5*(gma_-1)/(a*a);
+    for(int i=0; i<dim+2; i++){
+        for(int j=0; j<dim+2; j++){
+            Kinv(i,j) *= factor;
+        }
+    }
+}
+
+
+
 // # # # # # # # # # Private Functions # # # # # # # # # # # #
 
 
@@ -658,7 +783,7 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
 {
     double pl = get_p(lcs), pr = get_p(rcs); // pressures
     double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // velocities
-    double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0];
+    double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0]; // total/stagnation enthalpies
 
     double astl = sqrt(2*(gma_-1)/(gma_+1)*Hl),
         astr = sqrt(2*(gma_-1)/(gma_+1)*Hr); // critical speed of sounds ('st'ar)
@@ -676,7 +801,7 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
         p_split_neg = ausm::pressure_split_5_neg(Mr);
     
     double p12 = p_split_pos*pl + p_split_neg*pr -
-        ausm::Ku*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
+        ausm::Ku*ausm::fa*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
     
     // set the final flux
     if(M12 > 0){
@@ -694,6 +819,119 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
         f[2] = m12*rcs[2]/rcs[0];
         f[3] = m12*rcs[3]/rcs[0];
         f[4] = m12*Hr;
+    }
+}
+
+
+
+/**
+ * Blended Rusanov-HLLC flux function. Rusanov flux is given weight NavierStokes::flux_blender_value
+ * and HLLC is given the complementary weight.
+ *
+ * @pre The value of NavierStokes::flux_blender_value must be appropriately set using
+ * set_flux_blender_value() before using this function.
+ */
+void NavierStokes::rusanov_hllc_blend_xflux(const State &lcs, const State &rcs, State &f) const
+{
+    State f_rusanov, f_hllc;
+    rusanov_xflux(lcs, rcs, f_rusanov);
+    hllc_xflux(lcs, rcs, f_hllc);
+    for(cvar var: cvar_list) f[var] = flux_blender_value*f_rusanov[var] +
+        (1-flux_blender_value)*f_hllc[var];
+}
+
+
+
+/**
+ * Blended Rusanov-AUSM+-up flux function. Rusanov gets weight NavierStokes::flux_blender_value, and
+ * AUSM+-up gets the complement.
+ *
+ * @pre The value of NavierStokes::flux_blender_value must be appropriately set using
+ * set_flux_blender_value() before using this function.
+ */
+void NavierStokes::rusanov_ausm_plus_up_blend_xflux(const State &lcs, const State &rcs, State &f)
+const
+{
+    State f_rusanov, f_ausm;
+    rusanov_xflux(lcs, rcs, f_rusanov);
+    ausm_plus_up_xflux(lcs, rcs, f_ausm);
+    for(cvar var: cvar_list) f[var] = flux_blender_value*f_rusanov[var] +
+        (1-flux_blender_value)*f_ausm[var];
+}
+
+
+
+/**
+ * Modified Steger-Warming flux. See Druguet, Candler & Nompelis (2005). Algo:
+ * - Calculate omega based on left and right pressure values
+ * - Using omega, calculate pos and neg states based on which Jacobian matrices will be constructed
+ * - Calculate pos and neg eigen values with epsilon-based correction
+ * - Using pos and neg states, and using pos and neg eigen values, calculate the pos and neg
+ *   Jacobian matrices using get_xK() and get_xKinv()
+ * - Calculate the final flux
+ *
+ * @note The expression for corrected eigen values is wrong in the reference stated above. Instead,
+ * refer to ref. 13 of Druguet, Candler & Nompelis (2005).
+ */
+void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &f) const
+{
+    // Calculate omega
+    const double pl = get_p(lcs), pr = get_p(rcs);
+    const double sigma2 = 0.5;
+    const double omega = 0.5/( 1 + std::pow(sigma2*(pr-pl)/std::min(pl,pr), 2) );
+
+    // pos and neg states which are inputs for calculating pos and neg jacobians
+    // these are also used to calculate pos and neg eigenvalues
+    dealii::Tensor<1,dim> vel_pos, vel_neg;
+    for(int d=0; d<dim; d++){
+        vel_pos[d] = (1-omega)*lcs[1+d]/lcs[0] + omega*rcs[1+d]/rcs[0];
+        vel_neg[d] = (1-omega)*rcs[1+d]/rcs[0] + omega*lcs[1+d]/lcs[0];
+    }
+
+    const double rho_pos = (1-omega)*lcs[0] + omega*rcs[0],
+        rho_neg = (1-omega)*rcs[0] + omega*lcs[0];
+    const double p_pos = (1-omega)*pl + omega*pr,
+        p_neg = (1-omega)*pr + omega*pl;
+    const double a_pos = std::sqrt(gma_*p_pos/rho_pos),
+        a_neg = std::sqrt(gma_*p_neg/rho_neg);
+    const double H_pos = gma_*p_pos/((gma_-1)*rho_pos) + 0.5*dealii::scalar_product(vel_pos, vel_pos),
+        H_neg = gma_*p_neg/((gma_-1)*rho_neg) + 0.5*dealii::scalar_product(vel_neg, vel_neg);
+
+    // pos and neg eigenvector matrices
+    dealii::FullMatrix<double> K_pos(dim+2), Kinv_pos(dim+2), K_neg(dim+2), Kinv_neg(dim+2);
+    get_xK(vel_pos, a_pos, H_pos, K_pos);
+    get_xK(vel_neg, a_neg, H_neg, K_neg);
+    get_xKinv(vel_pos, a_pos, H_pos, Kinv_pos);
+    get_xKinv(vel_neg, a_neg, H_neg, Kinv_neg);
+
+    // pos and neg eigenvalues, and their correction
+    const double eps = 0.3;
+    std::array<double, dim+2> eig_pos, eig_neg;
+    eig_pos[0] = pos_smooth(vel_pos[0] - a_pos, eps*a_pos);
+    for(int d=0; d<dim; d++) eig_pos[1+d] = pos_smooth(vel_pos[0], eps*a_pos);
+    eig_pos[4] = pos_smooth(vel_pos[0] + a_pos, eps*a_pos);
+    eig_neg[0] = neg_smooth(vel_neg[0] - a_neg, eps*a_neg);
+    for(int d=0; d<dim; d++) eig_neg[1+d] = neg_smooth(vel_neg[0], eps*a_neg);
+    eig_neg[4] = neg_smooth(vel_neg[0] + a_neg, eps*a_neg);
+
+    dealii::FullMatrix<double> A_pos(dim+2), A_neg(dim+2);
+    A_pos = 0;
+    A_neg = 0;
+    for(int i=0; i<dim+2; i++){
+        for(int j=0; j<dim+2; j++){
+            for(int k=0; k<dim+2; k++){
+                A_pos(i,j) += K_pos(i,k)*eig_pos[k]*Kinv_pos(k,j);
+                A_neg(i,j) += K_neg(i,k)*eig_neg[k]*Kinv_neg(k,j);
+            }
+        }
+    }
+
+    // calculate the flux
+    for(int i=0; i<dim+2; i++){
+        f[i] = 0;
+        for(int j=0; j<dim+2; j++){
+            f[i] += A_pos(i,j)*lcs[j] + A_neg(i,j)*rcs[j];
+        }
     }
 }
 
@@ -957,6 +1195,29 @@ void NavierStokes::test()
             std::cout << "Stage " << stage << " flux:";
             utilities::print_state(f);
         }
+    }
+
+    {
+        t.new_block("testing ausm_plus_up_xflux()");
+        NavierStokes ns("air");
+        State lcs = {1,0,0,0,1000/0.4}, rcs = {1,0,0,0,0.01/0.4}, f;
+
+        ns.ausm_plus_up_xflux(lcs, rcs, f);
+        std::cout << "AUSM+-up x flux: ";
+        utilities::print_state(f);
+
+        ns.hllc_xflux(lcs, rcs, f);
+        std::cout << "HLLC x flux: ";
+        utilities::print_state(f);
+    }
+
+    {
+        t.new_block("Testing modified SW flux");
+        NavierStokes ns("air");
+        State lcs = {1,0.75,0,0,2.78125}, f;
+
+        ns.modified_sw_xflux(lcs, lcs, f);
+        utilities::print_state(f);
     }
 }
 

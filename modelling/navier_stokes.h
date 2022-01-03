@@ -159,7 +159,10 @@ class NavierStokes
     enum class inv_surf_flux_scheme{
         hllc,
         rusanov,
-        ausm_plus_up
+        ausm_plus_up,
+        rusanov_hllc_blend,
+        rusanov_ausm_plus_up_blend,
+        modified_sw
     };
     enum class inv_vol_flux_scheme{
         chandrashekhar
@@ -175,6 +178,12 @@ class NavierStokes
     
     private:
     double gma_, M_, Pr_, mu0_, T0_, S_;
+
+    /**
+     * Value of flux blender used in rusanov_hllc_blend_xflux(). This can be set via
+     * set_flux_blender_value().
+     */
+    double flux_blender_value;
     
     std::function< void (const State&, const State&, State&) > inv_surf_xflux;
     
@@ -182,6 +191,9 @@ class NavierStokes
     void hllc_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_xflux(const State &lcs, const State &rcs, State &f) const;
     void ausm_plus_up_xflux(const State &lcs, const State &rcs, State &f) const;
+    void rusanov_hllc_blend_xflux(const State &lcs, const State &rcs, State &f) const;
+    void rusanov_ausm_plus_up_blend_xflux(const State &lcs, const State &rcs, State &f) const;
+    void modified_sw_xflux(const State &lcs, const State &rcs, State &f) const;
     
     void chandrashekhar_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
@@ -263,6 +275,20 @@ class NavierStokes
     
     static void get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st);
     static void get_dif_flux(const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f);
+
+    void get_xK(
+        const dealii::Tensor<1,dim> &vel,
+        const double a,
+        const double H,
+        dealii::FullMatrix<double> &K
+    ) const;
+
+    void get_xKinv(
+        const dealii::Tensor<1,dim> &vel,
+        const double a,
+        const double H,
+        dealii::FullMatrix<double> &K
+    ) const;
     
     /**
      * Gives @f$\gamma@f$ value held by this instance
@@ -317,6 +343,45 @@ class NavierStokes
      * than that. The tolerance may be changed here in future if required.
      */
     inline bool is_inviscid() const {return mu0_<1e-16;}
+
+    /**
+     * Sets the value of flux blender (NavierStokes::flux_blender_value). Range checks are done on
+     * @p a and is clipped to lie in @f$[0,1]@f$.
+     */
+    inline void set_flux_blender_value(const double a)
+    {
+        if(a <= 0) flux_blender_value = 0;
+        else if(a <= 1) flux_blender_value = a;
+        else flux_blender_value = 1;
+    }
+
+    /**
+     * The pos operation
+     */
+    inline static double pos(const double x) {return 0.5*(x+fabs(x));}
+
+    /**
+     * The neg operation
+     */
+    inline static double neg(const double x) {return 0.5*(x-fabs(x));}
+
+    /**
+     * Smoothed pos function. The second argument is the smoother. See Buning & Steger (1982).
+     * Specifically relevant for Steger-Warming flux.
+     */
+    inline static double pos_smooth(const double x, const double eps)
+    {
+        return 0.5*(x + std::sqrt(x*x + eps*eps));
+    }
+
+    /**
+     * Smoothed neg function. The second argument is the smoother. See Buning & Steger (1982).
+     * Specifically relevant for Steger-Warming flux.
+     */
+    inline static double neg_smooth(const double x, const double eps)
+    {
+        return 0.5*(x - std::sqrt(x*x + eps*eps));
+    }
     
     #ifdef DEBUG
     static void test();

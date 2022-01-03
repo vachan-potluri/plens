@@ -238,8 +238,8 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "inviscid surface flux scheme",
             "HLLC",
-            Patterns::Selection("HLLC|Rusanov|AUSM+-up"),
-            "Options: 'HLLC|Rusanov|AUSM+-up'"
+            Patterns::Selection("HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW"),
+            "Options: 'HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW'"
         );
         prm.declare_entry(
             "inviscid volume flux scheme",
@@ -705,7 +705,12 @@ void PLENS::set_NS()
         temp = prm.get("inviscid surface flux scheme");
         if(temp == "HLLC") isfs = NavierStokes::inv_surf_flux_scheme::hllc;
         else if(temp == "Rusanov") isfs = NavierStokes::inv_surf_flux_scheme::rusanov;
-        else isfs = NavierStokes::inv_surf_flux_scheme::ausm_plus_up;
+        else if(temp == "AUSM+-up") isfs = NavierStokes::inv_surf_flux_scheme::ausm_plus_up;
+        else if(temp == "Rusanov-HLLC")
+            isfs = NavierStokes::inv_surf_flux_scheme::rusanov_hllc_blend;
+        else if(temp == "Rusanov-AUSM+-up")
+            isfs = NavierStokes::inv_surf_flux_scheme::rusanov_ausm_plus_up_blend;
+        else isfs = NavierStokes::inv_surf_flux_scheme::modified_sw;
 
         temp = prm.get("inviscid volume flux scheme");
         if(temp == "Chandrashekhar") ivfs = NavierStokes::inv_vol_flux_scheme::chandrashekhar;
@@ -1434,7 +1439,10 @@ void PLENS::calc_metric_terms()
  * In all stages, the ghosted version of required vectors are also used.
  *
  * @pre This function assumes that `gh_gcrk_cvars` and `gh_gcrk_avars` are ready to use. Also,
- * assumes that the entire setup (including BCs) is complete.
+ *      assumes that the entire setup (including BCs) is complete.
+ * @pre If blended flux functions are being used, then calc_blender() must be called before this
+ *      function because PLENS::gh_gcrk_alpha will be used as the flux blender. Average of owner's
+ *      and neighbor's alpha values is used as the flux blender value.
  *
  * @note This function resizes `surf_flux_term`.
  */
@@ -1490,6 +1498,9 @@ void PLENS::calc_surf_flux(
 
             if(face->at_boundary()){
                 // boundary face, use BC objects for flux
+                // set flux blender value
+                ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
+
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     FaceLocalDoFData ldd(cell->index(), face_id, face_dof);
                     usi bid = face->boundary_id();
@@ -1522,6 +1533,12 @@ void PLENS::calc_surf_flux(
                 const auto &neighbor = cell->neighbor(face_id);
                 usi face_id_nei = cell->neighbor_of_neighbor(face_id);
                 neighbor->get_dof_indices(dof_ids_nei);
+
+                // set flux blender value
+                ns_ptr->set_flux_blender_value(0.5*(
+                    gh_gcrk_alpha[cell->global_active_cell_index()] +
+                    gh_gcrk_alpha[neighbor->global_active_cell_index()]
+                ));
 
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
@@ -1560,6 +1577,12 @@ void PLENS::calc_surf_flux(
                 const auto &neighbor = cell->neighbor(face_id);
                 usi face_id_nei = cell->neighbor_of_neighbor(face_id);
                 neighbor->get_dof_indices(dof_ids_nei);
+
+                // set flux blender value
+                ns_ptr->set_flux_blender_value(0.5*(
+                    gh_gcrk_alpha[cell->global_active_cell_index()] +
+                    gh_gcrk_alpha[neighbor->global_active_cell_index()]
+                ));
 
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
@@ -2213,6 +2236,8 @@ void PLENS::calc_cell_ho_residual(
  *
  * @pre `s2_surf_flux` must be stage 2's surface flux
  * @pre `residual` Must have the size `fe.dofs_per_cell`
+ * @pre If a blended flux is being used, then calc_blender() must be called before this function
+ *      because PLENS::gcrk_alpha for @p cell will be used as the flux blender value.
  */
 void PLENS::calc_cell_lo_inv_residual(
     const DoFHandler<dim>::active_cell_iterator& cell,
@@ -2235,6 +2260,9 @@ void PLENS::calc_cell_lo_inv_residual(
 
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
+
+    // set the flux blender value for NS object
+    ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
 
     // First the internal contributions
     for(usi dir=0; dir<dim; dir++){
@@ -2405,7 +2433,10 @@ void PLENS::calc_rhs()
                 // gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
                 //     alpha*lo_inv_residual[i][var] +
                 //     (1-alpha)*ho_inv_residual[i][var];
-                gcrk_rhs[var][dof_ids[i]] = (1-alpha)*ho_dif_residual[i][var] +
+                gcrk_rhs[var][dof_ids[i]] = std::max(
+                        0.0,
+                        (1-alpha/blender_calc.get_blender_max_value())
+                    )*ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
             }

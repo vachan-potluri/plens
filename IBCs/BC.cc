@@ -185,7 +185,7 @@ void BC::test()
     utilities::Testing t("BC", "class");
     utilities::BCTestData bctd(5,2); // divisions and degree
     
-    BC bc(bctd.dof_handler, bctd.g_cvars, bctd.g_avars);
+    BC bc("blank", bctd.dof_handler, bctd.g_cvars, bctd.g_avars);
     
     // Parallel testing
     // preferably run this solo

@@ -124,6 +124,12 @@ ar_dof_handler_(ar_triang_)
 void FromArchive::set()
 {
     pcout << "Setting IC on all owned dofs. This may take long time\n";
+    // get bounding box
+    const BoundingBox<dim> bounding_box = GridTools::compute_bounding_box(
+        dof_handler.get_triangulation()
+    );
+    // const Point<dim> bb_center = bounding_box.center();
+    const Point<dim> bb_center(0.11, 0.05, 0.002);
     for(cvar var: cvar_list){
         Functions::FEFieldFunction<dim, DoFHandler<dim>, LA::MPI::Vector> ar_cvar_fn(
             ar_dof_handler_,
@@ -133,7 +139,8 @@ void FromArchive::set()
 
         for(auto cur_dof: locally_owned_dofs_){
             try{
-                g_cvars[var][cur_dof] = ar_cvar_fn.value(dof_locations[cur_dof]);
+                const Point<dim> cur_loc = bb_center + 1*(dof_locations[cur_dof] - bb_center);
+                g_cvars[var][cur_dof] = ar_cvar_fn.value(cur_loc);
             }
             catch(...){
                 AssertThrow(
