@@ -869,14 +869,16 @@ const
  * - Using pos and neg states, and using pos and neg eigen values, calculate the pos and neg
  *   Jacobian matrices using get_xK() and get_xKinv()
  * - Calculate the final flux
+ *
+ * @note The expression for corrected eigen values is wrong in the reference stated above. Instead,
+ * refer to ref. 13 of Druguet, Candler & Nompelis (2005).
  */
 void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &f) const
 {
     // Calculate omega
     const double pl = get_p(lcs), pr = get_p(rcs);
     const double sigma2 = 0.5;
-    // const double omega = 0.5/( 1 + std::pow(sigma2*(pr-pl)/std::min(pl,pr), 2) );
-    const double omega = 0;
+    const double omega = 0.5/( 1 + std::pow(sigma2*(pr-pl)/std::min(pl,pr), 2) );
 
     // pos and neg states which are inputs for calculating pos and neg jacobians
     // these are also used to calculate pos and neg eigenvalues
@@ -903,20 +905,14 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
     get_xKinv(vel_neg, a_neg, H_neg, Kinv_neg);
 
     // pos and neg eigenvalues, and their correction
+    const double eps = 0.3;
     std::array<double, dim+2> eig_pos, eig_neg;
-    eig_pos[0] = pos(vel_pos[0] - a_pos);
-    for(int d=0; d<dim; d++) eig_pos[1+d] = pos(vel_pos[0]);
-    eig_pos[4] = pos(vel_pos[0] + a_pos);
-    eig_neg[0] = neg(vel_neg[0] - a_neg);
-    for(int d=0; d<dim; d++) eig_neg[1+d] = neg(vel_neg[0]);
-    eig_neg[4] = neg(vel_neg[0] + a_neg);
-
-    // const double eps = 0.3;
-    const double eps = 0;
-    for(int i=0; i<dim+2; i++){
-        eig_pos[i] = 0.5*(eig_pos[i] + sqrt(pow(eig_pos[i], 2) + pow(eps*a_pos, 2)));
-        eig_neg[i] = 0.5*(eig_neg[i] - sqrt(pow(eig_neg[i], 2) + pow(eps*a_neg, 2)));
-    }
+    eig_pos[0] = pos_smooth(vel_pos[0] - a_pos, eps*a_pos);
+    for(int d=0; d<dim; d++) eig_pos[1+d] = pos_smooth(vel_pos[0], eps*a_pos);
+    eig_pos[4] = pos_smooth(vel_pos[0] + a_pos, eps*a_pos);
+    eig_neg[0] = neg_smooth(vel_neg[0] - a_neg, eps*a_neg);
+    for(int d=0; d<dim; d++) eig_neg[1+d] = neg_smooth(vel_neg[0], eps*a_neg);
+    eig_neg[4] = neg_smooth(vel_neg[0] + a_neg, eps*a_neg);
 
     dealii::FullMatrix<double> A_pos(dim+2), A_neg(dim+2);
     A_pos = 0;

@@ -364,6 +364,24 @@ class NavierStokes
      * The neg operation
      */
     inline static double neg(const double x) {return 0.5*(x-fabs(x));}
+
+    /**
+     * Smoothed pos function. The second argument is the smoother. See Buning & Steger (1982).
+     * Specifically relevant for Steger-Warming flux.
+     */
+    inline static double pos_smooth(const double x, const double eps)
+    {
+        return 0.5*(x + std::sqrt(x*x + eps*eps));
+    }
+
+    /**
+     * Smoothed neg function. The second argument is the smoother. See Buning & Steger (1982).
+     * Specifically relevant for Steger-Warming flux.
+     */
+    inline static double neg_smooth(const double x, const double eps)
+    {
+        return 0.5*(x - std::sqrt(x*x + eps*eps));
+    }
     
     #ifdef DEBUG
     static void test();
