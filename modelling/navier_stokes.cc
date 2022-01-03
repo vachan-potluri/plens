@@ -875,7 +875,8 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
     // Calculate omega
     const double pl = get_p(lcs), pr = get_p(rcs);
     const double sigma2 = 0.5;
-    const double omega = 0.5/( 1 + std::pow(sigma2*(pr-pl)/std::min(pl,pr), 2) );
+    // const double omega = 0.5/( 1 + std::pow(sigma2*(pr-pl)/std::min(pl,pr), 2) );
+    const double omega = 0;
 
     // pos and neg states which are inputs for calculating pos and neg jacobians
     // these are also used to calculate pos and neg eigenvalues
@@ -884,6 +885,7 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
         vel_pos[d] = (1-omega)*lcs[1+d]/lcs[0] + omega*rcs[1+d]/rcs[0];
         vel_neg[d] = (1-omega)*rcs[1+d]/rcs[0] + omega*lcs[1+d]/lcs[0];
     }
+    std::cout << "vel pos: " << vel_pos << "\nvel neg: " << vel_neg << "\n";
 
     const double rho_pos = (1-omega)*lcs[0] + omega*rcs[0],
         rho_neg = (1-omega)*rcs[0] + omega*lcs[0];
@@ -893,6 +895,8 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
         a_neg = std::sqrt(gma_*p_neg/rho_neg);
     const double H_pos = gma_*p_pos/((gma_-1)*rho_pos) + dealii::scalar_product(vel_pos, vel_pos),
         H_neg = gma_*p_neg/((gma_-1)*rho_neg) + dealii::scalar_product(vel_neg, vel_neg);
+    std::cout << "rho pos and neg: " << rho_pos << " " << rho_neg << "\n";
+    std::cout << "p pos and neg: " << p_pos << " " << p_neg << "\n";
 
     // pos and neg eigenvector matrices
     dealii::FullMatrix<double> K_pos(dim+2), Kinv_pos(dim+2), K_neg(dim+2), Kinv_neg(dim+2);
@@ -909,8 +913,13 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
     eig_neg[0] = neg(vel_neg[0] - a_neg);
     for(int d=0; d<dim; d++) eig_neg[1+d] = neg(vel_neg[0]);
     eig_neg[4] = neg(vel_neg[0] + a_neg);
+    std::cout << "eig pos: ";
+    utilities::print_state(eig_pos);
+    std::cout << "eig neg: ";
+    utilities::print_state(eig_neg);
 
-    const double eps = 0.3;
+    // const double eps = 0.3;
+    const double eps = 0;
     for(int i=0; i<dim+2; i++){
         eig_pos[i] = 0.5*(eig_pos[i] + sqrt(pow(eig_pos[i], 2) + pow(eps*a_pos, 2)));
         eig_neg[i] = 0.5*(eig_neg[i] - sqrt(pow(eig_neg[i], 2) + pow(eps*a_neg, 2)));
@@ -927,6 +936,18 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
             }
         }
     }
+    std::cout << "\nK pos:" << "\n";
+    K_pos.print_formatted(std::cout);
+    std::cout << "\nKinv pos:" << "\n";
+    Kinv_pos.print_formatted(std::cout);
+    std::cout << "\nK neg:" << "\n";
+    K_neg.print_formatted(std::cout);
+    std::cout << "\nKinv neg:" << "\n";
+    Kinv_neg.print_formatted(std::cout);
+    std::cout << "\nA pos:" << "\n";
+    A_pos.print_formatted(std::cout);
+    std::cout << "\nA neg:" << "\n";
+    A_neg.print_formatted(std::cout);
 
     // calculate the flux
     for(int i=0; i<dim+2; i++){
@@ -1210,6 +1231,15 @@ void NavierStokes::test()
 
         ns.hllc_xflux(lcs, rcs, f);
         std::cout << "HLLC x flux: ";
+        utilities::print_state(f);
+    }
+
+    {
+        t.new_block("Testing modified SW flux");
+        NavierStokes ns("air");
+        State lcs = {1,0.75,0,0,2.78125}, f;
+
+        ns.modified_sw_xflux(lcs, lcs, f);
         utilities::print_state(f);
     }
 }
