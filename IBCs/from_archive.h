@@ -34,6 +34,7 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <memory>
 
 using namespace dealii;
 namespace ICs
@@ -76,6 +77,8 @@ class FromArchive: public IC
 {
     private:
 
+    std::unique_ptr<MPI_Comm> local_mpi_comm_ptr_;
+
     /**
      * The triangulation relevant for the solution vectors stored in archive. Preferably, this has
      * to be the exactly same triangulation on which the simulation was done before performing
@@ -83,7 +86,7 @@ class FromArchive: public IC
      * constructor has nothing to do with this. This is constructed using the file
      * `ar_mesh_filename` provided in the constructor.
      */
-    parallel::distributed::Triangulation<dim> ar_triang_;
+    std::unique_ptr<parallel::distributed::Triangulation<dim>> ar_triang_ptr_;
 
     /**
      * Mapping used for archived triangulation

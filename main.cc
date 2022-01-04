@@ -42,7 +42,7 @@ int main(int argc, char** argv){
 
     #ifdef DEBUG
     // CAvars::test();
-    NavierStokes::test();
+    // NavierStokes::test();
     // FaceLocalDoFData::test();
     // FaceDoFInfo::test();
     // BCs::BC::test();
@@ -61,7 +61,7 @@ int main(int argc, char** argv){
     // ChangeOfBasisMatrix<3>::test(); // template argument doesn't matter for test() as it is static
     // BlenderCalculator::test();
     // RKCoeffs::test();
-    return 0;
+    // return 0;
     #endif
 
     // plens_test();
