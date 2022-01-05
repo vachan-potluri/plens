@@ -1312,6 +1312,8 @@ void PLENS::form_neighbor_face_matchings(
 {
     pcout << "Matching neighbor side dof ids on internal faces ... ";
     std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
+    // set max index of loc_rel_dofs (required for debug mode)
+    loc_rel_dofs.set_size(dof_handler.n_dofs());
     for(const auto &cell: dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
         cell->get_dof_indices(dof_ids);

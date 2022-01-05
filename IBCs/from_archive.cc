@@ -48,14 +48,22 @@ FromArchive::FromArchive(
 ):
 IC(dh, dl, gcv),
 pcout(std::cout, (Utilities::MPI::this_mpi_process(mpi_comm)==0)),
-ar_triang_(mpi_comm),
-ar_mapping_(*ar_mapping_ptr),
-ar_dof_handler_(ar_triang_)
+ar_triang_ptr_(nullptr),
+ar_mapping_(*ar_mapping_ptr)
 {
     // 1. Read and set manifolds to triangulation
     pcout << "\nSetting IC from archive\nReading archive mesh and applying manifolds\n";
+    local_mpi_comm_ptr_ = std::make_unique<MPI_Comm>();
+    // see https://mpitutorial.com/tutorials/introduction-to-groups-and-communicators/
+    MPI_Comm_split(
+        mpi_comm,
+        Utilities::MPI::this_mpi_process(mpi_comm), // color
+        0, // key
+        local_mpi_comm_ptr_.get() // resultant communicator
+    );
+    ar_triang_ptr_ = std::make_unique<parallel::distributed::Triangulation<dim>>(*local_mpi_comm_ptr_);
     GridIn<dim> grid_in;
-    grid_in.attach_triangulation(ar_triang_);
+    grid_in.attach_triangulation(*ar_triang_ptr_);
 
     std::ifstream ar_mesh_file(ar_mesh_filename);
     AssertThrow(
@@ -82,33 +90,27 @@ ar_dof_handler_(ar_triang_)
     grid_in.read(ar_mesh_file, fmt);
     ar_mesh_file.close();
 
-    if(ar_mfld_desc_ptr != nullptr) ar_mfld_desc_ptr->set(ar_triang_); 
+    if(ar_mfld_desc_ptr != nullptr) ar_mfld_desc_ptr->set(*ar_triang_ptr_); 
 
     // 2. Set dof handler
     pcout << "Forming dof handler for archive\n";
     FE_DGQ<dim> ar_fe(ar_fe_degree);
+    ar_dof_handler_.reinit(*ar_triang_ptr_);
     ar_dof_handler_.distribute_dofs(ar_fe);
 
     // 3. Set and read solution vectors, make the ghosted vectors ready-to-use
     pcout << "Reading and setting archive solution vectors, this may take some time ...";
     IndexSet ar_locally_owned_dofs = ar_dof_handler_.locally_owned_dofs();
-    IndexSet ar_all_dofs(ar_dof_handler_.n_dofs());
-    ar_all_dofs.add_range(0, ar_dof_handler_.n_dofs());
 
     std::vector<LA::MPI::Vector*> ar_gcvar_ptrs;
     for(cvar var: cvar_list){
-        ar_gcvars_[var].reinit(ar_locally_owned_dofs, mpi_comm);
-        ar_gh_gcvars_[var].reinit(ar_locally_owned_dofs, ar_all_dofs, mpi_comm);
+        ar_gcvars_[var].reinit(ar_locally_owned_dofs, *local_mpi_comm_ptr_);
         ar_gcvar_ptrs.emplace_back(&ar_gcvars_[var]);
     }
 
-    ar_triang_.load(ar_filename);
+    ar_triang_ptr_->load(ar_filename);
     parallel::distributed::SolutionTransfer<dim, LA::MPI::Vector> sol_trans(ar_dof_handler_);
     sol_trans.deserialize(ar_gcvar_ptrs);
-    for(cvar var: cvar_list){
-        // form ghosted vectors from serial vectors
-        ar_gh_gcvars_[var] = ar_gcvars_[var];
-    }
     pcout << " completed\n";
 }
 
@@ -123,23 +125,17 @@ ar_dof_handler_(ar_triang_)
  */
 void FromArchive::set()
 {
-    pcout << "Setting IC on all owned dofs. This may take long time\n";
-    // get bounding box
-    const BoundingBox<dim> bounding_box = GridTools::compute_bounding_box(
-        dof_handler.get_triangulation()
-    );
-    // const Point<dim> bb_center = bounding_box.center();
-    const Point<dim> bb_center(0.11, 0.05, 0.002);
+    pcout << "Setting IC on all owned dofs. This may take long time ... ";
     for(cvar var: cvar_list){
         Functions::FEFieldFunction<dim, DoFHandler<dim>, LA::MPI::Vector> ar_cvar_fn(
             ar_dof_handler_,
-            ar_gh_gcvars_[var],
+            ar_gcvars_[var],
             ar_mapping_
         );
 
         for(auto cur_dof: locally_owned_dofs_){
             try{
-                const Point<dim> cur_loc = bb_center + 1*(dof_locations[cur_dof] - bb_center);
+                const Point<dim> cur_loc = dof_locations[cur_dof];
                 g_cvars[var][cur_dof] = ar_cvar_fn.value(cur_loc);
             }
             catch(...){
