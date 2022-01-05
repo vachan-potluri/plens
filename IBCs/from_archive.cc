@@ -106,8 +106,8 @@ ar_mapping_(*ar_mapping_ptr)
 
     std::vector<LA::MPI::Vector*> ar_gcvar_ptrs;
     for(cvar var: cvar_list){
-        ar_gcvars_[var].reinit(ar_locally_owned_dofs, mpi_comm);
-        ar_gh_gcvars_[var].reinit(ar_locally_owned_dofs, ar_all_dofs, mpi_comm);
+        ar_gcvars_[var].reinit(ar_locally_owned_dofs, *local_mpi_comm_ptr_);
+        ar_gh_gcvars_[var].reinit(ar_locally_owned_dofs, ar_all_dofs, *local_mpi_comm_ptr_);
         ar_gcvar_ptrs.emplace_back(&ar_gcvars_[var]);
     }
 
