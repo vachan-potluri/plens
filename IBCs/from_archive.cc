@@ -132,7 +132,7 @@ ar_mapping_(*ar_mapping_ptr)
  */
 void FromArchive::set()
 {
-    pcout << "Setting IC on all owned dofs. This may take long time\n";
+    pcout << "Setting IC on all owned dofs. This may take long time ... ";
     for(cvar var: cvar_list){
         Functions::FEFieldFunction<dim, DoFHandler<dim>, LA::MPI::Vector> ar_cvar_fn(
             ar_dof_handler_,
@@ -157,5 +157,4 @@ void FromArchive::set()
             }
         } // loop over owned dofs
     } // loop over cvars
-    pcout << "exiting set()\n";
 }

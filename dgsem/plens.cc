@@ -999,9 +999,7 @@ void PLENS::set_IC()
     ic_ptr->set();
     pcout << "Completed\n";
 
-    pcout << "before barrier\n";
     MPI_Barrier(mpi_comm);
-    pcout << "exiting set IC\n";
 }
 
 
