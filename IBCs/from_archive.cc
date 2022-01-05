@@ -101,23 +101,16 @@ ar_mapping_(*ar_mapping_ptr)
     // 3. Set and read solution vectors, make the ghosted vectors ready-to-use
     pcout << "Reading and setting archive solution vectors, this may take some time ...";
     IndexSet ar_locally_owned_dofs = ar_dof_handler_.locally_owned_dofs();
-    IndexSet ar_all_dofs(ar_dof_handler_.n_dofs());
-    ar_all_dofs.add_range(0, ar_dof_handler_.n_dofs());
 
     std::vector<LA::MPI::Vector*> ar_gcvar_ptrs;
     for(cvar var: cvar_list){
         ar_gcvars_[var].reinit(ar_locally_owned_dofs, *local_mpi_comm_ptr_);
-        ar_gh_gcvars_[var].reinit(ar_locally_owned_dofs, ar_all_dofs, *local_mpi_comm_ptr_);
         ar_gcvar_ptrs.emplace_back(&ar_gcvars_[var]);
     }
 
     ar_triang_ptr_->load(ar_filename);
     parallel::distributed::SolutionTransfer<dim, LA::MPI::Vector> sol_trans(ar_dof_handler_);
     sol_trans.deserialize(ar_gcvar_ptrs);
-    for(cvar var: cvar_list){
-        // form ghosted vectors from serial vectors
-        ar_gh_gcvars_[var] = ar_gcvars_[var];
-    }
     pcout << " completed\n";
 }
 
@@ -136,7 +129,7 @@ void FromArchive::set()
     for(cvar var: cvar_list){
         Functions::FEFieldFunction<dim, DoFHandler<dim>, LA::MPI::Vector> ar_cvar_fn(
             ar_dof_handler_,
-            ar_gh_gcvars_[var],
+            ar_gcvars_[var],
             ar_mapping_
         );
 
