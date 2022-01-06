@@ -1706,6 +1706,9 @@ void PLENS::calc_cell_cons_grad(
         }
     }
 
+    // initialise a pointer to metric terms for this cell
+    const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
+
     for(usi grad_dir=0; grad_dir<dim; grad_dir++){
         // first calculate volumetric contribution
         for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
@@ -1730,8 +1733,8 @@ void PLENS::calc_cell_cons_grad(
                     }
                     ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
                     double JxContra_avg_comp = 0.5*(
-                        metrics.at(cell->index()).JxContra_vecs[ldof_this][m_dir][grad_dir] +
-                        metrics.at(cell->index()).JxContra_vecs[ldof_other][m_dir][grad_dir]
+                        metrics_ptr->JxContra_vecs[ldof_this][m_dir][grad_dir] +
+                        metrics_ptr->JxContra_vecs[ldof_other][m_dir][grad_dir]
                     ); // component (of average contravariant vector) in gradient direction
                     for(cvar var: cvar_list){
                         cons_grad[ldof_this][grad_dir][var] +=
@@ -1751,9 +1754,9 @@ void PLENS::calc_cell_cons_grad(
                     State flux_in, flux_surf;
                     for(cvar var: cvar_list){
                         flux_in[var] = gcrk_cvars[var][dof_ids[ldof]]*
-                            metrics.at(cell->index()).JxContra_vecs[ldof][surf_dir][grad_dir];
+                            metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
                         flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
-                            metrics.at(cell->index()).JxContra_vecs[ldof][surf_dir][grad_dir];
+                            metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
                         // a hack for incorporating contributions from both left and right faces
                         cons_grad[ldof][grad_dir][var] -= std::pow(-1,lr_id)*
                             (flux_surf[var]-flux_in[var])/w_1d[lr_id*fe.degree];
@@ -1765,7 +1768,7 @@ void PLENS::calc_cell_cons_grad(
         // now divide by Jacobian determinant
         for(usi ldof=0; ldof<fe.dofs_per_cell; ldof++){
             for(cvar var: cvar_list){
-                cons_grad[ldof][grad_dir][var] /= metrics.at(cell->index()).detJ[ldof];
+                cons_grad[ldof][grad_dir][var] /= metrics_ptr->detJ[ldof];
             }
         } // loop over cell dofs
     } // loop over gradient directions
