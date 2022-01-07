@@ -21,6 +21,14 @@ IF(BUILD_SPACETIME)
     ADD_DEFINITIONS(-DSPACETIME) # for older cmake versions
 ENDIF(BUILD_SPACETIME)
 
+# To profile the release version of code, a flag '-g' has to be added. This option will take care
+# of that. To use, invoke cmake with '-DPROFILE=ON'. This option works irrespective of the build
+# type, although it is redundant for a debug build (since dealii adds related flags automatically).
+OPTION(PROFILE "Add '-g' flag to enable profiling" OFF)
+IF(PROFILE)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+ENDIF(PROFILE)
+
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") # required for 9.3.0
 
 ADD_SUBDIRECTORY(utilities)
