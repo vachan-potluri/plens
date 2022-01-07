@@ -362,6 +362,17 @@ class PLENS
     static const usi n_faces_per_cell = GeometryInfo<dim>::faces_per_cell;
 
     /**
+     * This variable type is for storing variables on the surfaces of a cell. Access:
+     * `data[cell-local face id][face-local dof id]`. This is used to define
+     * PLENS::locly_ord_surf_term_t which is for storing such data for all cells.
+     */
+    template <class T>
+    using cell_surf_term_t = std::array<
+        std::vector<T>,
+        n_faces_per_cell
+    >;
+
+    /**
      * Locally order surface term type. "Locally ordered" is to emphasize that the access must
      * happen through `cell id --> cell-local face id --> face-local dof id`. Commonly, this type
      * is used to store surface fluxes on faces of owned cells. More commonly, this type is wrapped
@@ -374,10 +385,7 @@ class PLENS
     template <class T>
     using locly_ord_surf_term_t = std::map<
         psize,
-        std::array<
-            std::vector<T>,
-            n_faces_per_cell
-        >
+        cell_surf_term_t<T>
     >;
 
     /**

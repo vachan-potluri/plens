@@ -1706,6 +1706,15 @@ void PLENS::calc_cell_cons_grad(
         }
     }
 
+    // get surface flux data for this cell
+    std::array<
+        const cell_surf_term_t<double>*,
+        5
+    > cell_surf_flux;
+    for(cvar var: cvar_list){
+        cell_surf_flux[var] = &s1_surf_flux[var].at(cell->index());
+    }
+
     // initialise cons_grad to 0
     for(usi dir=0; dir<dim; dir++){
         for(usi i=0; i<fe.dofs_per_cell; i++){
@@ -1763,7 +1772,7 @@ void PLENS::calc_cell_cons_grad(
                     for(cvar var: cvar_list){
                         flux_in[var] = cell_cvars[var][ldof]*
                             metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
-                        flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
+                        flux_surf[var] = (*cell_surf_flux[var])[face_id][face_dof_id]*
                             metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
                         // a hack for incorporating contributions from both left and right faces
                         cons_grad[ldof][grad_dir][var] -= std::pow(-1,lr_id)*
