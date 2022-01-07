@@ -1742,7 +1742,8 @@ void PLENS::calc_cell_cons_grad(
                     usi ldof_other = cdi.tensorial_to_local(ti_other);
                     State cons_other = cell_states[ldof_other];
 
-                    ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
+                    // ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
+                    for(cvar var: cvar_list) flux[var] = 0.5*(cons_this[var] + cons_other[var]);
                     const double JxContra_avg_comp = 0.5*(
                         metrics_ptr->JxContra_vecs[ldof_this][m_dir][grad_dir] +
                         metrics_ptr->JxContra_vecs[ldof_other][m_dir][grad_dir]
