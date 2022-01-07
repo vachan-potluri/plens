@@ -1698,11 +1698,10 @@ void PLENS::calc_cell_cons_grad(
     // get cell cvar data
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
-    std::array<std::vector<double>, 5> cell_cvars;
+    std::vector<State> cell_states(fe.dofs_per_cell);
     for(cvar var: cvar_list){
-        cell_cvars[var].resize(fe.dofs_per_cell, 0);
         for(psize i=0; i<fe.dofs_per_cell; i++){
-            cell_cvars[var][i] = gcrk_cvars[var][dof_ids[i]];
+            cell_states[i][var] = gcrk_cvars[var][dof_ids[i]];
         }
     }
 
@@ -1728,8 +1727,7 @@ void PLENS::calc_cell_cons_grad(
     for(usi grad_dir=0; grad_dir<dim; grad_dir++){
         // first calculate volumetric contribution
         for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
-            State cons_this;
-            for(cvar var: cvar_list) cons_this[var] = cell_cvars[var][ldof_this];
+            State cons_this = cell_states[ldof_this];
             TableIndices<dim> ti_this;
             for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
 
@@ -1738,15 +1736,12 @@ void PLENS::calc_cell_cons_grad(
 
             for(usi m=0; m<=fe.degree; m++){
                 for(usi m_dir=0; m_dir<dim; m_dir++){
-                    State cons_other;
                     // strangely TableIndices doesn't have a copy ctor
                     TableIndices<dim> ti_other(ti_this[0], ti_this[1], ti_this[2]);
                     ti_other[m_dir] = m;
                     usi ldof_other = cdi.tensorial_to_local(ti_other);
+                    State cons_other = cell_states[ldof_other];
 
-                    for(cvar var: cvar_list){
-                        cons_other[var] = cell_cvars[var][ldof_other];
-                    }
                     ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
                     const double JxContra_avg_comp = 0.5*(
                         metrics_ptr->JxContra_vecs[ldof_this][m_dir][grad_dir] +
@@ -1768,9 +1763,10 @@ void PLENS::calc_cell_cons_grad(
                 usi face_id = 2*surf_dir + lr_id; // the face id
                 for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
                     usi ldof = fdi.maps[face_id][face_dof_id];
+                    State cons = cell_states[ldof];
                     State flux_in, flux_surf;
                     for(cvar var: cvar_list){
-                        flux_in[var] = cell_cvars[var][ldof]*
+                        flux_in[var] = cons[var]*
                             metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
                         flux_surf[var] = (*cell_surf_flux[var])[face_id][face_dof_id]*
                             metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
