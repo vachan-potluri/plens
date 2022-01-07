@@ -1705,6 +1705,9 @@ void PLENS::calc_cell_cons_grad(
         }
     }
 
+    // initialise a pointer to metric terms for this cell
+    const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
+
     // get surface flux data for this cell
     std::array<
         const cell_surf_term_t<double>*,
@@ -1714,15 +1717,17 @@ void PLENS::calc_cell_cons_grad(
         cell_surf_flux[var] = &s1_surf_flux[var].at(cell->index());
     }
 
+    // sign for surface contribution: std::pow(-1, lr_id)
+    // where lr_id = 0 for 'left' face and 1 for 'right' face
+    // avoid multiple use of std::pow
+    const std::array<double, 2> surface_contrib_sign = {1, -1}; // ordering: left, right
+
     // initialise cons_grad to 0
     for(usi dir=0; dir<dim; dir++){
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list) cons_grad[i][dir][var] = 0; // initialise to 0
         }
     }
-
-    // initialise a pointer to metric terms for this cell
-    const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
 
     for(usi grad_dir=0; grad_dir<dim; grad_dir++){
         // first calculate volumetric contribution
@@ -1772,7 +1777,7 @@ void PLENS::calc_cell_cons_grad(
                         flux_surf[var] = (*cell_surf_flux[var])[face_id][face_dof_id]*
                             metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
                         // a hack for incorporating contributions from both left and right faces
-                        cons_grad[ldof][grad_dir][var] -= std::pow(-1,lr_id)*
+                        cons_grad[ldof][grad_dir][var] -= surface_contrib_sign[lr_id]*
                             (flux_surf[var]-flux_in[var])/w_1d[lr_id*fe.degree];
                     }
                 } // loop over face dofs
@@ -1780,9 +1785,11 @@ void PLENS::calc_cell_cons_grad(
         } // loop over 3 directions for surface contributions
 
         // now divide by Jacobian determinant
+        double Jinv;
         for(usi ldof=0; ldof<fe.dofs_per_cell; ldof++){
+            Jinv = 1.0/metrics_ptr->detJ[ldof];
             for(cvar var: cvar_list){
-                cons_grad[ldof][grad_dir][var] /= metrics_ptr->detJ[ldof];
+                cons_grad[ldof][grad_dir][var] *= Jinv;
             }
         } // loop over cell dofs
     } // loop over gradient directions
