@@ -1696,17 +1696,14 @@ void PLENS::calc_cell_cons_grad(
     );
 
     // get cell cvar data
-    FEValues<dim> fe_values(
-        *mapping_ptr,
-        fe,
-        QGaussLobatto<dim>(fe.degree+1),
-        update_values | update_quadrature_points
-    );
-    fe_values.reinit(cell);
-    std::array<std::vector<double>, 5> local_cvars;
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+    std::array<std::vector<double>, 5> cell_cvars;
     for(cvar var: cvar_list){
-        local_cvars[var].resize(fe.dofs_per_cell, 0);
-        fe_values.get_function_values(gcrk_cvars[var], local_cvars[var]);
+        cell_cvars[var].resize(fe.dofs_per_cell, 0);
+        for(psize i=0; i<fe.dofs_per_cell; i++){
+            cell_cvars[var][i] = gcrk_cvars[var][dof_ids[i]];
+        }
     }
 
     // initialise cons_grad to 0
@@ -1723,7 +1720,7 @@ void PLENS::calc_cell_cons_grad(
         // first calculate volumetric contribution
         for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
             State cons_this;
-            for(cvar var: cvar_list) cons_this[var] = local_cvars[var][ldof_this];
+            for(cvar var: cvar_list) cons_this[var] = cell_cvars[var][ldof_this];
             TableIndices<dim> ti_this;
             for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
 
@@ -1739,7 +1736,7 @@ void PLENS::calc_cell_cons_grad(
                     usi ldof_other = cdi.tensorial_to_local(ti_other);
 
                     for(cvar var: cvar_list){
-                        cons_other[var] = local_cvars[var][ldof_other];
+                        cons_other[var] = cell_cvars[var][ldof_other];
                     }
                     ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
                     double JxContra_avg_comp = 0.5*(
@@ -1763,7 +1760,7 @@ void PLENS::calc_cell_cons_grad(
                     usi ldof = fdi.maps[face_id][face_dof_id];
                     State flux_in, flux_surf;
                     for(cvar var: cvar_list){
-                        flux_in[var] = local_cvars[var][ldof]*
+                        flux_in[var] = cell_cvars[var][ldof]*
                             metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
                         flux_surf[var] = s1_surf_flux[var].at(cell->index())[face_id][face_dof_id]*
                             metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
