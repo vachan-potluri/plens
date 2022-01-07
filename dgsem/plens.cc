@@ -1739,13 +1739,14 @@ void PLENS::calc_cell_cons_grad(
                         cons_other[var] = cell_cvars[var][ldof_other];
                     }
                     ns_ptr->get_aux_vol_flux(cons_this, cons_other, temp_dir, flux);
-                    double JxContra_avg_comp = 0.5*(
+                    const double JxContra_avg_comp = 0.5*(
                         metrics_ptr->JxContra_vecs[ldof_this][m_dir][grad_dir] +
                         metrics_ptr->JxContra_vecs[ldof_other][m_dir][grad_dir]
                     ); // component (of average contravariant vector) in gradient direction
+                    const double D_val_m2 = 2*ref_D_1d(ti_this[m_dir],m); // value of 2D_{i,j,k}m
                     for(cvar var: cvar_list){
                         cons_grad[ldof_this][grad_dir][var] +=
-                            2*ref_D_1d(ti_this[m_dir],m)*flux[var]*JxContra_avg_comp;
+                            D_val_m2*flux[var]*JxContra_avg_comp;
                     }
                 } // loop over three directions for m
             } // loop over m
