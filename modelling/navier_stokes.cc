@@ -452,7 +452,7 @@ void NavierStokes::get_inv_surf_flux(
     if(M > 1e-3){
         // this tolerance corrsponds to an angle of ~0.06 degrees between x and n
         m /= M; // now m is a unit vector <-- rotation axis
-        double theta = acos(
+        double theta = std::acos(
             dealii::scalar_product(xdir, normal)
         ); // <-- rotation angle (both xdir and normal are unit vectors)
         
