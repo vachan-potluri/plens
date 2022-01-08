@@ -448,7 +448,7 @@ void NavierStokes::get_inv_surf_flux(
     dealii::Tensor<1,dim> m = dealii::cross_product_3d(xdir, normal); // m = x cross n
     double M = m.norm(); // magnitude of m
     
-    dealii::FullMatrix<double> R(dim); // rotation matrix
+    dealii::Tensor<2,dim> R; // rotation matrix, all entries are zero
     if(M > 1e-3){
         // this tolerance corrsponds to an angle of ~0.06 degrees between x and n
         m /= M; // now m is a unit vector <-- rotation axis
@@ -456,31 +456,40 @@ void NavierStokes::get_inv_surf_flux(
             dealii::scalar_product(xdir, normal)
         ); // <-- rotation angle (both xdir and normal are unit vectors)
         
-        R.copy_from(
-            dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
-                dealii::Point<dim>(m), theta
-            )// returns tensor
-        ); // copies from second order tensor
+        R = dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
+                dealii::Point<dim>(m),
+                theta
+            );
     }
     else{
         // either x is parallel or anti-parallel to n
-        R = dealii::IdentityMatrix(dim);
         if(normal[0] < 0){
             // n is anti-parallel to x
-            R *= -1;
+            for(int d=0; d<dim; d++) R[d][d] = -1;
+        }
+        else{
+            // n is parallel to x
+            for(int d=0; d<dim; d++) R[d][d] = 1;
         }
     }
+    dealii::Tensor<2,dim> RT(R); // transpose of R
     
     // Step 2: get rotated states
-    dealii::Vector<double> osmom(dim), nsmom(dim), // owner and neighbor specific momentum
-        osmom_r(dim), nsmom_r(dim); // rotated specific momentum
+    dealii::Tensor<1,dim> osmom, nsmom, // owner and neighbor specific momentum
+        osmom_r, nsmom_r; // rotated specific momentum (initialised to 0)
     for(int d=0; d<dim; d++){
         osmom[d] = ocs[1+d];
         nsmom[d] = ncs[1+d];
     }
     // get the momentum components wrt rotated coordinate system
-    R.Tvmult(osmom_r, osmom); // osmom_r = R^{-1} * osmom, R^T = R^{-1}
-    R.Tvmult(nsmom_r, nsmom);
+    // osmom_r = R^{-1} * osmom, R^T = R^{-1}
+    for(int row=0; row<dim; row++){
+        for(int col=0; col<dim; col++){
+            const double RT_val = RT[row][col];
+            osmom_r[row] += RT_val*osmom[col];
+            nsmom_r[row] += RT_val*nsmom[col];
+        }
+    }
     
     State ocs_r, ncs_r; // rotated states
     ocs_r[0] = ocs[0];
@@ -497,10 +506,15 @@ void NavierStokes::get_inv_surf_flux(
     inv_surf_xflux(ocs_r, ncs_r, f_r);
     
     // Step 4: rotate back coordinate system and obtain the appropriate momentum components
-    dealii::Vector<double> mom_flux_r(3), mom_flux(3); // momentum fluxes
+    dealii::Tensor<1,dim> mom_flux_r, mom_flux; // momentum fluxes (initialised to 0)
     for(int d=0; d<dim; d++) mom_flux_r[d] = f_r[1+d];
     // get momentum flux components w.r.t original coordinate system
-    R.vmult(mom_flux, mom_flux_r); // mom_flux = R * mom_flux_r
+    // mom_flux = R * mom_flux_r
+    for(int row=0; row<dim; row++){
+        for(int col=0; col<dim; col++){
+            mom_flux[row] += R[row][col]*mom_flux_r[col];
+        }
+    }
     
     f[0] = f_r[0];
     for(int d=0; d<dim; d++) f[1+d] = mom_flux[d];
