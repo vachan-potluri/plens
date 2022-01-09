@@ -478,7 +478,7 @@ void NavierStokes::get_inv_surf_flux(
             for(int d=0; d<dim; d++) R[d][d] = 1;
         }
     }
-    dealii::Tensor<2,dim> RT(R); // transpose of R
+    dealii::Tensor<2,dim> RT(dealii::transpose(R)); // transpose of R
     
     // Step 2: get rotated states
     dealii::Tensor<1,dim> osmom, nsmom, // owner and neighbor specific momentum
