@@ -452,14 +452,20 @@ void NavierStokes::get_inv_surf_flux(
     if(M > 1e-3){
         // this tolerance corrsponds to an angle of ~0.06 degrees between x and n
         m /= M; // now m is a unit vector <-- rotation axis
-        double theta = std::acos(
-            dealii::scalar_product(xdir, normal)
-        ); // <-- rotation angle (both xdir and normal are unit vectors)
-        
-        R = dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
-                dealii::Point<dim>(m),
-                theta
-            );
+        const double c = dealii::scalar_product(xdir, normal), // cos of angle
+            t = 1-c, // 1 - (cos of angle)
+            s = std::sqrt(1-c*c); // sin of angle, will be +ve since angles lies in [0,pi]
+        R = dealii::Tensor<2,dim>(
+            {{t * m[0] * m[0] + c,
+            t * m[0] * m[1] - s * m[2],
+            t * m[0] * m[2] + s * m[1]},
+            {t * m[0] * m[1] + s * m[2],
+            t * m[1] * m[1] + c,
+            t * m[1] * m[2] - s * m[0]},
+            {t * m[0] * m[2] - s * m[1],
+            t * m[1] * m[2] + s * m[0],
+            t * m[2] * m[2] + c}}
+        ); // taken from <deal.II/physics/transformations.h>
     }
     else{
         // either x is parallel or anti-parallel to n
