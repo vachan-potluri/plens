@@ -177,3 +177,4 @@ print("Written input file in {}".format(input_filename))
 # 4. Create result directory
 full_res_dir = dest + args.res_dir
 if os.path.isdir(full_res_dir) == False: subprocess.run(["mkdir", full_res_dir])
+print("Created directory {}".format(full_res_dir))
