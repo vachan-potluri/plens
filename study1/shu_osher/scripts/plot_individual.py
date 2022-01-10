@@ -7,9 +7,13 @@ import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 14
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
+from scipy.interpolate import interp1d
 
 parser = argparse.ArgumentParser(
-    description = "A script to compare individual results with reference solution."
+    description = "A script to compare individual results with reference solution. Also prints "
+        + "some error metrics. The error is calculated evaluating the difference at the "
+        + "simulation data points provided in 'sim_data_filename'. Reference solution is "
+        + "interpolated in piecewise cubic manner for this purpose."
 )
 parser.add_argument(
     "sim_data_filename",
@@ -50,3 +54,27 @@ for fmt in ["png", "pdf"]:
     full_plot_filename = res_dir + args.plot_filename + "." + fmt
     fig.savefig(full_plot_filename, format=fmt)
     print("Written file {}".format(full_plot_filename))
+
+x_ref = ref_data[:,0]
+rho_ref = ref_data[:,1]
+ref_func = interp1d(x_ref, rho_ref, kind="cubic")
+x_sim = sim_data["Points0"]
+mask = (x_sim > np.min(x_ref)) & (x_sim < np.max(x_ref))
+rho_ref_evaluated = ref_func(x_sim[mask])
+error_vec = rho_ref_evaluated - sim_data["rho"][mask]
+errors_content = """Error norm order, Error
+1, {}
+2, {}
+inf, {}
+""".format(
+    np.linalg.norm(error_vec, ord=1)/np.linalg.norm(rho_ref_evaluated, ord=1),
+    np.linalg.norm(error_vec, ord=2)/np.linalg.norm(rho_ref_evaluated, ord=2),
+    np.linalg.norm(error_vec, ord=np.inf)/np.linalg.norm(rho_ref_evaluated, ord=np.inf)
+)
+print("Errors:")
+print(errors_content)
+full_errors_filename = res_dir + "errors.csv"
+errors_file = open(full_errors_filename, "w")
+errors_file.write(errors_content)
+errors_file.close()
+print("Written to file {}".format(full_errors_filename))
