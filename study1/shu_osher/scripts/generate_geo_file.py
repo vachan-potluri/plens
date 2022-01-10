@@ -7,7 +7,13 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("n_cells", type=int, help="Number of cells in the mesh")
 parser.add_argument("dest", help="Location where the gmsh file should be written")
-parser.add_argument("filename", help="Name to be given to the file ('.geo' can be skipped)")
+parser.add_argument(
+    "-f",
+    "--filename",
+    help="Name to be given to the file ('.geo' can be skipped). Default: 'mesh.geo'.",
+    default="mesh.geo",
+    action="store"
+)
 args = parser.parse_args()
 
 content = """
@@ -37,10 +43,11 @@ Physical Volume("volume", 1) = {{out[1]}};
 Physical Surface("left", 1) = {{out[5]}}; // left
 Physical Surface("right", 2) = {{out[3]}}; // right
 Physical Surface("symmetry", 3) = {{out[2], out[4], 1, out[0]}}; // top and bottom, front and back
+
 """.format(args.n_cells+1)
 
 filename = args.filename
-if filename[-4:-1] != ".geo":
+if filename[-4:] != ".geo":
     filename += ".geo"
 dest = args.dest
 if dest[-1] != "/":
