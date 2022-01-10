@@ -1631,193 +1631,193 @@ void PLENS::calc_surf_flux(
  * Same as above function, but with different call signature. Initially written for exploring cache
  * benefits obtained by using a different data type for surface flux term.
  */
-void PLENS::calc_surf_flux(
-    const usi stage,
-    locly_ord_surf_term_t<State> &surf_flux_term
-) const
-{
-    AssertThrow(
-        stage >=1 && stage <= 3,
-        StandardExceptions::ExcMessage(
-            "'stage' parameter must be 1, 2 or 3. Nothing else."
-        )
-    );
+// void PLENS::calc_surf_flux(
+//     const usi stage,
+//     locly_ord_surf_term_t<State> &surf_flux_term
+// ) const
+// {
+//     AssertThrow(
+//         stage >=1 && stage <= 3,
+//         StandardExceptions::ExcMessage(
+//             "'stage' parameter must be 1, 2 or 3. Nothing else."
+//         )
+//     );
 
-    // (re)set the size of surf_flux_term
-    for(const auto &cell: dof_handler.active_cell_iterators()){
-        if(!cell->is_locally_owned()) continue;
-        for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
-            surf_flux_term[cell->index()][face_id].resize(
-                fe_face.dofs_per_face,
-                State({0,0,0,0,0})
-            );
-        }
-    }
+//     // (re)set the size of surf_flux_term
+//     for(const auto &cell: dof_handler.active_cell_iterators()){
+//         if(!cell->is_locally_owned()) continue;
+//         for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
+//             surf_flux_term[cell->index()][face_id].resize(
+//                 fe_face.dofs_per_face,
+//                 State({0,0,0,0,0})
+//             );
+//         }
+//     }
 
-    // For internal faces not at processor boundary, flux is calculated only once from the owner
-    // side. Owner is defined as the cell having lesser index. The neighbor flux is set using the
-    // flux calculated from owner side by variable-wise multiplying with these signs. For stage 1,
-    // the flux doesn't have sign reversal, while for stages 2 & 3, it does have a sign reversal
-    const std::array<float, 3> reverse_flux_sign = {1,-1,-1};
+//     // For internal faces not at processor boundary, flux is calculated only once from the owner
+//     // side. Owner is defined as the cell having lesser index. The neighbor flux is set using the
+//     // flux calculated from owner side by variable-wise multiplying with these signs. For stage 1,
+//     // the flux doesn't have sign reversal, while for stages 2 & 3, it does have a sign reversal
+//     const std::array<float, 3> reverse_flux_sign = {1,-1,-1};
 
-    const usi stage_id = stage-1; // to access wrappers from NavierStokes and BC
-    FEFaceValues<dim> fe_face_values(
-        *mapping_ptr,
-        fe,
-        QGaussLobatto<dim-1>(fe.degree+1),
-        update_normal_vectors
-    ); // to get normal vectors at dof locations on face
-    std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
+//     const usi stage_id = stage-1; // to access wrappers from NavierStokes and BC
+//     FEFaceValues<dim> fe_face_values(
+//         *mapping_ptr,
+//         fe,
+//         QGaussLobatto<dim-1>(fe.degree+1),
+//         update_normal_vectors
+//     ); // to get normal vectors at dof locations on face
+//     std::vector<psize> dof_ids(fe.dofs_per_cell), dof_ids_nei(fe.dofs_per_cell);
 
-    for(const auto &cell: dof_handler.active_cell_iterators()){
-        if(!cell->is_locally_owned()) continue;
+//     for(const auto &cell: dof_handler.active_cell_iterators()){
+//         if(!cell->is_locally_owned()) continue;
 
-        cell->get_dof_indices(dof_ids);
-        for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
-            const auto &face = cell->face(face_id);
-            fe_face_values.reinit(cell, face_id);
+//         cell->get_dof_indices(dof_ids);
+//         for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
+//             const auto &face = cell->face(face_id);
+//             fe_face_values.reinit(cell, face_id);
 
-            // ref to owner side fluxes on this face
-            std::vector<State>& owner_face_fluxes = surf_flux_term[cell->index()][face_id];
+//             // ref to owner side fluxes on this face
+//             std::vector<State>& owner_face_fluxes = surf_flux_term[cell->index()][face_id];
 
-            // conservative states and auxiliary variables on owner side at this face
-            // do the same for neighbor side in the if statements
-            std::vector<State> owner_face_states(fe_face.dofs_per_face);
-            for(cvar var: cvar_list){
-                for(usi i=0; i<fe_face.dofs_per_face; i++){
-                    psize global_dof_id = dof_ids[fdi.maps[face_id].at(i)];
-                    owner_face_states[i][var] = gcrk_cvars[var][global_dof_id];
-                }
-            }
-            std::vector<Avars> owner_face_avars(fe_face.dofs_per_face);
-            for(avar var: avar_list){
-                for(usi i=0; i<fe_face.dofs_per_face; i++){
-                    psize global_dof_id = dof_ids[fdi.maps[face_id].at(i)];
-                    owner_face_avars[i][var] = gcrk_avars[var][global_dof_id];
-                }
-            }
+//             // conservative states and auxiliary variables on owner side at this face
+//             // do the same for neighbor side in the if statements
+//             std::vector<State> owner_face_states(fe_face.dofs_per_face);
+//             for(cvar var: cvar_list){
+//                 for(usi i=0; i<fe_face.dofs_per_face; i++){
+//                     psize global_dof_id = dof_ids[fdi.maps[face_id].at(i)];
+//                     owner_face_states[i][var] = gcrk_cvars[var][global_dof_id];
+//                 }
+//             }
+//             std::vector<Avars> owner_face_avars(fe_face.dofs_per_face);
+//             for(avar var: avar_list){
+//                 for(usi i=0; i<fe_face.dofs_per_face; i++){
+//                     psize global_dof_id = dof_ids[fdi.maps[face_id].at(i)];
+//                     owner_face_avars[i][var] = gcrk_avars[var][global_dof_id];
+//                 }
+//             }
 
-            if(face->at_boundary()){
-                // boundary face, use BC objects for flux
-                // set flux blender value
-                ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
+//             if(face->at_boundary()){
+//                 // boundary face, use BC objects for flux
+//                 // set flux blender value
+//                 ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
 
-                for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
-                    FaceLocalDoFData ldd(cell->index(), face_id, face_dof);
-                    usi bid = face->boundary_id();
+//                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
+//                     FaceLocalDoFData ldd(cell->index(), face_id, face_dof);
+//                     usi bid = face->boundary_id();
 
-                    // set inner cons and avars
-                    State cons = owner_face_states[face_dof], cons_gh;
-                    Avars av = owner_face_avars[face_dof], av_gh;
+//                     // set inner cons and avars
+//                     State cons = owner_face_states[face_dof], cons_gh;
+//                     Avars av = owner_face_avars[face_dof], av_gh;
 
-                    // first get ghost state
-                    CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
-                    Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
-                    bc_list.at(bid)->get_ghost_wrappers[stage_id](ldd, cav, normal, cav_gh);
+//                     // first get ghost state
+//                     CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
+//                     Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
+//                     bc_list.at(bid)->get_ghost_wrappers[stage_id](ldd, cav, normal, cav_gh);
 
-                    // now get the flux
-                    State flux;
-                    ns_ptr->surf_flux_wrappers[stage_id](cav, cav_gh, normal, flux);
+//                     // now get the flux
+//                     State flux;
+//                     ns_ptr->surf_flux_wrappers[stage_id](cav, cav_gh, normal, flux);
 
-                    // set surf_flux_term object
-                    owner_face_fluxes[face_dof] = flux;
-                } // loop over face dofs
-            } // boundary face
+//                     // set surf_flux_term object
+//                     owner_face_fluxes[face_dof] = flux;
+//                 } // loop over face dofs
+//             } // boundary face
 
-            else if(cell->neighbor(face_id)->is_ghost()){
-                // internal face at processor boundary
-                const auto &neighbor = cell->neighbor(face_id);
-                usi face_id_nei = cell->neighbor_of_neighbor(face_id);
-                neighbor->get_dof_indices(dof_ids_nei);
+//             else if(cell->neighbor(face_id)->is_ghost()){
+//                 // internal face at processor boundary
+//                 const auto &neighbor = cell->neighbor(face_id);
+//                 usi face_id_nei = cell->neighbor_of_neighbor(face_id);
+//                 neighbor->get_dof_indices(dof_ids_nei);
 
-                // set flux blender value
-                ns_ptr->set_flux_blender_value(0.5*(
-                    gh_gcrk_alpha[cell->global_active_cell_index()] +
-                    gh_gcrk_alpha[neighbor->global_active_cell_index()]
-                ));
+//                 // set flux blender value
+//                 ns_ptr->set_flux_blender_value(0.5*(
+//                     gh_gcrk_alpha[cell->global_active_cell_index()] +
+//                     gh_gcrk_alpha[neighbor->global_active_cell_index()]
+//                 ));
 
-                for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
-                    // first get neighbor-side matching dof's global id
-                    psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
-                    usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
-                    psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
+//                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
+//                     // first get neighbor-side matching dof's global id
+//                     psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
+//                     usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
+//                     psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
 
-                    // use ghosted vectors to get neighbor state information
-                    State cons, cons_nei;
-                    Avars av, av_nei;
-                    for(cvar var: cvar_list){
-                        cons[var] = gcrk_cvars[var][gdof_id];
-                        cons_nei[var] = gh_gcrk_cvars[var][gdof_id_nei];
-                    }
-                    for(avar var: avar_list){
-                        av[var] = gcrk_avars[var][gdof_id];
-                        av_nei[var] = gh_gcrk_avars[var][gdof_id_nei];
-                    }
+//                     // use ghosted vectors to get neighbor state information
+//                     State cons, cons_nei;
+//                     Avars av, av_nei;
+//                     for(cvar var: cvar_list){
+//                         cons[var] = gcrk_cvars[var][gdof_id];
+//                         cons_nei[var] = gh_gcrk_cvars[var][gdof_id_nei];
+//                     }
+//                     for(avar var: avar_list){
+//                         av[var] = gcrk_avars[var][gdof_id];
+//                         av_nei[var] = gh_gcrk_avars[var][gdof_id_nei];
+//                     }
 
-                    // get the flux
-                    CAvars cav(&cons, &av), cav_nei(&cons_nei, &av_nei);
-                    State flux;
-                    Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
-                    ns_ptr->surf_flux_wrappers[stage_id](cav, cav_nei, normal, flux);
+//                     // get the flux
+//                     CAvars cav(&cons, &av), cav_nei(&cons_nei, &av_nei);
+//                     State flux;
+//                     Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
+//                     ns_ptr->surf_flux_wrappers[stage_id](cav, cav_nei, normal, flux);
 
-                    // set surf_flux_term entries for owner, neighbor's flux will be calculated
-                    // by its own process
-                    owner_face_fluxes[face_dof] = flux;
-                } // loop over face dofs
-            } // internal face at processor boundary
+//                     // set surf_flux_term entries for owner, neighbor's flux will be calculated
+//                     // by its own process
+//                     owner_face_fluxes[face_dof] = flux;
+//                 } // loop over face dofs
+//             } // internal face at processor boundary
 
-            else if(cell->index() < cell->neighbor_index(face_id)){
-                // processor internal face
-                const auto &neighbor = cell->neighbor(face_id);
-                usi face_id_nei = cell->neighbor_of_neighbor(face_id);
-                neighbor->get_dof_indices(dof_ids_nei);
+//             else if(cell->index() < cell->neighbor_index(face_id)){
+//                 // processor internal face
+//                 const auto &neighbor = cell->neighbor(face_id);
+//                 usi face_id_nei = cell->neighbor_of_neighbor(face_id);
+//                 neighbor->get_dof_indices(dof_ids_nei);
 
-                // ref to neighbor side surface fluxes
-                std::vector<State>& neighbor_face_fluxes =
-                    surf_flux_term[neighbor->index()][face_id_nei];
+//                 // ref to neighbor side surface fluxes
+//                 std::vector<State>& neighbor_face_fluxes =
+//                     surf_flux_term[neighbor->index()][face_id_nei];
 
-                // set flux blender value
-                ns_ptr->set_flux_blender_value(0.5*(
-                    gh_gcrk_alpha[cell->global_active_cell_index()] +
-                    gh_gcrk_alpha[neighbor->global_active_cell_index()]
-                ));
+//                 // set flux blender value
+//                 ns_ptr->set_flux_blender_value(0.5*(
+//                     gh_gcrk_alpha[cell->global_active_cell_index()] +
+//                     gh_gcrk_alpha[neighbor->global_active_cell_index()]
+//                 ));
 
-                for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
-                    // first get neighbor-side matching dof's global id
-                    psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
-                    usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
-                    psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
+//                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
+//                     // first get neighbor-side matching dof's global id
+//                     psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
+//                     usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
+//                     psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
 
-                    // get neighbor state information
-                    State cons, cons_nei;
-                    Avars av, av_nei;
-                    for(cvar var: cvar_list){
-                        cons[var] = gcrk_cvars[var][gdof_id];
-                        cons_nei[var] = gcrk_cvars[var][gdof_id_nei];
-                    }
-                    for(avar var: avar_list){
-                        av[var] = gcrk_avars[var][gdof_id];
-                        av_nei[var] = gcrk_avars[var][gdof_id_nei];
-                    }
+//                     // get neighbor state information
+//                     State cons, cons_nei;
+//                     Avars av, av_nei;
+//                     for(cvar var: cvar_list){
+//                         cons[var] = gcrk_cvars[var][gdof_id];
+//                         cons_nei[var] = gcrk_cvars[var][gdof_id_nei];
+//                     }
+//                     for(avar var: avar_list){
+//                         av[var] = gcrk_avars[var][gdof_id];
+//                         av_nei[var] = gcrk_avars[var][gdof_id_nei];
+//                     }
 
-                    // get the flux
-                    CAvars cav(&cons, &av), cav_nei(&cons_nei, &av_nei);
-                    State flux;
-                    Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
-                    ns_ptr->surf_flux_wrappers[stage_id](cav, cav_nei, normal, flux);
+//                     // get the flux
+//                     CAvars cav(&cons, &av), cav_nei(&cons_nei, &av_nei);
+//                     State flux;
+//                     Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
+//                     ns_ptr->surf_flux_wrappers[stage_id](cav, cav_nei, normal, flux);
 
-                    // set surf_flux_term entries for owner and neighbor
-                    // reverse the flux for neighbor
-                    owner_face_fluxes[face_dof] = flux;
-                    for(cvar var: cvar_list) flux[var] *= reverse_flux_sign[stage_id];
-                    neighbor_face_fluxes[face_dof_nei] = flux;
-                } // loop over face dofs
-            } // processor internal face
+//                     // set surf_flux_term entries for owner and neighbor
+//                     // reverse the flux for neighbor
+//                     owner_face_fluxes[face_dof] = flux;
+//                     for(cvar var: cvar_list) flux[var] *= reverse_flux_sign[stage_id];
+//                     neighbor_face_fluxes[face_dof_nei] = flux;
+//                 } // loop over face dofs
+//             } // processor internal face
 
-            else continue;
-        } // loop over faces
-    } // loop over owned cells
-} // calc_surf_flux (v2)
+//             else continue;
+//         } // loop over faces
+//     } // loop over owned cells
+// } // calc_surf_flux (v2)
 
 
 
