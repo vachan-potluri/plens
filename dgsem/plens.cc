@@ -1494,6 +1494,18 @@ void PLENS::calc_surf_flux(
         if(!cell->is_locally_owned()) continue;
 
         cell->get_dof_indices(dof_ids);
+
+        // owner surface flux data
+        std::array<
+            cell_surf_term_t<double>*,
+            5
+        > owner_surf_flux;
+        for(cvar var: cvar_list){
+            owner_surf_flux[var] = &surf_flux_term[var].at(cell->index());
+        }
+
+        const cell_surf_term_t<usi>& cell_nei_face_matching_dofs =
+            nei_face_matching_dofs.at(cell->index());
         for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
             const auto &face = cell->face(face_id);
             fe_face_values.reinit(cell, face_id);
@@ -1525,7 +1537,7 @@ void PLENS::calc_surf_flux(
 
                     // set surf_flux_term object
                     for(cvar var: cvar_list){
-                        surf_flux_term[var][cell->index()][face_id][face_dof] = flux[var];
+                        (*owner_surf_flux[var])[face_id][face_dof] = flux[var];
                     }
                 } // loop over face dofs
             } // boundary face
@@ -1545,7 +1557,7 @@ void PLENS::calc_surf_flux(
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
                     psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
-                    usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
+                    usi face_dof_nei = cell_nei_face_matching_dofs[face_id][face_dof];
                     psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
 
                     // use ghosted vectors to get neighbor state information
@@ -1569,7 +1581,7 @@ void PLENS::calc_surf_flux(
                     // set surf_flux_term entries for owner, neighbor's flux will be calculated
                     // by its own process
                     for(cvar var: cvar_list){
-                        surf_flux_term[var][cell->index()][face_id][face_dof] = flux[var];
+                        (*owner_surf_flux[var])[face_id][face_dof] = flux[var];
                     }
                 } // loop over face dofs
             } // internal face at processor boundary
@@ -1579,6 +1591,14 @@ void PLENS::calc_surf_flux(
                 const auto &neighbor = cell->neighbor(face_id);
                 usi face_id_nei = cell->neighbor_of_neighbor(face_id);
                 neighbor->get_dof_indices(dof_ids_nei);
+                // neighbor surface flux data
+                std::array<
+                    cell_surf_term_t<double>*,
+                    5
+                > neighbor_surf_flux;
+                for(cvar var: cvar_list){
+                    neighbor_surf_flux[var] = &surf_flux_term[var].at(neighbor->index());
+                }
 
                 // set flux blender value
                 ns_ptr->set_flux_blender_value(0.5*(
@@ -1589,7 +1609,7 @@ void PLENS::calc_surf_flux(
                 for(usi face_dof=0; face_dof<fe_face.dofs_per_face; face_dof++){
                     // first get neighbor-side matching dof's global id
                     psize gdof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
-                    usi face_dof_nei = nei_face_matching_dofs.at(cell->index())[face_id][face_dof];
+                    usi face_dof_nei = cell_nei_face_matching_dofs[face_id][face_dof];
                     psize gdof_id_nei = dof_ids_nei[fdi.maps[face_id_nei].at(face_dof_nei)];
 
                     // get neighbor state information
@@ -1613,8 +1633,8 @@ void PLENS::calc_surf_flux(
                     // set surf_flux_term entries for owner and neighbor
                     // reverse the flux for neighbor
                     for(cvar var: cvar_list){
-                        surf_flux_term[var][cell->index()][face_id][face_dof] = flux[var];
-                        surf_flux_term[var][neighbor->index()][face_id_nei][face_dof_nei]
+                        (*owner_surf_flux[var])[face_id][face_dof] = flux[var];
+                        (*neighbor_surf_flux[var])[face_id_nei][face_dof_nei]
                             = reverse_flux_sign[stage_id][var]*flux[var];
                     }
                 } // loop over face dofs
