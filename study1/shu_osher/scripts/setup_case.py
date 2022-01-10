@@ -11,7 +11,7 @@ import subprocess
 
 parser = argparse.ArgumentParser(
     description = "A script to setup a case. Assumes '.geo' file is available for mesh generation "
-        + "using gmsh."
+        + "using gmsh and 'gmsh' is an executable."
 )
 parser.add_argument("dest", help="Location where setup is being done")
 parser.add_argument(
@@ -48,11 +48,14 @@ parser.add_argument(
 parser.add_argument(
     "-r",
     "--res_dir",
-    help="Name of the result directory. Default: 'result'",
+    help="Name of the result directory (relative to the location given in the 'dest' argument). "
+        + "Default: 'result'",
     default="result",
     action="store"
 )
 args = parser.parse_args()
+
+
 
 # 1. Generate mesh
 dest = args.dest
@@ -65,4 +68,95 @@ if geo_file[-4:] != ".geo":
 
 full_mesh_filename = dest + geo_file
 
-subprocess.run(["gmsh", full_mesh_filename, "-3", "-format", "msh4"], env=dict(os.environ), shell=True)
+# https://stackoverflow.com/questions/12060863/python-subprocess-call-a-bash-alias
+command = "gmsh {} -3 -format msh4".format(full_mesh_filename)
+subprocess.run(["/bin/bash", "-i", "-c", command])
+
+
+
+# 2. IC file
+ic_content = """p
+2
+1
+1
+-4
+
+
+3.857143
+2.629369
+0
+0
+10.33333
+1 + 0.2*sin(5*x)
+0
+0
+0
+1
+"""
+ic_filename = dest + "ic_shu_osher.dat"
+ic_file = open(ic_filename, "w")
+ic_file.write(ic_content)
+ic_file.close()
+print("Written IC in file {}".format(ic_filename))
+
+
+
+# 3. Input file
+mesh_filename = geo_file[:-4] + ".msh"
+input_content = """
+subsection mesh
+	set type = straight
+	set format = msh
+	set file name = {}
+end
+
+subsection Navier-Stokes
+	set gas name = air
+	set inviscid = true
+	set inviscid surface flux scheme = {}
+end
+
+subsection IC
+	set type = piecewise function
+	set file name = ic_shu_osher.dat
+end
+
+subsection BCs
+	subsection bid1
+		set type = uniform inflow
+        set prescribed p = 10.33333
+        set prescribed velocity = 2.629369 0 0
+        set prescribed T = 0.009344639 
+	end
+	subsection bid2
+	    set type = free
+	end
+	subsection bid3
+		set type = symmetry
+	end
+end
+
+subsection blender parameters
+    set variable = pxrho
+end
+
+subsection time integration
+    set Courant number = {}
+    set end time = 1.8
+end
+
+subsection data output
+    set write frequency = {}
+    set directory = {}
+end
+""".format(mesh_filename, args.flux_scheme, args.cfl, args.write_frequency, args.res_dir)
+input_filename = dest + "input.prm"
+input_file = open(input_filename, "w")
+input_file.write(input_content)
+input_file.close()
+print("Written input file in {}".format(input_filename))
+
+
+
+# 4. Create result directory
+subprocess.run(["mkdir", dest + args.res_dir])
