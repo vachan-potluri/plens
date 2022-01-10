@@ -770,6 +770,10 @@ class PLENS
         const usi stage,
         locly_ord_surf_flux_term_t<double> &surf_flux_term
     ) const;
+    void calc_surf_flux(
+        const usi stage,
+        locly_ord_surf_term_t<State> &surf_flux_term
+    ) const;
     void calc_cell_cons_grad(
         const DoFHandler<dim>::active_cell_iterator& cell,
         const locly_ord_surf_flux_term_t<double>& s1_surf_flux,
