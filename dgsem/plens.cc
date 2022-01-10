@@ -1678,7 +1678,24 @@ void PLENS::calc_surf_flux(
             fe_face_values.reinit(cell, face_id);
 
             // ref to owner side fluxes on this face
-            std::vector<State>& owner_face_flux_term = surf_flux_term[cell->index()][face_id];
+            std::vector<State>& owner_face_fluxes = surf_flux_term[cell->index()][face_id];
+
+            // conservative states and auxiliary variables on owner side at this face
+            // do the same for neighbor side in the if statements
+            std::vector<State> owner_face_states(fe_face.dofs_per_face);
+            for(cvar var: cvar_list){
+                for(usi i=0; i<fe_face.dofs_per_face; i++){
+                    psize global_dof_id = dof_ids[fdi.maps[face_id].at(i)];
+                    owner_face_states[i][var] = gcrk_cvars[var][global_dof_id];
+                }
+            }
+            std::vector<Avars> owner_face_avars(fe_face.dofs_per_face);
+            for(avar var: avar_list){
+                for(usi i=0; i<fe_face.dofs_per_face; i++){
+                    psize global_dof_id = dof_ids[fdi.maps[face_id].at(i)];
+                    owner_face_avars[i][var] = gcrk_avars[var][global_dof_id];
+                }
+            }
 
             if(face->at_boundary()){
                 // boundary face, use BC objects for flux
@@ -1690,23 +1707,20 @@ void PLENS::calc_surf_flux(
                     usi bid = face->boundary_id();
 
                     // set inner cons and avars
-                    State cons, cons_gh;
-                    Avars av, av_gh;
-                    psize global_dof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
-                    for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][global_dof_id];
-                    for(avar var: avar_list) av[var] = gcrk_avars[var][global_dof_id];
+                    State cons = owner_face_states[face_dof], cons_gh;
+                    Avars av = owner_face_avars[face_dof], av_gh;
 
                     // first get ghost state
                     CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
                     Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
-                    bc_list.at(bid)->get_ghost_wrappers[stage_id](ldd, cav, normal,cav_gh);
+                    bc_list.at(bid)->get_ghost_wrappers[stage_id](ldd, cav, normal, cav_gh);
 
                     // now get the flux
                     State flux;
                     ns_ptr->surf_flux_wrappers[stage_id](cav, cav_gh, normal, flux);
 
                     // set surf_flux_term object
-                    owner_face_flux_term[face_dof] = flux;
+                    owner_face_fluxes[face_dof] = flux;
                 } // loop over face dofs
             } // boundary face
 
@@ -1748,7 +1762,7 @@ void PLENS::calc_surf_flux(
 
                     // set surf_flux_term entries for owner, neighbor's flux will be calculated
                     // by its own process
-                    owner_face_flux_term[face_dof] = flux;
+                    owner_face_fluxes[face_dof] = flux;
                 } // loop over face dofs
             } // internal face at processor boundary
 
@@ -1759,7 +1773,7 @@ void PLENS::calc_surf_flux(
                 neighbor->get_dof_indices(dof_ids_nei);
 
                 // ref to neighbor side surface fluxes
-                std::vector<State>& neighbor_face_flux_term =
+                std::vector<State>& neighbor_face_fluxes =
                     surf_flux_term[neighbor->index()][face_id_nei];
 
                 // set flux blender value
@@ -1794,9 +1808,9 @@ void PLENS::calc_surf_flux(
 
                     // set surf_flux_term entries for owner and neighbor
                     // reverse the flux for neighbor
-                    owner_face_flux_term[face_dof] = flux;
+                    owner_face_fluxes[face_dof] = flux;
                     for(cvar var: cvar_list) flux[var] *= reverse_flux_sign[stage_id];
-                    neighbor_face_flux_term[face_dof_nei] = flux;
+                    neighbor_face_fluxes[face_dof_nei] = flux;
                 } // loop over face dofs
             } // processor internal face
 
