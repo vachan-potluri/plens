@@ -2204,7 +2204,7 @@ void PLENS::calc_blender()
     // evaluate the wall blender limit
     wall_blender_limit_function.set_time(cur_time);
     const double wall_blender_limit = wall_blender_limit_function.value(Point<dim>());
-    pcout << "Wall blender limit: " << wall_blender_limit << "\n";
+    pcout << "\tWall blender limit: " << wall_blender_limit << "\n";
 
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
@@ -3079,7 +3079,8 @@ void PLENS::update_rk4()
     if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
     pcout << "Current time: " << cur_time
         << ", time step: " << time_step
-        << ", elapsed wall time: " << clk.wall_time() << "\n";
+        << ", elapsed wall time: " << clk.wall_time()
+        << ", CPU time: " << clk.cpu_time() << "\n";
     if(n_time_steps%write_freq == 0){
         write();
         pcout << "Writing solution\n";
@@ -3163,7 +3164,8 @@ void PLENS::update_rk3()
     if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
     pcout << "Current time: " << cur_time
         << ", time step: " << time_step
-        << ", elapsed wall time: " << clk.wall_time() << "\n";
+        << ", elapsed wall time: " << clk.wall_time()
+        << ", CPU time: " << clk.cpu_time() << "\n";
     if(n_time_steps%write_freq == 0){
         write();
         pcout << "Writing solution\n";
