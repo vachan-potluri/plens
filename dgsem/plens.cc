@@ -428,7 +428,7 @@ void PLENS::declare_parameters()
         );
         prm.declare_entry(
             "wall blender limit",
-            "0.95",
+            "0.5",
             Patterns::Anything(),
             "A limit on the blender value at the wall. Can be a function of simulation time (t)."
         );
