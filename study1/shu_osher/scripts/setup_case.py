@@ -30,6 +30,14 @@ parser.add_argument(
     action="store"
 )
 parser.add_argument(
+    "-k",
+    "--rk_order",
+    help="RK integration order. Default: 3.",
+    type=int,
+    default=3,
+    action="store"
+)
+parser.add_argument(
     "-c",
     "--cfl",
     help="CFL number. Default: 0.5.",
@@ -141,6 +149,7 @@ subsection blender parameters
 end
 
 subsection time integration
+    set RK order = {}
     set Courant number = {}
     set end time = 1.8
 end
@@ -149,7 +158,14 @@ subsection data output
     set write frequency = {}
     set directory = {}
 end
-""".format(mesh_filename, args.flux_scheme, args.cfl, args.write_frequency, args.res_dir)
+""".format(
+    mesh_filename,
+    args.flux_scheme,
+    args.rk_order,
+    args.cfl,
+    args.write_frequency,
+    args.res_dir
+)
 input_filename = dest + "input.prm"
 input_file = open(input_filename, "w")
 input_file.write(input_content)
@@ -159,4 +175,5 @@ print("Written input file in {}".format(input_filename))
 
 
 # 4. Create result directory
-subprocess.run(["mkdir", dest + args.res_dir])
+full_res_dir = dest + args.res_dir
+if os.path.isdir(full_res_dir) == False: subprocess.run(["mkdir", full_res_dir])
