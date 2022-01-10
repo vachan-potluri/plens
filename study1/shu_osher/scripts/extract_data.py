@@ -17,6 +17,14 @@ parser.add_argument(
     action="store"
 )
 parser.add_argument(
+    "-r",
+    "--resolution",
+    help="Resolution of line source. Default: 1000.",
+    type=int,
+    default=1000,
+    action="store"
+)
+parser.add_argument(
     "-d",
     "--base_data_filename",
     help="Base data file name. Default: 'line_data'. Data is stored as csv file with 'counter' "
@@ -43,6 +51,7 @@ plotOverLine1 = PlotOverLine(
 
 plotOverLine1.Source.Point1 = [-5.0, 0.025, 0.025]
 plotOverLine1.Source.Point2 = [5.0, 0.025, 0.025]
+plotOverLine1.Source.Resolution = args.resolution
 
 # save data
 full_data_filename = res_dir + args.base_data_filename + "_{:06d}.csv".format(args.counter)
