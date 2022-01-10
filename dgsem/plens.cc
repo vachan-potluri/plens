@@ -3098,7 +3098,8 @@ void PLENS::update_rk4()
     calc_time_step();
     if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
     pcout << "Current time: " << cur_time
-        << ", time step: " << time_step
+        << ", dt: " << time_step
+        << ", time steps: " << n_time_steps
         << ", elapsed wall time: " << clk.wall_time()
         << ", CPU time: " << clk.cpu_time() << "\n";
     if(n_time_steps%write_freq == 0){
@@ -3183,7 +3184,8 @@ void PLENS::update_rk3()
     calc_time_step();
     if(time_step > (end_time - cur_time)) time_step = end_time - cur_time;
     pcout << "Current time: " << cur_time
-        << ", time step: " << time_step
+        << ", dt: " << time_step
+        << ", time steps: " << n_time_steps
         << ", elapsed wall time: " << clk.wall_time()
         << ", CPU time: " << clk.cpu_time() << "\n";
     if(n_time_steps%write_freq == 0){
