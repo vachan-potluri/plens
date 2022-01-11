@@ -532,12 +532,13 @@ void NavierStokes::get_inv_surf_flux(
 /**
  * @brief Gives the symmetric stress tensor based on avars provided
  */
-void NavierStokes::get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st)
+void NavierStokes::get_stress_tensor(const Avars &av, dealii::Tensor<2,dim> &st)
 {
     int i=0;
     for(int row=0; row<dim; row++){
         for(int col=row; col<dim; col++){
-            st[row][col] = av[i]; // automatically sets the symmetrical part too
+            st[row][col] = av[i];
+            if(col != row) st[col][row] = av[i];
             i++;
         } // loop over cols with col >= row
     } // loop over rows
@@ -560,10 +561,15 @@ void NavierStokes::get_dif_flux(
 {
     const State &cons = cav.get_state();
     const Avars &av = cav.get_avars();
-    dealii::SymmetricTensor<2,dim> st;
+    dealii::Tensor<2,dim> st;
     get_stress_tensor(av, st);
     
-    dealii::Tensor<1,dim> mom_flux = st*dir;
+    dealii::Tensor<1,dim> mom_flux;
+    for(int i=0; i<dim; i++){
+        for(int j=0; j<dim; j++){
+            mom_flux[i] += st[i][j]*dir[j];
+        }
+    }
     f[0] = 0; // density flux
     f[4] = 0; // initialise energy flux
     double v; // temporary quantity

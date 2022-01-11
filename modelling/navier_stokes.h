@@ -273,7 +273,7 @@ class NavierStokes
         const State &ocs, const State &ncs, const dealii::Tensor<1,dim> &normal, State &f
     ) const;
     
-    static void get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st);
+    static void get_stress_tensor(const Avars &av, dealii::Tensor<2,dim> &st);
     static void get_dif_flux(const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f);
 
     void get_xK(
