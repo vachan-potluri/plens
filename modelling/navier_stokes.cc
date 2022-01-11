@@ -312,11 +312,12 @@ double NavierStokes::get_e(const State &cons)
 {
     double ske=0; // specific kinetic energy
     for(int dir=0; dir<dim; dir++){
-        ske += pow(cons[1+dir], 2);
+        ske += cons[1+dir]*cons[1+dir];
     }
-    ske *= 0.5/cons[0];
+    const double rho_inv = 1/cons[0];
+    ske *= 0.5*rho_inv;
     
-    return (cons[4]-ske)/cons[0];
+    return (cons[4]-ske)*rho_inv;
 }
 
 
@@ -337,7 +338,7 @@ double NavierStokes::get_p(const State &cons) const
 {
     double ske=0; // specific kinetic energy
     for(int dir=0; dir<dim; dir++){
-        ske += pow(cons[1+dir], 2);
+        ske += cons[1+dir]*cons[1+dir];
     }
     ske *= 0.5/cons[0];
     
@@ -369,7 +370,8 @@ double NavierStokes::get_a(const State &cons) const
 double NavierStokes::get_M(const State &cons) const
 {
     double speed_sq(0);
-    for(int d=0; d<dim; d++) speed_sq += (cons[1+d]*cons[1+d])/(cons[0]*cons[0]);
+    const double rho_inv = 1/cons[0];
+    for(int d=0; d<dim; d++) speed_sq += (cons[1+d]*cons[1+d])*(rho_inv*rho_inv);
     return sqrt(speed_sq)/get_a(cons);
 }
 
@@ -993,9 +995,10 @@ void NavierStokes::chandrashekhar_flux(
     
     dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
     double v1, v2; // temporary quantities
+    const double rho_inv1 = 1/cs1[0], rho_inv2 = 1/cs2[0];
     for(int d=0; d<dim; d++){
-        v1 = cs1[1+d]/cs1[0];
-        v2 = cs2[1+d]/cs2[0];
+        v1 = cs1[1+d]*rho_inv1;
+        v2 = cs2[1+d]*rho_inv2;
         vel_avg[d] = 0.5*(v1+v2);
         vel_sq_avg[d] = 0.5*(v1*v1 + v2*v2);
     }
