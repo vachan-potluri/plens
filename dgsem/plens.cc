@@ -1934,7 +1934,7 @@ void PLENS::calc_cell_cons_grad(
 
     // sign for surface contribution: std::pow(-1, lr_id)
     // where lr_id = 0 for 'left' face and 1 for 'right' face
-    // avoid multiple use of std::pow
+    // avoids multiple use of std::pow
     const std::array<double, 2> surface_contrib_sign = {1, -1}; // ordering: left, right
 
     // initialise cons_grad to 0
@@ -2327,9 +2327,38 @@ void PLENS::calc_cell_ho_residual(
     // -1 for stage 2 (stage id 1) and +1 for stage 3 (stage id 2)
     const double stage_sign = std::pow(-1, stage_id);
 
-    // get cell dof indices
+    // get cell cvar and avar data
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     cell->get_dof_indices(dof_ids);
+    std::vector<State> cell_states(fe.dofs_per_cell);
+    std::vector<Avars> cell_avars(fe.dofs_per_cell);
+    for(cvar var: cvar_list){
+        for(psize i=0; i<fe.dofs_per_cell; i++){
+            cell_states[i][var] = gcrk_cvars[var][dof_ids[i]];
+        }
+    }
+    for(avar var: avar_list){
+        for(psize i=0; i<fe.dofs_per_cell; i++){
+            cell_avars[i][var] = gcrk_avars[var][dof_ids[i]];
+        }
+    }
+
+    // initialise a pointer to metric terms for this cell
+    const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
+
+    // get surface flux data for this cell
+    std::array<
+        const cell_surf_term_t<double>*,
+        5
+    > cell_surf_flux;
+    for(cvar var: cvar_list){
+        cell_surf_flux[var] = &s_surf_flux[var].at(cell->index());
+    }
+
+    // sign for surface contribution: std::pow(-1, lr_id)
+    // where lr_id = 0 for 'left' face and 1 for 'right' face
+    // avoids multiple use of std::pow
+    const std::array<double, 2> surface_contrib_sign = {1, -1}; // ordering: left, right
 
     // reset values in residual to 0
     for(usi i=0; i<fe.dofs_per_cell; i++){
@@ -2339,10 +2368,8 @@ void PLENS::calc_cell_ho_residual(
     // set the residual
     // first volumetric contrib
     for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
-        State cons_this;
-        for(cvar var: cvar_list) cons_this[var] = gcrk_cvars[var][dof_ids[ldof_this]];
-        Avars av_this;
-        for(avar var: avar_list) av_this[var] = gcrk_avars[var][dof_ids[ldof_this]];
+        State cons_this = cell_states[ldof_this];
+        Avars av_this = cell_avars[ldof_this];
         TableIndices<dim> ti_this;
         for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
 
@@ -2352,18 +2379,16 @@ void PLENS::calc_cell_ho_residual(
 
         for(usi m=0; m<=fe.degree; m++){
             for(usi m_dir=0; m_dir<dim; m_dir++){
-                State cons_other;
-                Avars av_other;
                 // strangely TableIndices doesn't have a copy ctor
                 TableIndices<dim> ti_other(ti_this[0], ti_this[1], ti_this[2]);
                 ti_other[m_dir] = m;
                 usi ldof_other = cdi.tensorial_to_local(ti_other);
-
-                for(cvar var: cvar_list) cons_other[var] = gcrk_cvars[var][dof_ids[ldof_other]];
-                for(avar var: avar_list) av_other[var] = gcrk_avars[var][dof_ids[ldof_other]];
+                State cons_other = cell_states[ldof_other];
+                Avars av_other = cell_avars[ldof_other];
+                
                 dir = 0.5*(
-                    metrics.at(cell->index()).JxContra_vecs[ldof_this][m_dir] +
-                    metrics.at(cell->index()).JxContra_vecs[ldof_other][m_dir]
+                    metrics_ptr->JxContra_vecs[ldof_this][m_dir] +
+                    metrics_ptr->JxContra_vecs[ldof_other][m_dir]
                 ); // not unit vector yet
                 norm = dir.norm();
                 dir /= norm; // unit vector now
@@ -2374,8 +2399,9 @@ void PLENS::calc_cell_ho_residual(
 
                 // do an addition here, negative sign will be incorporated when scaling with
                 // jacobian
+                const double D_val_m2_norm = 2*ref_D_1d(ti_this[m_dir],m)*norm;
                 for(cvar var: cvar_list){
-                    residual[ldof_this][var] += 2*ref_D_1d(ti_this[m_dir],m)*flux[var]*norm;
+                    residual[ldof_this][var] += D_val_m2_norm*flux[var];
                 }
             } // loop over m dir
         } // loop over m
@@ -2389,7 +2415,7 @@ void PLENS::calc_cell_ho_residual(
             for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
                 usi ldof = fdi.maps[face_id][face_dof_id];
                 Tensor<1,dim> dir =
-                    metrics.at(cell->index()).JxContra_vecs[ldof][surf_dir]; // not yet unit vector
+                    metrics_ptr->JxContra_vecs[ldof][surf_dir]; // not yet unit vector
                 double norm = dir.norm();
                 dir /= norm; // unit vector
                 State flux_in, flux_surf;
@@ -2399,19 +2425,17 @@ void PLENS::calc_cell_ho_residual(
                     // thus a sign changes is required for left faces since the algorithm assumes
                     // all face normals in positive cartesian directions (that's what the
                     // contravariant vectors give)
-                    flux_surf[var] = -std::pow(-1, lr_id)* // -ve for left and +ve for right faces
-                        s_surf_flux[var].at(cell->index())[face_id][face_dof_id];
+                    flux_surf[var] = -surface_contrib_sign[lr_id]* // -ve for left and +ve for right faces
+                        (*cell_surf_flux[var])[face_id][face_dof_id];
                 }
                 // inner flux
-                State cons;
-                Avars av;
-                for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[ldof]];
-                for(avar var: avar_list) av[var] = gcrk_avars[var][dof_ids[ldof]];
+                State cons = cell_states[ldof];
+                Avars av = cell_avars[ldof];
                 CAvars cav(&cons, &av);
                 ns_ptr->flux_wrappers[stage_id](cav, dir, flux_in);
 
                 for(cvar var: cvar_list){
-                    residual[ldof][var] += -std::pow(-1,lr_id)*
+                    residual[ldof][var] += -surface_contrib_sign[lr_id]*
                         (flux_surf[var]-flux_in[var])*norm/
                         w_1d[lr_id*fe.degree];
                 }
@@ -2421,8 +2445,8 @@ void PLENS::calc_cell_ho_residual(
 
     // multiply by sign and scale by jacobian
     for(usi i=0; i<fe.dofs_per_cell; i++){
-        for(cvar var: cvar_list) residual[i][var] /= stage_sign*
-            metrics.at(cell->index()).detJ[i];
+        const double J_m_stage_sign_inv = 1/(stage_sign*metrics_ptr->detJ[i]);
+        for(cvar var: cvar_list) residual[i][var] *= J_m_stage_sign_inv;
     }
 } // calc_cell_ho_residual
 
