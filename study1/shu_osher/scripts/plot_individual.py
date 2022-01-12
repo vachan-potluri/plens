@@ -40,7 +40,7 @@ ref_data = np.genfromtxt(args.ref_data_filename, delimiter=",")
 
 fig, ax = plt.subplots(1,1)
 ax.plot(ref_data[:,0], ref_data[:,1], "b-", label="Reference\n(Shu & Osher, 1989)")
-ax.plot(sim_data["Points0"], sim_data["rho"], "ro", markersize=2, label="Simulation")
+ax.plot(sim_data["Points0"], sim_data["rho"], "r-", alpha=0.75, label="Simulation")
 ax.legend(loc="best")
 ax.grid()
 ax.set_xlabel(r"$x$")
