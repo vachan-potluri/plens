@@ -77,7 +77,7 @@ if geo_file[-4:] != ".geo":
 full_mesh_filename = dest + geo_file
 
 # https://stackoverflow.com/questions/12060863/python-subprocess-call-a-bash-alias
-command = "gmsh {} -3 -format msh4".format(full_mesh_filename)
+command = "gmsh {0} -3 -format msh4 && gmsh {0} -3 -format vtk".format(full_mesh_filename)
 subprocess.run(["/bin/bash", "-i", "-c", command])
 
 
