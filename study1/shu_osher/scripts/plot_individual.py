@@ -28,8 +28,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "plot_filename",
-    help="File name of the plot to be saved. The plot is saved in '.png' and '.pdf' formats in "
-        + "the result directory extracted from 'sim_data_filename'."
+    help=" Base file name of the plot to be saved. The plot is saved in '.png' and '.pdf' formats "
+        + "in the result directory extracted from 'sim_data_filename'."
 )
 args = parser.parse_args()
 
