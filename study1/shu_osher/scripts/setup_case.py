@@ -49,7 +49,7 @@ parser.add_argument(
     "-w",
     "--write_frequency",
     help="Write frequency. Default: 100.",
-    type=float,
+    type=int,
     default=100,
     action="store"
 )
