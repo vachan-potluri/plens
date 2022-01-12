@@ -22,10 +22,11 @@ parser.add_argument(
 args = parser.parse_args()
 
 content = """
+w = 1;
 Point(1) = {{-5, 0, 0}};
 Point(2) = {{5, 0, 0}};
-Point(3) = {{5, 0.05, 0}};
-Point(4) = {{-5, 0.05, 0}};
+Point(3) = {{5, w, 0}};
+Point(4) = {{-5, w, 0}};
 
 Line(1) = {{1,2}};
 Line(2) = {{2,3}};
@@ -40,7 +41,7 @@ Plane Surface(1) = {{1}};
 Transfinite Surface{{1}};
 Recombine Surface{{1}};
 
-out[] = Extrude {{0, 0, 0.05}}{{
+out[] = Extrude {{0, 0, w}}{{
     Surface{{1}}; Layers{{ {} }}; Recombine;
 }};
 
