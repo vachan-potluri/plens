@@ -19,7 +19,8 @@ parser.add_argument(
     "sim_data_filename",
     help="The file containing extracted simulation data for comparison with reference solution. "
         + "This file can be generated using 'extract_data.py'. Full path has to be provided here, "
-        +"result directory will be extracted from this argument and used for saving plots."
+        +"result directory will be extracted from this argument and used for saving plots. Assumed "
+        +"to be in csv format with 1st row headers."
 )
 parser.add_argument(
     "ref_data_filename",
@@ -28,15 +29,25 @@ parser.add_argument(
 )
 parser.add_argument(
     "plot_filename",
-    help=" Base file name of the plot to be saved. The plot is saved in '.png' and '.pdf' formats "
+    help="Base file name of the plot to be saved. The plot is saved in '.png' and '.pdf' formats "
         + "in the result directory extracted from 'sim_data_filename'."
+)
+parser.add_argument(
+    "-d",
+    "--ref_delimiter",
+    help="Delimiter in the 'ref_data_filename'. Default: ''.",
+    action="store",
+    default=""
 )
 args = parser.parse_args()
 
 print("Reading simulation data from {}".format(args.sim_data_filename))
 sim_data = np.genfromtxt(args.sim_data_filename, delimiter=",", names=True)
 print("Reading reference data from {}".format(args.ref_data_filename))
-ref_data = np.genfromtxt(args.ref_data_filename, delimiter=",")
+if args.ref_delimiter != "":
+    ref_data = np.genfromtxt(args.ref_data_filename, delimiter=args.ref_delimiter)
+else:
+    ref_data = np.genfromtxt(args.ref_data_filename)
 
 fig, ax = plt.subplots(1,1)
 ax.plot(ref_data[:,0], ref_data[:,1], "b-", label="Reference\n(Shu & Osher, 1989)")
@@ -57,7 +68,7 @@ for fmt in ["png", "pdf"]:
 
 x_ref = ref_data[:,0]
 rho_ref = ref_data[:,1]
-ref_func = interp1d(x_ref, rho_ref, kind="cubic")
+ref_func = interp1d(x_ref, rho_ref, kind="slinear")
 x_sim = sim_data["Points0"]
 mask = (x_sim > np.min(x_ref)) & (x_sim < np.max(x_ref))
 rho_ref_evaluated = ref_func(x_sim[mask])

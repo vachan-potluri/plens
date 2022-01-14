@@ -69,6 +69,6 @@ def format_2to0(length, start_size, n_cells):
 
 format_2to0(1e-3, 30e-6, 20)
 format_2to0(4e-3, 77e-6, 44)
+format_2to0(38e-3, 77e-6, 44)
 format_2to0(30e-3, 77e-6, 44)
-format_2to0(18e-3, 77e-6, 44)
 
