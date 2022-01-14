@@ -3,7 +3,7 @@
 import argparse
 
 parser = argparse.ArgumentParser(
-    description = "A script to generate gmsh file to generate mesh for Shu-Osher problem."
+    description = "A script to generate gmsh file to generate mesh for shock tube problem."
 )
 parser.add_argument(
     "n_cells",
@@ -34,7 +34,7 @@ left = args.extent[0]
 right = args.extent[1]
 assert left < right, "Invalid extent. First argument must be smaller than the second."
 l = right - left
-w = 0.1*l
+w = 0.5*l
 
 content = """
 left = {};
