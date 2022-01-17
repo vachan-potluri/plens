@@ -1401,7 +1401,7 @@ void PLENS::calc_metric_terms()
         *mapping_ptr,
         fe,
         QGaussLobatto<dim>(fe.degree+1),
-        update_values | update_jacobians | update_quadrature_points
+        update_values | update_jacobians | update_inverse_jacobians | update_quadrature_points
     );
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
@@ -2722,6 +2722,8 @@ void PLENS::calc_rhs()
  * @f]
  * where @f$C@f$ is a constant and @f$h@f$ is the cell size.
  *
+ * @note Now, a modified formula based on dealii's step-67 is used.
+ *
  * In this function, @f$C@f$ is taken 1 and @f$h@f$ is taken as the minimum vertex distance.
  *
  * This function also confirms whether local time stepping has to be activated and populates
@@ -2759,21 +2761,28 @@ void PLENS::calc_time_step()
 
         double this_cell_step = 1e6; // stable time step for this cell
         cell->get_dof_indices(dof_ids);
-        const double length = cell->minimum_vertex_distance();
+        const double min_vert_dist = cell->minimum_vertex_distance();
+        const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
 
-        for(psize i: dof_ids){
+        for(usi ldof=0; ldof<fe.dofs_per_cell; ldof++){
             State cons;
-            for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][i];
+            for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[ldof]];
             double a = ns_ptr->get_a(cons);
-            double max_vel = std::max({
-                fabs(cons[1]/cons[0]),
-                fabs(cons[2]/cons[0]),
-                fabs(cons[3]/cons[0])
+            Tensor<1,dim> vel({cons[1]/cons[0], cons[2]/cons[0], cons[3]/cons[0]});
+            Tensor<2,dim> JinvT = metrics_ptr->Jinv[ldof].transpose();
+            Tensor<1,dim> advection_rate;
+            for(int row=0; row<dim; row++){
+                for(int col=0; col<dim; col++){
+                    advection_rate[row] += JinvT[row][col]*vel[col];
+                }
+            }
+            double max_advection_rate = std::max({
+                advection_rate[0], advection_rate[1], advection_rate[2]
             });
-            // factoring out 1/N^2
-            double cur_step = Co/(fe.degree*fe.degree)*length/(max_vel + a +
-                fe.degree*fe.degree*gcrk_mu[i]/(length*cons[0])
-            );
+            
+            double cur_step = Co/(std::pow(fe.degree, 1.5)*(max_advection_rate + a/min_vert_dist +
+                fe.degree*fe.degree*gcrk_mu[dof_ids[ldof]]/(min_vert_dist*min_vert_dist*cons[0])
+            ));
             if(cur_step < this_cell_step) this_cell_step = cur_step;
         }
         loc_time_steps[cell->index()] = this_cell_step;

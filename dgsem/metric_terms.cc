@@ -65,6 +65,7 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
     // resize the metric term containers
     JxContra_vecs.resize(fev.n_quadrature_points); // dofs_per_cell == n_quadrature_points
     detJ.resize(fev.n_quadrature_points);
+    Jinv.resize(fev.n_quadrature_points);
     const usi degree = fev.get_fe().degree;
     for(usi dir=0; dir<dim; dir++){
         TableIndices<dim> ti(degree+1,degree+1,degree+1);
@@ -79,6 +80,7 @@ void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>
     for(usi i=0; i<fev.n_quadrature_points; i++){
         const DerivativeForm<1,dim,dim>& J_mat = fev.jacobian(i); // jacobian matrix
         detJ[i] = J_mat.determinant();
+        Jinv[i] = fev.inverse_jacobian(i);
 
         const DerivativeForm<1,dim,dim> J_mat_T = J_mat.transpose();
         // get covariant vecs
