@@ -3034,6 +3034,14 @@ void PLENS::write()
     }
     data_out.add_data_vector(alpha, "alpha");
 
+    // local time step
+    Vector<float> loc_dt(triang.n_active_cells());
+    for(auto &cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+        loc_dt[cell->active_cell_index()] = loc_time_steps[cell->index()];
+    }
+    data_out.add_data_vector(loc_dt, "loc_dt");
+
     double ss_error;
     Vector<double> cell_ss_error(triang.n_active_cells());
     if(calculate_ss_error){
