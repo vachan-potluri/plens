@@ -933,6 +933,12 @@ void PLENS::set_sol_vecs()
         cell_partitioner->ghost_indices(),
         mpi_comm
     );
+    loc_time_steps.reinit(cell_partitioner->locally_owned_range(), mpi_comm);
+    gh_loc_time_steps.reinit(
+        cell_partitioner->locally_owned_range(),
+        cell_partitioner->ghost_indices(),
+        mpi_comm
+    );
 
     pcout << "Completed\n";
 
@@ -2785,11 +2791,11 @@ void PLENS::calc_time_step()
             ));
             if(cur_step < this_cell_step) this_cell_step = cur_step;
         }
-        loc_time_steps[cell->index()] = this_cell_step;
+        loc_time_steps[cell->global_active_cell_index()] = this_cell_step;
 
         if(this_cell_step < this_proc_step) this_proc_step = this_cell_step;
     } // loop over owned cells
-    MPI_Barrier(mpi_comm);
+    loc_time_steps.compress(VectorOperation::insert);
 
     // first perform reduction (into "time_step" of 0-th process)
     MPI_Reduce(&this_proc_step, &time_step, 1, MPI_DOUBLE, MPI_MIN, 0, mpi_comm);
@@ -2805,11 +2811,25 @@ void PLENS::calc_time_step()
         for(const auto &cell: dof_handler.active_cell_iterators()){
             if(!(cell->is_locally_owned())) continue;
 
-            loc_time_steps[cell->index()] = time_step;
+            loc_time_steps[cell->global_active_cell_index()] = time_step;
         }
     }
     else{
         pcout << "Local time stepping\n";
+        // limit the time step
+        gh_loc_time_steps = loc_time_steps;
+        for(const auto &cell: dof_handler.active_cell_iterators()){
+            if(!(cell->is_locally_owned())) continue;
+
+            double cell_dt = loc_time_steps[cell->global_active_cell_index()];
+            double modified_cell_dt;
+            for(usi f=0; f<n_faces_per_cell; f++){
+                const auto neighbor = cell->neighbor(f);
+                double nei_dt = gh_loc_time_steps[neighbor->global_active_cell_index()];
+                modified_cell_dt = std::min(cell_dt, 2*nei_dt);
+            }
+            loc_time_steps[cell->global_active_cell_index()] = modified_cell_dt;
+        }
     }
 } // calc_time_step
 
@@ -2834,7 +2854,8 @@ void PLENS::multiply_time_step_to_rhs()
         cell->get_dof_indices(dof_ids);
         for(cvar var: cvar_list){
             for(psize i: dof_ids){
-                gcrk_rhs[var][i] = gcrk_rhs[var][i]*loc_time_steps[cell->index()];
+                gcrk_rhs[var][i] = gcrk_rhs[var][i]*
+                    loc_time_steps[cell->global_active_cell_index()];
             }
         }
     }
@@ -3047,7 +3068,7 @@ void PLENS::write()
     Vector<float> loc_dt(triang.n_active_cells());
     for(auto &cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
-        loc_dt[cell->active_cell_index()] = loc_time_steps[cell->index()];
+        loc_dt[cell->active_cell_index()] = loc_time_steps[cell->global_active_cell_index()];
     }
     data_out.add_data_vector(loc_dt, "loc_dt");
 

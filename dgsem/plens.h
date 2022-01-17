@@ -700,7 +700,12 @@ class PLENS
      * been asked for, or has not been activated, then all values in this map are set to
      * PLENS::time_step.
      */
-    std::map<psize, double> loc_time_steps;
+    LA::MPI::Vector loc_time_steps;
+
+    /**
+     * Ghosted version of PLENS::loc_time_steps
+     */
+    LA::MPI::Vector gh_loc_time_steps;
 
     /**
      * The function that dynamically evaluates Courant number (PLENS::Co) based on the simulation
