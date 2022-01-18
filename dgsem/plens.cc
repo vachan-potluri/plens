@@ -2813,6 +2813,7 @@ void PLENS::calc_time_step()
 
             loc_time_steps[cell->global_active_cell_index()] = time_step;
         }
+        loc_time_steps.compress(VectorOperation::insert);
     }
     else{
         pcout << "Local time stepping\n";
@@ -2824,12 +2825,15 @@ void PLENS::calc_time_step()
             double cell_dt = loc_time_steps[cell->global_active_cell_index()];
             double modified_cell_dt;
             for(usi f=0; f<n_faces_per_cell; f++){
-                const auto neighbor = cell->neighbor(f);
-                double nei_dt = gh_loc_time_steps[neighbor->global_active_cell_index()];
-                modified_cell_dt = std::min(cell_dt, 2*nei_dt);
+                if(!cell->face(f)->at_boundary()){
+                    const auto neighbor = cell->neighbor(f);
+                    double nei_dt = gh_loc_time_steps[neighbor->global_active_cell_index()];
+                    modified_cell_dt = std::min(cell_dt, 1.05*nei_dt);
+                }
             }
             loc_time_steps[cell->global_active_cell_index()] = modified_cell_dt;
         }
+        loc_time_steps.compress(VectorOperation::insert);
     }
 } // calc_time_step
 
