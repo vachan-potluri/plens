@@ -8,13 +8,13 @@
 import argparse
 import os
 import subprocess
+from ic_data import *
 
 parser = argparse.ArgumentParser(
     description = "A script to setup a case. Assumes '.geo' file is available for mesh generation "
         + "using gmsh and 'gmsh' is an executable."
 )
 parser.add_argument("dest", help="Location where setup is being done")
-test_options = ["test1-2", "noh", "test1-1"]
 parser.add_argument(
     "test",
     help="The test case being setup. Options are: {}.".format(test_options)
@@ -89,49 +89,6 @@ subprocess.run(["/bin/bash", "-i", "-c", command])
 
 
 # 2. IC file
-# diaphragm locations
-dia_locs = {
-    "test1-2": 0.5,
-    "noh": 0.5,
-    "test1-1": 0.3
-}
-# left and right states
-rho_left = {
-    "test1-2": 1.0,
-    "noh": 1.0,
-    "test1-1": 1.0
-}
-rho_right = {
-    "test1-2": 1.0,
-    "noh": 1.0,
-    "test1-1": 0.125
-}
-p_left = {
-    "test1-2": 0.4,
-    "noh": 1e-6,
-    "test1-1": 1.0
-}
-p_right = {
-    "test1-2": 0.4,
-    "noh": 1e-6,
-    "test1-1": 0.1
-}
-u_left = {
-    "test1-2": -2.0,
-    "noh": 1.0,
-    "test1-1": 0.75
-}
-u_right = {
-    "test1-2": 2.0,
-    "noh": -1.0,
-    "test1-1": 0.0
-}
-# end times
-end_times = {
-    "test1-2": 0.15,
-    "noh": 1,
-    "test1-1": 0.2
-}
 ic_content = """p
 2
 1
