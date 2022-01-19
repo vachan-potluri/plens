@@ -1,27 +1,37 @@
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
-plt.rcParams["font.size"] = 14
-plt.rcParams["figure.figsize"] = 7,6
+plt.rcParams["font.size"] = 10
+# plt.rcParams["figure.figsize"] = 7,6
 
-p_inf = 47.55513
-rho_inf = 0.001206
-u_inf = 2667.0
+p_inf = 36.8023
+rho_inf = 0.000794
+u_inf = 2432.0
 L = 10.17e-2
 
-result_dir = "./group7/trial4/result/"
-counter = 9080
+parser = argparse.ArgumentParser(
+    description = "A script to plot extracted data for HCEF case."
+)
+parser.add_argument("res_dir", help="Result directory (absolute or relative).")
+parser.add_argument("counter", help="Output counter.", type=int)
+args = parser.parse_args()
+
+res_dir = args.res_dir
+if res_dir[-1] != "/":
+    res_dir += "/"
+counter = args.counter
 cylinder_data = np.genfromtxt(
-    "{}/cylinder_data_{}.csv".format(result_dir, counter), delimiter=",", names=True
+    "{}cylinder_data_{}.csv".format(res_dir, counter), delimiter=",", names=True
 )
 flare_data = np.genfromtxt(
-    "{}/flare_data_{}.csv".format(result_dir, counter), delimiter=",", names=True
+    "{}flare_data_{}.csv".format(res_dir, counter), delimiter=",", names=True
 )
-harvey_cp = np.genfromtxt("harvey_run8_cp.csv", delimiter=",")
-gnoffo_cp = np.genfromtxt("gnoffo_run8_cp.csv", delimiter=",")
-harvey_St = np.genfromtxt("harvey_run8_St.csv", delimiter=",")
-gnoffo_St = np.genfromtxt("gnoffo_run8_St.csv", delimiter=",")
+harvey_cp = np.genfromtxt("../data/cp_harvey.csv", delimiter=",")
+candler_cp = np.genfromtxt("../data/cp_candler.csv", delimiter=",")
+harvey_St = np.genfromtxt("../data/St_harvey.csv", delimiter=",")
+candler_St = np.genfromtxt("../data/St_candler.csv", delimiter=",")
 
 x_cylinder = cylinder_data["Points0"]/L
 x_flare = flare_data["Points0"]/L
@@ -42,35 +52,40 @@ txy_flare = flare_data["txy"]
 txy = np.concatenate([txy_cylinder, txy_flare])
 txy_mask = np.isfinite(txy)
 
-"""
 fig, ax = plt.subplots(1,1)
 ax.plot(harvey_cp[:,0], harvey_cp[:,1], "bo", markersize=4, label="Harvey et al (2001)\nexperiment")
-ax.plot(gnoffo_cp[:,0], gnoffo_cp[:,1], "gx", markersize=4, label="Gnoffo (2001)\nsimulation")
+ax.plot(candler_cp[:,0], candler_cp[:,1], "gx", markersize=4, label="Candler (2001)\nsimulation")
 ax.plot(x[cp_mask], cp[cp_mask], "r-", label="PLENS")
 ax.set_xlabel(r"$x/L$")
 ax.set_ylabel(r"$\dfrac{p-p_\infty}{\frac{1}{2}\rho_\infty u_\infty^2}$", rotation=0, labelpad=20)
 ax.grid()
 ax.legend(loc="best")
 fig.tight_layout()
-fig.savefig("{}/cp_comparison_{}.png".format(result_dir, counter), format="png")
-fig.savefig("{}/cp_comparison_{}.pdf".format(result_dir, counter), format="pdf")
+for fmt in ["png", "pdf"]:
+    full_figname = "{}cp_comparison_{}.{}".format(res_dir, counter, fmt)
+    fig.savefig(full_figname, format=fmt)
+    print("Written file {}".format(full_figname))
 plt.show()
 
 del fig, ax
 fig, ax = plt.subplots(1,1)
 ax.plot(harvey_St[:,0], harvey_St[:,1], "bo", markersize=4, label="Harvey et al (2001)\nexperiment")
-ax.plot(gnoffo_St[:,0], gnoffo_St[:,1], "gx", markersize=4, label="Gnoffo (2001)\nsimulation")
+ax.plot(candler_St[:,0], candler_St[:,1], "gx", markersize=4, label="Candler (2001)\nsimulation")
 ax.plot(x[St_mask], St[St_mask], "r-", label="PLENS")
 ax.set_xlabel(r"$x/L$")
 ax.set_ylabel(r"$\dfrac{2q^{\prime\prime}_w}{\rho_\infty u_\infty^3}$", rotation=0, labelpad=20)
 ax.grid()
 ax.legend(loc="best")
 fig.tight_layout()
-fig.savefig("{}/St_comparison_{}.png".format(result_dir, counter), format="png")
-fig.savefig("{}/St_comparison_{}.pdf".format(result_dir, counter), format="pdf")
+for fmt in ["png", "pdf"]:
+    full_figname = "{}St_comparison_{}.{}".format(res_dir, counter, fmt)
+    fig.savefig(full_figname, format=fmt)
+    print("Written file {}".format(full_figname))
 plt.show()
-"""
 
+
+
+"""
 #del fig, ax
 fig, ax = plt.subplots(1,1)
 ax.plot(x[txy_mask], txy[txy_mask], "r-", label="PLENS")
@@ -89,6 +104,7 @@ ax.grid(which="minor", linestyle='-', linewidth='0.25')
 ax.set_xlabel(r"$x/L$")
 ax.set_ylabel(r"$\tau_{xy}$ [Pa]")
 fig.tight_layout()
-fig.savefig("{}/txy_comparison_{}.png".format(result_dir, counter), format="png")
-fig.savefig("{}/txy_comparison_{}.pdf".format(result_dir, counter), format="pdf")
+fig.savefig("{}txy_comparison_{}.png".format(res_dir, counter), format="png")
+fig.savefig("{}txy_comparison_{}.pdf".format(res_dir, counter), format="pdf")
 plt.show()
+"""
