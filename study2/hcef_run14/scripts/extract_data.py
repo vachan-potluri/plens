@@ -4,7 +4,7 @@ import argparse
 from paraview.simple import *
 
 parser = argparse.ArgumentParser(
-    description = "A script to extract line data from pvtu files for Shu-Osher case. This script "
+    description = "A script to extract line data from pvtu files for HCEF case. This script "
         + "has to be executed using 'pvpython'."
 )
 parser.add_argument("res_dir", help="Result directory (absolute or relative).")
@@ -48,7 +48,7 @@ plotOverLine1.Source.Point2 = [0.1017, 0.0325, 1e-8]
 plotOverLine1.Source.Resolution = args.resolution
 
 # save data
-temp_filename = '{}cylinder_data_{}.csv'.format(result_dir, counter)
+temp_filename = '{}cylinder_data_{}.csv'.format(res_dir, counter)
 SaveData(
     temp_filename,
     proxy=plotOverLine1,
@@ -68,7 +68,7 @@ plotOverLine2.Source.Point2 = [0.22, 0.100801, 1e-8]
 plotOverLine1.Source.Resolution = args.resolution
 
 # save data
-temp_filename = '{}flare_data_{}.csv'.format(result_dir, counter)
+temp_filename = '{}flare_data_{}.csv'.format(res_dir, counter)
 SaveData(
     temp_filename,
     proxy=plotOverLine2,
