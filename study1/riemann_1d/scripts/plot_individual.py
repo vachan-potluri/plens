@@ -53,14 +53,14 @@ ex_data = shockTubeSoln(
 
 fig, ax = plt.subplots(1,1)
 x_vec = sim_data["Points0"]
-sim_vec = sim_data["T"]
-ex_vec = ex_data[:,1]
+sim_vec = sim_data["rho"]
+ex_vec = ex_data[:,4]
 ax.plot(x_vec, ex_vec, "b-", label="Exact")
 ax.plot(x_vec, sim_vec, "r-", alpha=0.75, label="Simulation")
 ax.legend(loc="best")
 ax.grid()
 ax.set_xlabel(r"$x$")
-ax.set_ylabel(r"$T$")
+ax.set_ylabel(r"$\rho$")
 fig.tight_layout()
 
 plt.show()
@@ -80,16 +80,15 @@ print("Written file {}".format(full_data_filename))
 
 
 
-# error_vec = sim_data["rho"] - ex_data[:,4]
 error_vec = sim_vec - ex_vec
 errors_content = """Error norm order, Error
 1, {}
 2, {}
 inf, {}
 """.format(
-    np.linalg.norm(error_vec, ord=1)/np.linalg.norm(ex_data[:,4], ord=1),
-    np.linalg.norm(error_vec, ord=2)/np.linalg.norm(ex_data[:,4], ord=2),
-    np.linalg.norm(error_vec, ord=np.inf)/np.linalg.norm(ex_data[:,4], ord=np.inf)
+    np.linalg.norm(error_vec, ord=1)/np.linalg.norm(ex_vec, ord=1),
+    np.linalg.norm(error_vec, ord=2)/np.linalg.norm(ex_vec, ord=2),
+    np.linalg.norm(error_vec, ord=np.inf)/np.linalg.norm(ex_vec, ord=np.inf)
 )
 print("Errors:")
 print(errors_content)

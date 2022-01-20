@@ -144,8 +144,13 @@ subsection IC
 end
 
 subsection BCs
-	subsection bid1
-        set type = free
+    # for test1-4
+    subsection bid1
+        # set type = free # for other tests
+	    set type = uniform inflow
+        set prescribed velocity = 19.5975 0 0
+        set prescribed T = 0.267684
+        set prescribed p = 460.894
 	end
 	subsection bid2
 	    set type = free

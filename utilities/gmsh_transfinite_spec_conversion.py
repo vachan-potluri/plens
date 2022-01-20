@@ -67,8 +67,5 @@ def format_2to0(length, start_size, n_cells):
     print("Real positive roots for geometric ratio:\n\t{}".format(real_pos_roots))
     print("Scale ratios (geom_ratio^(n_cells-1)):\n\t{}".format(real_pos_roots**(n_cells-1)))
 
-format_2to0(1e-3, 30e-6, 20)
-format_2to0(4e-3, 77e-6, 44)
-format_2to0(38e-3, 77e-6, 44)
-format_2to0(30e-3, 77e-6, 44)
+format_2to0(30e-3, 0.5e-6, 50)
 
