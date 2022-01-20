@@ -52,12 +52,15 @@ ex_data = shockTubeSoln(
 )
 
 fig, ax = plt.subplots(1,1)
-ax.plot(sim_data["Points0"], ex_data[:,4], "b-", label="Exact")
-ax.plot(sim_data["Points0"], sim_data["rho"], "r-", alpha=0.75, label="Simulation")
+x_vec = sim_data["Points0"]
+sim_vec = sim_data["T"]
+ex_vec = ex_data[:,1]
+ax.plot(x_vec, ex_vec, "b-", label="Exact")
+ax.plot(x_vec, sim_vec, "r-", alpha=0.75, label="Simulation")
 ax.legend(loc="best")
 ax.grid()
 ax.set_xlabel(r"$x$")
-ax.set_ylabel(r"$\rho$")
+ax.set_ylabel(r"$T$")
 fig.tight_layout()
 
 plt.show()
@@ -70,14 +73,15 @@ for fmt in ["png", "pdf"]:
 full_data_filename = res_dir + args.plot_filename + "_data.csv"
 np.savetxt(
     full_data_filename,
-    np.transpose(np.vstack((sim_data["Points0"], ex_data[:,4], sim_data["rho"]))),
+    np.column_stack((x_vec, ex_vec, sim_vec)),
     delimiter=","
 )
 print("Written file {}".format(full_data_filename))
 
 
 
-error_vec = sim_data["rho"] - ex_data[:,4]
+# error_vec = sim_data["rho"] - ex_data[:,4]
+error_vec = sim_vec - ex_vec
 errors_content = """Error norm order, Error
 1, {}
 2, {}

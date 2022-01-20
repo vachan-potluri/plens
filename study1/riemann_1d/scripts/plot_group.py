@@ -12,8 +12,14 @@ data_files = [
     "../test1-1/run/dof200_12_12_N3_hllc/result/comparison_data.csv",
     "../test1-1/run/dof200_12_12_N5_hllc/result/comparison_data.csv"
 ]
+# data_files = [
+#     "../test1-2/run/dof200_12_12_N1_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof200_12_12_N2_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof200_12_12_N3_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof200_12_12_N5_rusanov/result/comparison_data.csv"
+# ]
 titles = ["N=1", "N=2", "N=3", "N=5"]
-figtitle = "test1-1"
+figtitle = r"test1-1 $\rho$ vs $x$"
 
 n_plots = len(data_files)
 fig, axes = plt.subplots(2,2)
