@@ -57,8 +57,9 @@ plotOnIntersectionCurves1.SliceType.Radius = 0.020000001
 # save data
 temp_filename = '{}surface_data_{}.csv'.format(res_dir, counter)
 SaveData(
-    'surface_data.csv',
+    temp_filename,
     proxy=plotOnIntersectionCurves1,
     PointDataArrays=['Subdomain', 'T', 'alpha', 'arc_length', 'k', 'loc_dt', 'mu', 'p', 'qx', 'qy', 'qz', 'rho', 'rhoE', 'rhou', 'rhov', 'rhow', 'steady_state_error', 'txx', 'txy', 'txz', 'tyy', 'tyz', 'tzz', 'u', 'v', 'w'],
     UseScientificNotation=1
 )
+print("Written file {}".format(temp_filename))
