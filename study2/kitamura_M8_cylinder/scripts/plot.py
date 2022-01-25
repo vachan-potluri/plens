@@ -25,11 +25,20 @@ r = 0.02
 p_inf = 370.7
 p0 = p_inf*84.9 # this ratio is given in Kitamura (2010)
 p = surface_data["p"]
-theta = np.arcsin(surface_data["Points1"]/r)*180/np.pi
+theta = np.arcsin(surface_data["Points1"]/r)
+q = surface_data["qx"]*np.cos(theta) - surface_data["qy"]*np.sin(theta)
 
 fig, ax = plt.subplots(1,1)
-ax.plot(theta, p/p0, "r-")
+ax.plot(theta*180/np.pi, p/p0, "r-")
 ax.grid()
 ax.set_xlabel(r"$\theta$ [degrees]")
 ax.set_ylabel(r"$\frac{p}{p_0}$")
+plt.show()
+del fig, ax
+
+fig, ax = plt.subplots(1,1)
+ax.plot(theta*180/np.pi, q, "r-")
+ax.grid()
+ax.set_xlabel(r"$\theta$ [degrees]")
+ax.set_ylabel(r"$Heat flux [W/sqm]")
 plt.show()
