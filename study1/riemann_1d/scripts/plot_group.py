@@ -36,14 +36,32 @@ plt.rcParams["mathtext.fontset"] = "dejavuserif"
 #     "../test1-5/run/dof200_12_12_N3_rusanov/result/comparison_data.csv",
 #     "../test1-5/run/dof200_12_12_N5_rusanov/result/comparison_data.csv"
 # ]
+# data_files = [
+#     "../test1-1/run/dof400_12_12_N1_hllc/result/comparison_data.csv",
+#     "../test1-1/run/dof400_12_12_N2_hllc/result/comparison_data.csv",
+#     "../test1-1/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
+#     "../test1-1/run/dof400_12_12_N5_hllc/result1/comparison_data.csv"
+# ]
+# data_files = [
+#     "../test1-2/run/dof400_12_12_N1_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof400_12_12_N2_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof400_12_12_N3_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof400_12_12_N5_rusanov/result/comparison_data.csv"
+# ]
+# data_files = [
+#     "../test1-3/run/dof400_12_12_N1_hllc/result/comparison_data.csv",
+#     "../test1-3/run/dof400_12_12_N2_hllc/result/comparison_data.csv",
+#     "../test1-3/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
+#     "../test1-3/run/dof400_12_12_N5_hllc/result/comparison_data.csv"
+# ]
 data_files = [
-    "../test1-1/run/dof400_12_12_N1_hllc/result/comparison_data.csv",
-    "../test1-1/run/dof400_12_12_N2_hllc/result/comparison_data.csv",
-    "../test1-1/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
-    "../test1-1/run/dof400_12_12_N5_hllc/result/comparison_data.csv"
+    "../test1-4/run/dof400_12_12_N1_hllc/result/comparison_data.csv",
+    "../test1-4/run/dof400_12_12_N2_hllc/result/comparison_data.csv",
+    "../test1-4/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
+    "../test1-4/run/dof400_12_12_N5_hllc/result/comparison_data.csv"
 ]
 titles = ["N=1", "N=2", "N=3", "N=5"]
-figtitle = r"test1-1 $\rho$ vs $x$"
+figtitle = r"test1-4 $\rho$ vs $x$"
 
 n_plots = len(data_files)
 fig, axes = plt.subplots(2,2)
