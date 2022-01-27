@@ -4,6 +4,7 @@ import argparse
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 14
 plt.rcParams["mathtext.fontset"] = "dejavuserif"

@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 10
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
@@ -54,14 +55,20 @@ plt.rcParams["mathtext.fontset"] = "dejavuserif"
 #     "../test1-3/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
 #     "../test1-3/run/dof400_12_12_N5_hllc/result/comparison_data.csv"
 # ]
+# data_files = [
+#     "../test1-4/run/dof400_12_12_N1_hllc/result/comparison_data.csv",
+#     "../test1-4/run/dof400_12_12_N2_hllc/result/comparison_data.csv",
+#     "../test1-4/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
+#     "../test1-4/run/dof400_12_12_N5_hllc/result/comparison_data.csv"
+# ]
 data_files = [
-    "../test1-4/run/dof400_12_12_N1_hllc/result/comparison_data.csv",
-    "../test1-4/run/dof400_12_12_N2_hllc/result/comparison_data.csv",
-    "../test1-4/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
-    "../test1-4/run/dof400_12_12_N5_hllc/result/comparison_data.csv"
+    "../test1-5/run/dof400_12_12_N1_rusanov/result/comparison_data.csv",
+    "../test1-5/run/dof400_12_12_N2_rusanov/result/comparison_data.csv",
+    "../test1-5/run/dof400_12_12_N3_rusanov/result/comparison_data.csv",
+    "../test1-5/run/dof400_12_12_N5_rusanov/result/comparison_data.csv"
 ]
-titles = ["N=1", "N=2", "N=3", "N=5"]
-figtitle = r"test1-4 $\rho$ vs $x$"
+titles = [r"$N=1$", r"$N=2$", r"$N=3$", r"$N=5$"]
+figtitle = r"test1-5 $\rho$ vs $x$"
 
 n_plots = len(data_files)
 fig, axes = plt.subplots(2,2)
