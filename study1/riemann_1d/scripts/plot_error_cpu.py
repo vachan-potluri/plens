@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.ticker import LogLocator, AutoMinorLocator
+from matplotlib.ticker import ScalarFormatter, NullFormatter, MultipleLocator, LogLocator
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 12
@@ -197,7 +197,7 @@ for N_id in range(len(N_values)):
             marker=N_markers[N_id],
             markerfacecolor=N_markercolors[N_id],
             markeredgecolor=N_markercolors[N_id],
-            label=r"N={}".format(N_values[N_id])
+            label=r"$N={}$".format(N_values[N_id])
         )
     )
 for case_id in range(len(case_names)):
@@ -218,12 +218,21 @@ for dof_id in range(len(dof_values)):
         )
     )
 
-ax.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1,0.5))
+ax.legend(handles=legend_elements, loc="upper right", bbox_to_anchor=(1,1))
+ax.set_xlabel("Scaled normalised L2 error")
+ax.set_ylabel("CPU time per time step [sec]")
 ax.set_xscale("log")
 ax.set_yscale("log")
-ax.set_xlabel("Scaled L2 error")
-ax.set_ylabel("CPU time per time step [sec]")
-ax.grid()
+ax.xaxis.set_major_locator(MultipleLocator(0.2))
+ax.yaxis.set_major_locator(MultipleLocator(5))
+ax.xaxis.set_major_formatter(ScalarFormatter())
+ax.yaxis.set_major_formatter(ScalarFormatter())
+ax.xaxis.set_minor_locator(MultipleLocator(0.05))
+ax.yaxis.set_minor_locator(MultipleLocator(1))
+ax.xaxis.set_minor_formatter(NullFormatter())
+ax.yaxis.set_minor_formatter(NullFormatter())
+ax.grid(which="major", lw=0.5)
+ax.grid(which="minor", lw=0.25)
 fig.tight_layout()
 def on_resize(event):
     fig.tight_layout()
