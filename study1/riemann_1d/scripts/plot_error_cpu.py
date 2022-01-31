@@ -232,7 +232,7 @@ ax.yaxis.set_minor_locator(MultipleLocator(1))
 ax.xaxis.set_minor_formatter(NullFormatter())
 ax.yaxis.set_minor_formatter(NullFormatter())
 ax.grid(which="major", lw=0.5)
-ax.grid(which="minor", lw=0.25)
+ax.grid(which="minor", lw=0.2)
 fig.tight_layout()
 def on_resize(event):
     fig.tight_layout()
