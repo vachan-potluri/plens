@@ -9,7 +9,7 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 12
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
-dof_values = [200, 400]
+dof_values = [200, 400, 800]
 
 case_names = [
     "Test 1, HLLC",
@@ -39,6 +39,14 @@ l1_errors = np.array([
         [0.09814, 0.06594, 0.06426, 0.05333],
         [2.811e-2, 2.553e-2, 2.225e-2, 2.518e-2],
         [8.44e-2, 5.228e-2, 5e-2, 4.725e-2]
+    ],
+
+    [
+        [0.006389, 0.003354, 0.002320, 0.002938],
+        [0.08653, 0.05713, 0.04243, 0.03282],
+        [0.05782, 0.03525, 0.03201, 0.0268],
+        [0.01855, 0.01631, 0.01431, 0.02158],
+        [0.04708, 0.02727, 0.02986, 0.02837]
     ]
 ])
 l2_errors = np.array([
@@ -56,6 +64,14 @@ l2_errors = np.array([
         [0.2829, 0.2386, 0.2255, 0.2],
         [9.196e-2, 9.255e-2, 8.845e-2, 7.404e-2],
         [25.91e-2, 19.94e-2, 19.78e-2, 17.16e-2]
+    ],
+
+    [
+        [0.02209, 0.01538, 0.01230, 0.01171],
+        [0.144, 0.122, 0.09129, 0.07026],
+        [0.2121, 0.1764, 0.1564, 0.145],
+        [0.07473, 0.06874, 0.06161, 0.05598],
+        [0.1938, 0.1473, 0.1406, 0.1248]
     ]
 ])
 linf_errors = np.array([
@@ -73,6 +89,14 @@ linf_errors = np.array([
         [0.6691, 0.6981, 0.6812, 0.624],
         [59.86e-2, 57.19e-2, 70.57e-2, 54.07e-2],
         [60.7e-2, 58.39e-2, 74.1e-2, 61.47e-2]
+    ],
+
+    [
+        [0.1527, 0.1355, 0.1323, 0.1372],
+        [0.3933, 0.4061, 0.3486, 0.3471],
+        [0.7129, 0.7087, 0.6362, 0.6441],
+        [0.6103, 0.7768, 0.5621, 0.5374],
+        [0.6749, 0.6584, 0.5899, 0.535]
     ]
 ])
 all_errors = [l1_errors, l2_errors, linf_errors]
@@ -94,16 +118,28 @@ cpu_times = np.array([
         [21.14, 21.67, 17.92, 25.51],
         [19.72, 18.01, 18.26, 25.47],
         [19.44, 23.17, 19.35, 26.31]
+    ],
+
+    [
+        [42.35, 34.33, 35.3, 50.83],
+        [39.11, 33.4, 34.79, 51.92],
+        [46.12, 40.56, 44.13, 56.61],
+        [49.07, 35.59, 35.97, 52.5],
+        [43.85, 46.72, 36.15, 51.21]
     ]
 ])
 
 
 
 # Error vs N
-"""
+# """
 case_markers = ["o", "s", "^", "d", "x"]
 case_colors = ["b", "r", "g", "m", "k"]
-dof_linestyles = ["-", "--"]
+dof_linestyles = [
+    (0, ()), # solid
+    (0, (5,1)), # dense dash
+    (0, (1,1)) # dot, (0, (5,2,1,2)) # dash dot
+]
 for error_type, errors in zip(all_errors_types, all_errors):
     fig, ax = plt.subplots(1,1)
     for dof_id in range(len(dof_values)):
@@ -114,7 +150,8 @@ for error_type, errors in zip(all_errors_types, all_errors):
                 np.array(errors[dof_id,case_id])/errors[dof_id,case_id,0],
                 marker=case_markers[case_id],
                 c=case_colors[case_id],
-                ls=dof_linestyles[dof_id]
+                ls=dof_linestyles[dof_id],
+                alpha=0.75
             )
     # loop for legend
     legend_elements = []
@@ -135,7 +172,8 @@ for error_type, errors in zip(all_errors_types, all_errors):
                 [0], [0],
                 c="gray",
                 ls=dof_linestyles[dof_id],
-                label="{} dofs".format(dof_values[dof_id])
+                label="{} dofs".format(dof_values[dof_id]),
+                alpha=0.75
             )
         )
     ax.grid()
@@ -149,7 +187,7 @@ for error_type, errors in zip(all_errors_types, all_errors):
     cid = fig.canvas.mpl_connect('resize_event', on_resize)
     plt.show()
     del fig, ax
-"""
+# """
 
 
 
@@ -164,7 +202,7 @@ case_connector_linestyles = [
     (0, (5,2,1,2)), # dash dot
     (0, (1,1)) # dot
 ]
-dof_linecolors = ["orange", "brown"]
+dof_linecolors = ["orange", "brown", "black"]
 
 # first draw the connectors
 fig, ax = plt.subplots(1,1)

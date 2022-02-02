@@ -61,11 +61,41 @@ plt.rcParams["mathtext.fontset"] = "dejavuserif"
 #     "../test1-4/run/dof400_12_12_N3_hllc/result/comparison_data.csv",
 #     "../test1-4/run/dof400_12_12_N5_hllc/result/comparison_data.csv"
 # ]
+# data_files = [
+#     "../test1-5/run/dof400_12_12_N1_rusanov/result/comparison_data.csv",
+#     "../test1-5/run/dof400_12_12_N2_rusanov/result/comparison_data.csv",
+#     "../test1-5/run/dof400_12_12_N3_rusanov/result/comparison_data.csv",
+#     "../test1-5/run/dof400_12_12_N5_rusanov/result/comparison_data.csv"
+# ]
+# data_files = [
+#     "../test1-1/run/dof800_12_12_N1_hllc/result/comparison_data.csv",
+#     "../test1-1/run/dof800_12_12_N2_hllc/result/comparison_data.csv",
+#     "../test1-1/run/dof800_12_12_N3_hllc/result/comparison_data.csv",
+#     "../test1-1/run/dof800_12_12_N5_hllc/result1/comparison_data.csv"
+# ]
+# data_files = [
+#     "../test1-2/run/dof800_12_12_N1_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof800_12_12_N2_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof800_12_12_N3_rusanov/result/comparison_data.csv",
+#     "../test1-2/run/dof800_12_12_N5_rusanov/result/comparison_data.csv"
+# ]
+# data_files = [
+#     "../test1-3/run/dof800_12_12_N1_hllc/result/comparison_data.csv",
+#     "../test1-3/run/dof800_12_12_N2_hllc/result/comparison_data.csv",
+#     "../test1-3/run/dof800_12_12_N3_hllc/result/comparison_data.csv",
+#     "../test1-3/run/dof800_12_12_N5_hllc/result/comparison_data.csv"
+# ]
+# data_files = [
+#     "../test1-4/run/dof800_12_12_N1_hllc/result/comparison_data.csv",
+#     "../test1-4/run/dof800_12_12_N2_hllc/result/comparison_data.csv",
+#     "../test1-4/run/dof800_12_12_N3_hllc/result/comparison_data.csv",
+#     "../test1-4/run/dof800_12_12_N5_hllc/result/comparison_data.csv"
+# ]
 data_files = [
-    "../test1-5/run/dof400_12_12_N1_rusanov/result/comparison_data.csv",
-    "../test1-5/run/dof400_12_12_N2_rusanov/result/comparison_data.csv",
-    "../test1-5/run/dof400_12_12_N3_rusanov/result/comparison_data.csv",
-    "../test1-5/run/dof400_12_12_N5_rusanov/result/comparison_data.csv"
+    "../test1-5/run/dof800_12_12_N1_rusanov/result/comparison_data.csv",
+    "../test1-5/run/dof800_12_12_N2_rusanov/result/comparison_data.csv",
+    "../test1-5/run/dof800_12_12_N3_rusanov/result/comparison_data.csv",
+    "../test1-5/run/dof800_12_12_N5_rusanov/result1/comparison_data.csv"
 ]
 titles = [r"$N=1$", r"$N=2$", r"$N=3$", r"$N=5$"]
 figtitle = r"test1-5 $\rho$ vs $x$"
