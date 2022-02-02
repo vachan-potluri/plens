@@ -1,0 +1,153 @@
+% !TeX spellcheck = en_GB
+\documentclass[a4paper,11pt,oneside]{article}
+
+\usepackage[vmargin=0.8in,outer=0.65in,inner=0.8in]{geometry}
+
+\usepackage{newtxtext} % for roman style text and math
+\usepackage{newtxmath}
+
+\usepackage{etoolbox} % for defining and using boolean vars
+\usepackage{setspace} % for changing line spacing. Using \linespread is not recommended
+\usepackage{xspace} % for space after text macros
+\usepackage{enumitem} % for changing settings of enumerate and itemize lists
+\usepackage{caption,subcaption} % for changing caption settings
+\usepackage{graphicx} % to include figures
+\usepackage{float} % for modifications to figure position
+\usepackage{standalone} % for stanalone tikz pictures
+\usepackage{tikz}
+\usetikzlibrary{arrows,calc,shapes,positioning,trees,matrix}
+\usepackage{amsmath} % for math support
+\usepackage{mathtools} % for math support
+%\usepackage{upgreek}
+\usepackage{empheq} % for emphasis (boxing etc) around multiple equations
+\usepackage{gensymb} % for degree
+\usepackage{bm} % for bold math symbols
+\usepackage{cancel}
+\usepackage{chemformula} % for chemicals
+\usepackage{siunitx} % for units
+\usepackage{booktabs} % for well spaced tables
+%\usepackage{fancyhdr} % for header and footer
+\usepackage{epstopdf} % for inserting .eps files as images
+\usepackage[
+backend=biber,
+style=nature,% important, use this style only
+citestyle=numeric-comp,
+maxbibnames=50,
+sorting=none]%important to specify this
+{biblatex}
+\usepackage{hyperref}
+\hypersetup
+{
+	colorlinks=true,
+	linkcolor=black,
+	filecolor=black,      
+	urlcolor=black,
+	citecolor=black,
+	pdftitle={APS-2 report},
+}
+
+\usepackage[compress,capitalize]{cleveref} % to be loaded after hyperref
+% ``capitalize'' to use capital starting letter in reference
+% ``compress'' to prevent sorting multiple references and use compressed referencing
+\crefname{subsection}{Subsection}{Subsections} % to refer subsections, label them using \label[subsection]{name}
+% Assuming that cleveref is loaded using capitalize option
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.5em}
+
+\setlist[enumerate]{
+	% vertical spacing
+	topsep=0em,
+	itemsep=0em,
+	% horizontal spacing
+	labelindent=0em,
+	leftmargin=\parindent,
+	labelsep=*,
+}
+\setlist[itemize]{
+	% vertical spacing
+	topsep=0em,
+	itemsep=0em,
+	% horizontal spacing
+	labelindent=0em,
+	leftmargin=\parindent,
+	labelsep=*,
+}
+\captionsetup[figure]{labelfont={sf,bf},textfont={sf}}
+\captionsetup[table]{labelfont={sf,bf},textfont={sf}}
+
+%\addbibresource{references-articles.bib}
+%\addbibresource{references-books.bib}
+%\addbibresource{references-others.bib}
+
+\newcommand{\newword}[1]{\textbf{#1}} % style of text for introducing a new important word or definition
+\newcommand{\citear}[1]{\citeauthor{#1} \cite{#1}} % cite author and ref
+\newcommand{\ndnum}[1]{\textrm{#1}} % for non-dimensional numbers
+\newcommand{\vect}[1]{\ensuremath{\boldsymbol{\mathbf{#1}}}} % for 1st order tensors
+\newcommand{\tens}[1]{\underline{\vect{#1}}} % for 2nd order tensors
+\newcommand{\pder}[2]{\frac{\partial #1}{\partial #2}} % for partial derivative
+\newcommand{\der}[2]{\frac{\sdd #1}{\sdd #2}}
+\newcommand{\pprime}{{\prime\hspace{-1pt}\prime}} % double prime (only for superscripts of normal size math text. will not work for any other levels like superscript of super/subscript)
+\newcommand{\ppprime}{{\prime\hspace{-1pt}\prime\hspace{-1pt}\prime}} % triple prime (only for superscripts of normal size math text. will not work for any other levels like superscript of super/subscript)
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\comment}[1]{
+	{\sffamily\textcolor{red}{#1}}%
+} % for comments
+\newcommand{\outline}[1]{
+	\iftoggle{editing}{
+		\noindent\rule{\linewidth}{2pt}
+		\textcolor{blue!60!black}{{#1}}
+		\vspace*{-1em}\noindent\rule{\linewidth}{2pt}}{
+		%
+	}
+} % for writing outlines to sections. shows up only when 'editing' is true
+\newcommand{\pens}{\textsf{pens2D}\xspace} % shortcut for pens2D
+\newcommand{\plens}{\textsf{PLENS}\xspace} % shortcut for PLENS
+\newcommand{\sdi}{\ensuremath{\,\text{d}}} % small 'd' for integration
+\newcommand{\sdd}{\ensuremath{\text{d}}} % small 'd' for differentiation
+\newcommand{\abs}[1]{\ensuremath{\left\lvert#1\right\rvert}} % absolute values
+\DeclareMathOperator{\diag}{diag} % for diagonal matrices
+\DeclareMathOperator{\sgn}{sgn} % sign
+\newcommand{\res}{\ensuremath{\mathcal{L}}} % for residual (describing RK method)
+\newcommand{\bigoh}{\ensuremath{O}} % 'order of' symbol
+\newcommand{\dealii}{\textsf{deal.II}\xspace}
+\newcommand{\pv}{\textsf{ParaView}\xspace}
+\newcommand{\apsi}{APS-1\xspace}
+\newcommand{\defeq}{\ensuremath{:=}} % defined to be equal to
+\newcommand{\refelemone}{\ensuremath{\mathcal{R}}} % reference element in 1d
+\newcommand{\elemmapone}{\ensuremath{\mathcal{M}}} % element mapping in 1d
+\newcommand{\linalgmat}[1]{\vect{#1}} % for linear algebra matrix
+\newcommand{\linalgvect}[1]{\ensuremath{\underline{#1}}} % linear algebra vector
+\newcommand{\textdg}{\text{DG}} % text DG
+\newcommand{\textfv}{\text{FV}} % text FV
+\newcommand{\avg}[1]{\ensuremath{\left\{ \mskip-5mu \left\{ #1 \right\} \mskip-5mu \right\}}} % for average
+\newcommand{\textch}{\text{Ch}} % abbrevation for Chandrashekhar
+\newcommand{\textln}{\text{ln}} % for superscript ln in chandrashekhar flux
+\newcommand{\textho}{\text{HO}} % abbrevation for high order
+\newcommand{\textlo}{\text{LO}} % abbrevation for low order
+\newcommand{\trouble}{\ensuremath{\mathbb{E}}} % for energy in higher modes
+\newcommand{\threshold}{\ensuremath{\mathbb{T}}} % threshold for Persson's detector
+\newcommand{\textmax}{\text{max}} % max in text
+\newcommand{\textmin}{\text{min}} % min in text
+\newcommand{\textsh}{\text{sh}} % subscript for shock impingement location in Degrez case
+
+% Define a boolean 'editing' to have 'outline' display
+\providetoggle{editing}
+
+\addbibresource{references.bib}
+
+\begin{document}
+\onehalfspacing % line spacing set to 1.5
+\raggedbottom % allow for text height to vary between pages
+
+\tableofcontents
+
+\section{Introduction}
+\label{sec:intro}
+
+The use of discontinuous Galerkin method for nonlinear hyperbolic problems was propelled to fore-front by the work of \citear{cockburnShu1998a}. These class of methods combine the desirable qualities of numerical fluxes studied in quite detail for the FVM along with the advantages of FEM in obtaining high order solutions on complex geometries \cite{cockburnShu2001}.
+
+In this work, the performance of DG methods for Euler equations is studied. More specifically, the effect of polynomial order on certain test cases is analysed within a given numerical methodology. This study was also done in previous works. However, most of these studies have kept the number of cells fixed and varied the polynomial order. In this work, the number of cells and the polynomial order are varied such that the resulting degrees of freedom remain constant. This would let a comparison of the solution accuracy obtainable for a fixed problem size with different polynomial orders.
+
+\printbibliography
+\end{document}
