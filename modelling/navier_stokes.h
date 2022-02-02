@@ -8,7 +8,7 @@
 #include <deal.II/base/symmetric_tensor.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
-#include <deal.II/physics/transformations.h>
+// #include <deal.II/physics/transformations.h>
 
 #include <cmath> // for pow
 #include <array>
@@ -273,7 +273,7 @@ class NavierStokes
         const State &ocs, const State &ncs, const dealii::Tensor<1,dim> &normal, State &f
     ) const;
     
-    static void get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st);
+    static void get_stress_tensor(const Avars &av, dealii::Tensor<2,dim> &st);
     static void get_dif_flux(const CAvars &cav, const dealii::Tensor<1,dim> &dir, State &f);
 
     void get_xK(

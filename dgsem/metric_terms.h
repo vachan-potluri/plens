@@ -84,6 +84,12 @@ class MetricTerms
     std::vector<double> detJ;
 
     /**
+     * Inverse of Jacobian matrices, required for time step calculation. See WJ-17-Jan-2022. This
+     * use is motivated from step-67.
+     */
+    std::vector<DerivativeForm<1,dim,dim>> Jinv;
+
+    /**
      * Subcell normal vectors. There is one important distinction between subcell normals and cell
      * normals as used in PLENS. The subcell normals are uni-directional: their doesn't change
      * depending on the subcell. This implies that the normal will point _into_ the subcell on the

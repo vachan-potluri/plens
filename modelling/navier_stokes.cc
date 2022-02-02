@@ -312,11 +312,12 @@ double NavierStokes::get_e(const State &cons)
 {
     double ske=0; // specific kinetic energy
     for(int dir=0; dir<dim; dir++){
-        ske += pow(cons[1+dir], 2);
+        ske += cons[1+dir]*cons[1+dir];
     }
-    ske *= 0.5/cons[0];
+    const double rho_inv = 1/cons[0];
+    ske *= 0.5*rho_inv;
     
-    return (cons[4]-ske)/cons[0];
+    return (cons[4]-ske)*rho_inv;
 }
 
 
@@ -337,7 +338,7 @@ double NavierStokes::get_p(const State &cons) const
 {
     double ske=0; // specific kinetic energy
     for(int dir=0; dir<dim; dir++){
-        ske += pow(cons[1+dir], 2);
+        ske += cons[1+dir]*cons[1+dir];
     }
     ske *= 0.5/cons[0];
     
@@ -369,7 +370,8 @@ double NavierStokes::get_a(const State &cons) const
 double NavierStokes::get_M(const State &cons) const
 {
     double speed_sq(0);
-    for(int d=0; d<dim; d++) speed_sq += (cons[1+d]*cons[1+d])/(cons[0]*cons[0]);
+    const double rho_inv = 1/cons[0];
+    for(int d=0; d<dim; d++) speed_sq += (cons[1+d]*cons[1+d])*(rho_inv*rho_inv);
     return sqrt(speed_sq)/get_a(cons);
 }
 
@@ -448,39 +450,54 @@ void NavierStokes::get_inv_surf_flux(
     dealii::Tensor<1,dim> m = dealii::cross_product_3d(xdir, normal); // m = x cross n
     double M = m.norm(); // magnitude of m
     
-    dealii::FullMatrix<double> R(dim); // rotation matrix
+    dealii::Tensor<2,dim> R; // rotation matrix, all entries are zero
     if(M > 1e-3){
         // this tolerance corrsponds to an angle of ~0.06 degrees between x and n
         m /= M; // now m is a unit vector <-- rotation axis
-        double theta = acos(
-            dealii::scalar_product(xdir, normal)
-        ); // <-- rotation angle (both xdir and normal are unit vectors)
-        
-        R.copy_from(
-            dealii::Physics::Transformations::Rotations::rotation_matrix_3d(
-                dealii::Point<dim>(m), theta
-            )// returns tensor
-        ); // copies from second order tensor
+        const double c = dealii::scalar_product(xdir, normal), // cos of angle
+            t = 1-c, // 1 - (cos of angle)
+            s = std::sqrt(1-c*c); // sin of angle, will be +ve since angles lies in [0,pi]
+        R = dealii::Tensor<2,dim>(
+            {{t * m[0] * m[0] + c,
+            t * m[0] * m[1] - s * m[2],
+            t * m[0] * m[2] + s * m[1]},
+            {t * m[0] * m[1] + s * m[2],
+            t * m[1] * m[1] + c,
+            t * m[1] * m[2] - s * m[0]},
+            {t * m[0] * m[2] - s * m[1],
+            t * m[1] * m[2] + s * m[0],
+            t * m[2] * m[2] + c}}
+        ); // taken from <deal.II/physics/transformations.h>
     }
     else{
         // either x is parallel or anti-parallel to n
-        R = dealii::IdentityMatrix(dim);
         if(normal[0] < 0){
             // n is anti-parallel to x
-            R *= -1;
+            for(int d=0; d<dim; d++) R[d][d] = -1;
+        }
+        else{
+            // n is parallel to x
+            for(int d=0; d<dim; d++) R[d][d] = 1;
         }
     }
+    dealii::Tensor<2,dim> RT(dealii::transpose(R)); // transpose of R
     
     // Step 2: get rotated states
-    dealii::Vector<double> osmom(dim), nsmom(dim), // owner and neighbor specific momentum
-        osmom_r(dim), nsmom_r(dim); // rotated specific momentum
+    dealii::Tensor<1,dim> osmom, nsmom, // owner and neighbor specific momentum
+        osmom_r, nsmom_r; // rotated specific momentum (initialised to 0)
     for(int d=0; d<dim; d++){
         osmom[d] = ocs[1+d];
         nsmom[d] = ncs[1+d];
     }
     // get the momentum components wrt rotated coordinate system
-    R.Tvmult(osmom_r, osmom); // osmom_r = R^{-1} * osmom, R^T = R^{-1}
-    R.Tvmult(nsmom_r, nsmom);
+    // osmom_r = R^{-1} * osmom, R^T = R^{-1}
+    for(int row=0; row<dim; row++){
+        for(int col=0; col<dim; col++){
+            const double RT_val = RT[row][col];
+            osmom_r[row] += RT_val*osmom[col];
+            nsmom_r[row] += RT_val*nsmom[col];
+        }
+    }
     
     State ocs_r, ncs_r; // rotated states
     ocs_r[0] = ocs[0];
@@ -497,10 +514,15 @@ void NavierStokes::get_inv_surf_flux(
     inv_surf_xflux(ocs_r, ncs_r, f_r);
     
     // Step 4: rotate back coordinate system and obtain the appropriate momentum components
-    dealii::Vector<double> mom_flux_r(3), mom_flux(3); // momentum fluxes
+    dealii::Tensor<1,dim> mom_flux_r, mom_flux; // momentum fluxes (initialised to 0)
     for(int d=0; d<dim; d++) mom_flux_r[d] = f_r[1+d];
     // get momentum flux components w.r.t original coordinate system
-    R.vmult(mom_flux, mom_flux_r); // mom_flux = R * mom_flux_r
+    // mom_flux = R * mom_flux_r
+    for(int row=0; row<dim; row++){
+        for(int col=0; col<dim; col++){
+            mom_flux[row] += R[row][col]*mom_flux_r[col];
+        }
+    }
     
     f[0] = f_r[0];
     for(int d=0; d<dim; d++) f[1+d] = mom_flux[d];
@@ -512,12 +534,13 @@ void NavierStokes::get_inv_surf_flux(
 /**
  * @brief Gives the symmetric stress tensor based on avars provided
  */
-void NavierStokes::get_stress_tensor(const Avars &av, dealii::SymmetricTensor<2,dim> &st)
+void NavierStokes::get_stress_tensor(const Avars &av, dealii::Tensor<2,dim> &st)
 {
     int i=0;
     for(int row=0; row<dim; row++){
         for(int col=row; col<dim; col++){
-            st[row][col] = av[i]; // automatically sets the symmetrical part too
+            st[row][col] = av[i];
+            if(col != row) st[col][row] = av[i];
             i++;
         } // loop over cols with col >= row
     } // loop over rows
@@ -540,10 +563,15 @@ void NavierStokes::get_dif_flux(
 {
     const State &cons = cav.get_state();
     const Avars &av = cav.get_avars();
-    dealii::SymmetricTensor<2,dim> st;
+    dealii::Tensor<2,dim> st;
     get_stress_tensor(av, st);
     
-    dealii::Tensor<1,dim> mom_flux = st*dir;
+    dealii::Tensor<1,dim> mom_flux;
+    for(int i=0; i<dim; i++){
+        for(int j=0; j<dim; j++){
+            mom_flux[i] += st[i][j]*dir[j];
+        }
+    }
     f[0] = 0; // density flux
     f[4] = 0; // initialise energy flux
     double v; // temporary quantity
@@ -967,9 +995,10 @@ void NavierStokes::chandrashekhar_flux(
     
     dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
     double v1, v2; // temporary quantities
+    const double rho_inv1 = 1/cs1[0], rho_inv2 = 1/cs2[0];
     for(int d=0; d<dim; d++){
-        v1 = cs1[1+d]/cs1[0];
-        v2 = cs2[1+d]/cs2[0];
+        v1 = cs1[1+d]*rho_inv1;
+        v2 = cs2[1+d]*rho_inv2;
         vel_avg[d] = 0.5*(v1+v2);
         vel_sq_avg[d] = 0.5*(v1*v1 + v2*v2);
     }
