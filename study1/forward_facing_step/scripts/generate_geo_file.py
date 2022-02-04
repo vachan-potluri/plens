@@ -13,11 +13,12 @@ def get_prog_ratio(length, start_size, n_cells):
     p = Polynomial(coeffs)
     r = p.roots()
     real_roots = r.real[abs(r.imag)<1e-4]
-    valid_roots = real_roots[real_roots>1]
+    valid_roots = real_roots[real_roots>1+1e-4]
     assert len(valid_roots) == 1, "Found more than one valid roots"
     return valid_roots[0]
 
 import argparse
+import math
 parser = argparse.ArgumentParser(
     description = "A script to generate gmsh file to generate mesh for forward facing step case."
 )
@@ -128,16 +129,16 @@ Curve Loop(10) = {{10,  27, -14,  -25}};
 
 // Transfinite specs
 // x-dir
-Transfinite Curve{{1,3,7,11}} = 0.4/h + 1;
-Transfinite Curve{{2,8,12,  9,13}} = 0.2/h + 1;
-Transfinite Curve{{6,10,14}} = 2.2/h + 1;
+Transfinite Curve{{1,3,7,11}} = Ceil(0.4/h) + 1;
+Transfinite Curve{{2,8,12,  9,13}} = Ceil(0.2/h) + 1;
+Transfinite Curve{{6,10,14}} = Ceil(2.2/h) + 1;
 
 // y-dir
-Transfinite Curve{{15,18,  16,19,24,26}} = 0.2/h + 1;
-Transfinite Curve{{17,20,23,25,27}} = 0.6/h + 1;
+Transfinite Curve{{15,18,  16,19,24,26}} = Ceil(0.2/h) + 1;
+Transfinite Curve{{17,20,23,25,27}} = Ceil(0.6/h) + 1;
 
 // originating at corner
-Transfinite Curve{{-4,5,-21,22}} = 0.2/h + 1 Using Progression {};
+Transfinite Curve{{-4,5,-21,22}} = Ceil(0.2/h) + 1 Using Progression {};
 
 
 
@@ -191,7 +192,7 @@ For i In {{1:10}}
 EndFor
 """.format(
     args.h,
-    get_prog_ratio(0.2, args.h/args.cr_ratio, int(0.2/args.h)),
+    get_prog_ratio(0.2, args.h/args.cr_ratio, int(math.ceil(0.2/args.h))),
     args.nz
 )
 
