@@ -130,6 +130,8 @@ sorting=none]%important to specify this
 \newcommand{\textmax}{\text{max}} % max in text
 \newcommand{\textmin}{\text{min}} % min in text
 \newcommand{\textsh}{\text{sh}} % subscript for shock impingement location in Degrez case
+\newcommand{\eulerphy}[1]{\ensuremath{\mathcal{#1}}} % euler equation variables in physical space
+\newcommand{\eulerref}[1]{\ensuremath{#1}} % euler equation variables in physical space
 
 % Define a boolean 'editing' to have 'outline' display
 \providetoggle{editing}
@@ -150,6 +152,89 @@ Recently, lot of efforts are being made to bring in high order numerical methods
 For a given mesh, the DG solution takes significantly higher computing time depending on the polynomial degree used. But it also gives better accuracy and resolution provided a `good' limiter is used. Instead of comparing the solutions on a given mesh, it is more useful to compare the accuracy level obtained for a given computational cost [Wang et al 2013]. In such a comparison, higher order methods perform well on cases dominated by smooth regions [refs]. However, the same comparison gives inconclusive results for flows dominated by strong discontinuities [refs].
 
 In this work, we compare the accuracy and computational cost for 4 different polynomial interpolation values. In doing this, we keep the degrees of freedom constant which results in a constant memory load on the CPU. We aim to study and conclude what type of cases have advantageous high order solutions. We also aim to answer to what extent will increasing polynomial order significantly effect the accuracy of the solution, and when does the computational cost offset any benefit in this regard.
+
+
+
+\section{Governing equations}
+\label{sec:gov-eq}
+
+This work simulates the 3d Euler equations given by
+\begin{equation}
+	\pder{\vect{\eulerphy{U}}}{t} + \sum_{i=1}^{3} \pder{\vect{\eulerphy{F}}_i}{x_i} = \vect{0},
+	\label{eq:3d_euler}
+\end{equation}
+where $\vect{\eulerphy{U}} \defeq \left[ \rho\ \rho u_1\ \rho u_2\ \rho u_3\ \rho E \right]^T$ is the state vector, and the flux vectors are given by
+\begin{equation}
+	\vect{\eulerphy{F}}_i \defeq
+	\begin{bmatrix}
+		\rho u_i\\
+		\rho u_1 u_i\\
+		\rho u_2 u_i\\
+		\rho u_3 u_i\\
+		\rho E u_i
+	\end{bmatrix}
+	+ p
+	\begin{bmatrix}
+		0\\
+		\delta_{1i}\\
+		\delta_{2i}\\
+		\delta_{3i}\\
+		u_i
+	\end{bmatrix}
+	\label{eq:3d_euler_flux_tensor}
+\end{equation}
+Here, $\rho$ and $p$ represent density and pressure respectively, $u_i$ are the velocity components, and $\delta_{ij}$ is the Kronecker delta. The total energy $E \defeq e + \frac{q^2}{2}$ where $q$ is the specific kinetic energy and $e \defeq (\gamma-1)p/\rho$ for a calorically perfect gas with specific heat ratio $\gamma$.
+
+
+
+\section{Numerical method}
+\label{sec:num_method}
+
+The DGSEM algorithm along with the subcell limiter of \citear{hennemannRamirezHindenlang2021} is used. The algorithm is described here in brief for the 1d system of equations
+\begin{equation}
+	\pder{\vect{\eulerphy{U}}}{t} + \pder{\vect{\eulerphy{F}}_1}{x_1} = \vect{0}, \quad (t \geq 0,\ x_1 \in \Omega)
+	\label{eq:1d_euler}
+\end{equation}
+The domain $\Omega$ is partitioned into non-overlapping 1d elements, $\{\Omega_e \mid e=0,\ 1,\ \ldots,\ N_e-1\}$. Consider the restriction of \cref{eq:1d_euler} to a representative element $\Omega_e \defeq [a,b]$ which is being mapped to the reference element $\refelemone \defeq [0,1]$ using the mapping $\xi_1 \xmapsto{\elemmapone} x_1$ given by
+\begin{equation}
+	\elemmapone^{-1}(x_1) = \xi_1 = \frac{x_1-a}{b-a} \quad (x_1 \in \Omega_e \defeq [a,b]).
+	\label{eq:1d_element_mapping}
+\end{equation}
+\cref{eq:1d_euler} can then be written in the reference space as
+\begin{equation}
+	J \pder{\vect{\eulerref{U}}}{t} + \pder{\vect{\eulerref{F}}_1}{\xi_1} = 0 \quad (t \geq 0,\ \xi_1 \in \refelemone \defeq [0,1]),
+	\label{eq:1d_euler_refelem}
+\end{equation}
+where $\vect{\eulerref{U}}(\xi_1,t) \defeq \vect{\eulerphy{U}}(x_1,t)$, $\vect{\eulerref{F}}_1(\vect{\eulerref{U}}) \defeq \vect{\eulerphy{F}}_1(\vect{\eulerref{U}})$, $J \defeq \sdd \elemmapone/\sdd \xi_1 = (b-a)$ is the Jacobian of the mapping.
+
+Now, $\eulerref{\vect{U}}$ and $\eulerref{\vect{F}}_1$ are approximated as
+\begin{align}
+	\eulerref{\vect{U}}(\xi_1,t) &\approx \sum_{i=0}^{N} \eulerref{\vect{U}}_i(t) \ell_i(\xi_1),
+	\label{eq:1d_euler_state_interpolation}\\
+	\eulerref{\vect{F}}_1(\xi_1,t) &\approx \sum_{i=0}^{N} \eulerref{\vect{F}}_1(U_i(t)) \ell_i(\xi_1),
+	\label{eq:1d_euler_flux_interpolation}
+\end{align}
+where $\{\ell_i(\xi_1)\}_{i=0}^{N}$ are the basis Lagrange functions constructed using Gauss-Lobatto points. The error in approximations \cref{eq:1d_euler_state_interpolation,eq:1d_euler_flux_interpolation} is minimised by Galerkin formulation of \cref{eq:1d_euler_refelem} in a strong sense using $\{\ell_j\}_{j=0}^{N}$
+\begin{equation}
+	\int_{0}^{1} \ell_j J \pder{\eulerref{\vect{U}}}{t} \sdi \xi_1 + \int_{0}^{1} \ell_j \pder{\eulerref{\vect{F}}_1}{\xi_1} \sdi \xi_1 + \left[\ell_j (\eulerref{\vect{F}}_1^*-\eulerref{\vect{F}}_1) \right]_{\xi_1=0}^{\xi_1=1} = \vect{0},
+	\label{eq:1d_euler_strong_form}
+\end{equation}
+where $\eulerref{\vect{F}}_1^*$ is the numerical flux function introduced at the element ends to ensure conservation. \cref{eq:1d_euler_strong_form} can be written component-wise conveniently in a matrix form as follows
+\begin{equation}
+	\linalgmat{M} J \linalgvect{\dot{U}_k} + \linalgmat{S} {\linalgvect{F_{1k}}} + \linalgmat{B} \left( {\linalgvect{F_{1k}}^*} - {\linalgvect{F_{1k}}} \right) = 0, \quad k=1,2,\ldots,5
+	\label{eq:1d_euler_matrix_form1}
+\end{equation}
+where the elements of matrices \linalgmat{M} and \linalgmat{S} are given by
+\begin{align*}
+	M_{ij} &\defeq \int_{0}^{1} \ell_i \ell_j \sdi \xi_1,\\
+	S_{ij} &\defeq \int_{0}^{1} \ell_i \der{\ell_j}{\xi_1} \sdi \xi_1,
+\end{align*}
+$\linalgmat{B} \defeq \diag (-1,\ 0,\ \ldots,\ 0,\ 1)$, and the vectors given by
+\begin{align*}
+	\linalgvect{\dot{U}_k} &= ({\dot{U}_{k_0}},\ {\dot{U}_{k_1}},\ \ldots,\ {\dot{U}_{k_N}})^T,\\
+	\linalgvect{F_{1k}} &= (F_{1k_0},\ F_{1k_1},\ \ldots,\ F_{1k_N})^T,\\
+	\linalgvect{F_{1k}}^* &= \left(F_{1k}^*(U_L, U_0),\ 0,\ \ldots,\ 0,\ F_{1k}^*(U_N, U_R) \right)^T.
+\end{align*}
 
 \printbibliography
 \end{document}
