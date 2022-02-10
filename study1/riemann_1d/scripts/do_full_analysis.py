@@ -7,6 +7,7 @@
 # - Compute 3d velocity error
 # - Plot line data, save the plotted data for group plotting
 # - Compute the errors wrt exact solution
+# - Additional: note the wall time per time step
 
 # All this data is saved in `full_analysis.log`
 
@@ -18,6 +19,7 @@ import numpy as np
 import os
 import re
 import subprocess
+from ic_data import dia_locs as test_dia_locs
 from ic_data import end_times as test_end_times
 from ic_data import test_options
 
@@ -42,7 +44,7 @@ def parse_value_in_string(s, substr, size=10):
     # eg: given s = "xyz b: 35 , c: ab", calling this with "b" as `substr` returns "35"
     # the length of the value following colon is given by the `size` parameter
     lookstr = substr
-    loc = s.find(lookstr)
+    loc = s.rfind(lookstr) # find latest occurance
     assert loc != -1, "Not found substring"
     temp = s[loc+len(lookstr) : loc+len(lookstr)+size]
     temp_splits = re.split(r"[,\n]+", temp)
@@ -50,13 +52,14 @@ def parse_value_in_string(s, substr, size=10):
 
 
 
-logfile = open("full_analysis.log", "w")
+logfile = open("full_analysis.log", "a")
 print("Doing full analysis in current directory")
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
 
 
 
+"""
 ## 1. Get the end time and counter from `output.times`
 # check if the times file exists
 print("\nStep 1")
@@ -130,7 +133,7 @@ logfile.write("3d absolute velocity error, {}\n".format(abs_vel_error_3d))
 
 ## 5. Plotting line data and comparing with exact solution
 # first getting diaphragm location from IC (0th output)
-print("\nStep 4")
+print("\nStep 5")
 jump_vars = {
     "test1-1": "p",
     "test1-2": "u",
@@ -139,28 +142,39 @@ jump_vars = {
     "test1-5": "p"
 }
 # get line data for ic
+# set the extent around expected diaphragm location
 print("Getting line data for IC to detect diaphragm position (outsourced)")
-subprocess.run(
-    ["pvpython", script_dir + "extract_data.py", ".", "0", "-r", "6400"]
-)
+subprocess.run([
+    "pvpython",
+    script_dir + "extract_data.py",
+    ".",
+    "0",
+    "-r",
+    "6400",
+    "-e",
+    str(test_dia_locs[args.test] - 0.035), # 0.03 is the highest grid spacing (204 dof with N=5)
+    str(test_dia_locs[args.test] + 0.035),
+])
 ic_data = np.genfromtxt("line_data_000000.csv", delimiter=",", names=True)
 x = ic_data["Points0"]
 ic_vec = ic_data[jump_vars[args.test]]
 jump_tol = 1e-4
-jump_indices = []
+jump_locs = []
 i=0
 for i in range(len(ic_vec)-1):
     if abs(ic_vec[i+1]-ic_vec[i]) > abs(ic_vec[i])*jump_tol:
-        jump_indices.append(i)
+        jump_locs.append(0.5*(x[i]+x[i+1]))
 print("Found jumps in variable {} at locations:".format(jump_vars[args.test]))
-print(x[jump_indices])
+print(jump_locs)
 plt.plot(x, ic_vec, "bo", markersize=1)
 plt.xlabel(r"$x$")
 plt.ylabel(jump_vars[args.test])
 plt.title("IC")
 plt.grid()
-plt.show()
-dia_loc = x[jump_indices][0]
+plt.show(block=False)
+plt.pause(1)
+plt.close()
+dia_loc = jump_locs[0]
 print("Using diaphragm location {}".format(dia_loc))
 runlog = subprocess.run(
     [
@@ -180,6 +194,23 @@ linf_error = float(parse_value_in_string(runlog, "inf, "))
 logfile.write(
     "l1 error, {}\nl2 error, {}\nlinf error, {}\n".format(l1_error, l2_error, linf_error)
 )
+"""
+
+
+
+## 6. Wall time per time step
+# check if the log file exists
+print("\nStep 6")
+check_file_existance("plens.log")
+# get the last 30 lines (will contain only the last time step)
+runlog = subprocess.run(
+    ["tail", "-n", "60", "plens.log"],
+    stdout=subprocess.PIPE
+).stdout.decode("utf-8")
+n_timesteps = int(parse_value_in_string(runlog, "time steps: "))
+wall_time = float(parse_value_in_string(runlog, "wall time: "))
+print("Found # time steps {} and wall time {}".format(n_timesteps, wall_time))
+logfile.write("wall time per time step, {}\n".format(wall_time/n_timesteps))
 
 
 

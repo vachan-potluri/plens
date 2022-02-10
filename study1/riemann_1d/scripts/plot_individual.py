@@ -88,7 +88,9 @@ ax.set_xlabel(r"$x$")
 ax.set_ylabel(comparison_labels[args.test])
 fig.tight_layout()
 
-plt.show()
+plt.show(block=False)
+plt.pause(1)
+plt.close()
 
 res_dir = os.path.dirname(args.sim_data_filename) + "/"
 for fmt in ["png", "pdf"]:
