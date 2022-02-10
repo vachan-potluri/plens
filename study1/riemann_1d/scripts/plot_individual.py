@@ -59,7 +59,7 @@ comparison_labels = {
 }
 exact_soln_cols = {
     "x": 0,
-    "Points0": 0
+    "Points0": 0,
     "T": 1,
     "p": 2,
     "u": 3,
@@ -79,7 +79,7 @@ ex_data = shockTubeSoln(
 fig, ax = plt.subplots(1,1)
 x_vec = sim_data["Points0"]
 sim_vec = sim_data[comparison_vars[args.test]]
-ex_vec = ex_data[exact_soln_cols[comparison_vars[args.test]]]
+ex_vec = ex_data[:,exact_soln_cols[comparison_vars[args.test]]]
 ax.plot(x_vec, ex_vec, "b-", label="Exact")
 ax.plot(x_vec, sim_vec, "r-", alpha=0.75, label="Simulation")
 ax.legend(loc="best")

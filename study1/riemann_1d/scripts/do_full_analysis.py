@@ -13,6 +13,7 @@
 
 
 import argparse
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import re
@@ -96,16 +97,21 @@ n_timesteps = int(parse_value_in_string(runlog, "time steps: "))
 cpu_time = float(parse_value_in_string(runlog, "CPU time: "))
 print("Found # time steps {} and CPU time {}".format(n_timesteps, cpu_time))
 logfile.write("time steps, {}\ncpu time, {}\n".format(n_timesteps, cpu_time))
-logfile.write("cpu time per time step, {}".format(cpu_time/n_timesteps))
+logfile.write("cpu time per time step, {}\n".format(cpu_time/n_timesteps))
 
 
 
 ## 3. Extract line data using `extract_data.py`
 print("\nStep 3")
 print("Extracting data (outsourced)")
-subprocess.run(
-    ["pvpython", script_dir + "extract_data.py", ".", str(end_ctr), "-r", "6400"]
-)
+subprocess.run([
+    "pvpython",
+    script_dir + "extract_data.py",
+    ".",
+    str(end_ctr),
+    "-r",
+    "6400"
+])
 
 
 
@@ -124,6 +130,7 @@ logfile.write("3d absolute velocity error, {}\n".format(abs_vel_error_3d))
 
 ## 5. Plotting line data and comparing with exact solution
 # first getting diaphragm location from IC (0th output)
+print("\nStep 4")
 jump_vars = {
     "test1-1": "p",
     "test1-2": "u",
@@ -147,13 +154,19 @@ for i in range(len(ic_vec)-1):
         jump_indices.append(i)
 print("Found jumps in variable {} at locations:".format(jump_vars[args.test]))
 print(x[jump_indices])
+plt.plot(x, ic_vec, "bo", markersize=1)
+plt.xlabel(r"$x$")
+plt.ylabel(jump_vars[args.test])
+plt.title("IC")
+plt.grid()
+plt.show()
 dia_loc = x[jump_indices][0]
 print("Using diaphragm location {}".format(dia_loc))
 runlog = subprocess.run(
     [
         "python3",
         script_dir + "plot_individual.py",
-        "line_data_{:06d}.csv".format(end_ctr),
+        "./line_data_{:06d}.csv".format(end_ctr), # "./" is required to detect dir for saving fig
         args.test,
         str(dia_loc),
         "comparison"
@@ -161,6 +174,12 @@ runlog = subprocess.run(
     stdout=subprocess.PIPE
 ).stdout.decode("utf-8")
 print(runlog)
+l1_error = float(parse_value_in_string(runlog, "1, "))
+l2_error = float(parse_value_in_string(runlog, "2, "))
+linf_error = float(parse_value_in_string(runlog, "inf, "))
+logfile.write(
+    "l1 error, {}\nl2 error, {}\nlinf error, {}\n".format(l1_error, l2_error, linf_error)
+)
 
 
 
