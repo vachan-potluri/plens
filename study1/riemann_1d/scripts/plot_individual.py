@@ -42,6 +42,30 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# variables to compare and column numbers in the data returned by shockTubeSoln
+comparison_vars = {
+    "test1-1": "rho",
+    "test1-2": "T",
+    "test1-3": "rho",
+    "test1-4": "rho",
+    "test1-5": "rho"
+}
+comparison_labels = {
+    "test1-1": r"$\rho$",
+    "test1-2": r"$T$",
+    "test1-3": r"$\rho$",
+    "test1-4": r"$\rho$",
+    "test1-5": r"$\rho$",
+}
+exact_soln_cols = {
+    "x": 0,
+    "Points0": 0
+    "T": 1,
+    "p": 2,
+    "u": 3,
+    "rho": 4
+}
+
 print("Reading simulation data from {}".format(args.sim_data_filename))
 sim_data = np.genfromtxt(args.sim_data_filename, delimiter=",", names=True)
 ex_data = shockTubeSoln(
@@ -54,14 +78,14 @@ ex_data = shockTubeSoln(
 
 fig, ax = plt.subplots(1,1)
 x_vec = sim_data["Points0"]
-sim_vec = sim_data["rho"]
-ex_vec = ex_data[:,4]
+sim_vec = sim_data[comparison_vars[args.test]]
+ex_vec = ex_data[exact_soln_cols[comparison_vars[args.test]]]
 ax.plot(x_vec, ex_vec, "b-", label="Exact")
 ax.plot(x_vec, sim_vec, "r-", alpha=0.75, label="Simulation")
 ax.legend(loc="best")
 ax.grid()
 ax.set_xlabel(r"$x$")
-ax.set_ylabel(r"$\rho$")
+ax.set_ylabel(comparison_labels[args.test])
 fig.tight_layout()
 
 plt.show()

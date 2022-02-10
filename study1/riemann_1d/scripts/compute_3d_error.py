@@ -35,4 +35,8 @@ calculator1.Function = 'sqrt(v*v+w*w)'
 integrateVariables1 = IntegrateVariables(registrationName='IntegrateVariables1', Input=calculator1)
 iv_pdata = paraview.servermanager.Fetch(integrateVariables1).GetPointData()
 
-print(iv_pdata.GetArray("transverse_vel").GetValue(0))
+print(
+    "Absolute transverse velocity error: {}".format(
+        iv_pdata.GetArray("transverse_vel").GetValue(0)
+    )
+)
