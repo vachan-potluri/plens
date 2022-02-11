@@ -19,6 +19,7 @@
 \usepackage{amsmath} % for math support
 \usepackage{mathtools} % for math support
 %\usepackage{upgreek}
+\usepackage{accents}
 \usepackage{empheq} % for emphasis (boxing etc) around multiple equations
 \usepackage{gensymb} % for degree
 \usepackage{bm} % for bold math symbols
@@ -116,7 +117,7 @@ sorting=none]%important to specify this
 \newcommand{\defeq}{\ensuremath{:=}} % defined to be equal to
 \newcommand{\refelemone}{\ensuremath{\mathcal{R}}} % reference element in 1d
 \newcommand{\elemmapone}{\ensuremath{\mathcal{M}}} % element mapping in 1d
-\newcommand{\linalgmat}[1]{\vect{#1}} % for linear algebra matrix
+\newcommand{\linalgmat}[1]{\ensuremath{\undertilde{#1}}} % for linear algebra matrix
 \newcommand{\linalgvect}[1]{\ensuremath{\underline{#1}}} % linear algebra vector
 \newcommand{\textdg}{\text{DG}} % text DG
 \newcommand{\textfv}{\text{FV}} % text FV
@@ -190,51 +191,78 @@ Here, $\rho$ and $p$ represent density and pressure respectively, $u_i$ are the 
 \section{Numerical method}
 \label{sec:num_method}
 
-The DGSEM algorithm along with the subcell limiter of \citear{hennemannRamirezHindenlang2021} is used. The algorithm is described here in brief for the 1d system of equations
+The split form DGSEM algorithm along with the subcell limiter of \citear{hennemannRamirezHindenlang2021} is used. The algorithm is described here in brief for the 1d system of equations
 \begin{equation}
 	\pder{\vect{\eulerphy{U}}}{t} + \pder{\vect{\eulerphy{F}}_1}{x_1} = \vect{0}, \quad (t \geq 0,\ x_1 \in \Omega)
 	\label{eq:1d_euler}
 \end{equation}
-The domain $\Omega$ is partitioned into non-overlapping 1d elements, $\{\Omega_e \mid e=0,\ 1,\ \ldots,\ N_e-1\}$. Consider the restriction of \cref{eq:1d_euler} to a representative element $\Omega_e \defeq [a,b]$ which is being mapped to the reference element $\refelemone \defeq [0,1]$ using the mapping $\xi_1 \xmapsto{\elemmapone} x_1$ given by
+For simplicity, the subscript `1' is dropped in this section. The domain $\Omega$ is partitioned into non-overlapping 1d elements, $\{\Omega_e \mid e=0,\ 1,\ \ldots,\ N_e-1\}$. Consider the restriction of \cref{eq:1d_euler} to a representative element $\Omega_e \defeq [a,b]$ which is being mapped to the reference element $\refelemone \defeq [0,1]$ using the mapping $\xi \xmapsto{\elemmapone} x$ given by
 \begin{equation}
-	\elemmapone^{-1}(x_1) = \xi_1 = \frac{x_1-a}{b-a} \quad (x_1 \in \Omega_e \defeq [a,b]).
+	\elemmapone^{-1}(x) = \xi = \frac{x-a}{b-a} \quad (x \in \Omega_e \defeq [a,b]).
 	\label{eq:1d_element_mapping}
 \end{equation}
 \cref{eq:1d_euler} can then be written in the reference space as
 \begin{equation}
-	J \pder{\vect{\eulerref{U}}}{t} + \pder{\vect{\eulerref{F}}_1}{\xi_1} = 0 \quad (t \geq 0,\ \xi_1 \in \refelemone \defeq [0,1]),
+	J \pder{\vect{\eulerref{U}}}{t} + \pder{\vect{\eulerref{F}}}{\xi} = 0 \quad (t \geq 0,\ \xi \in \refelemone \defeq [0,1]),
 	\label{eq:1d_euler_refelem}
 \end{equation}
-where $\vect{\eulerref{U}}(\xi_1,t) \defeq \vect{\eulerphy{U}}(x_1,t)$, $\vect{\eulerref{F}}_1(\vect{\eulerref{U}}) \defeq \vect{\eulerphy{F}}_1(\vect{\eulerref{U}})$, $J \defeq \sdd \elemmapone/\sdd \xi_1 = (b-a)$ is the Jacobian of the mapping.
+where $\vect{\eulerref{U}}(\xi,t) \defeq \vect{\eulerphy{U}}(x,t)$, $\vect{\eulerref{F}}(\vect{\eulerref{U}}) \defeq \vect{\eulerphy{F}}(\vect{\eulerref{U}})$ are the conservative state and flux in reference space, and $J \defeq \sdd \elemmapone/\sdd \xi = (b-a)$ is the Jacobian of the mapping.
 
-Now, $\eulerref{\vect{U}}$ and $\eulerref{\vect{F}}_1$ are approximated as
-\begin{align}
-	\eulerref{\vect{U}}(\xi_1,t) &\approx \sum_{i=0}^{N} \eulerref{\vect{U}}_i(t) \ell_i(\xi_1),
+Now, $\vect{\eulerref{U}}$ and $\vect{\eulerref{F}}$ are approximated as
+\begin{gather}
+	\vect{\eulerref{U}}(\xi,t) \approx \sum_{i=0}^{N} \vect{\eulerref{U}}_i(t) \ell_i(\xi),
 	\label{eq:1d_euler_state_interpolation}\\
-	\eulerref{\vect{F}}_1(\xi_1,t) &\approx \sum_{i=0}^{N} \eulerref{\vect{F}}_1(U_i(t)) \ell_i(\xi_1),
+	\eulerref{\vect{F}}(\xi_1,t) \approx \sum_{i=0}^{N} \eulerref{\vect{F}}(U_i(t)) \ell_i(\xi),
 	\label{eq:1d_euler_flux_interpolation}
-\end{align}
-where $\{\ell_i(\xi_1)\}_{i=0}^{N}$ are the basis Lagrange functions constructed using Gauss-Lobatto points. The error in approximations \cref{eq:1d_euler_state_interpolation,eq:1d_euler_flux_interpolation} is minimised by Galerkin formulation of \cref{eq:1d_euler_refelem} in a strong sense using $\{\ell_j\}_{j=0}^{N}$
+\end{gather}
+where $N$ is the degree of polynomial basis and $\{\ell_i(\xi)\}_{i=0}^{N}$ are the basis Lagrange functions constructed using Gauss-Lobatto points. The error in approximations \cref{eq:1d_euler_state_interpolation,eq:1d_euler_flux_interpolation} is minimised by Galerkin formulation of \cref{eq:1d_euler_refelem} in a strong sense using the test functions $\{\ell_j\}_{j=0}^{N}$
 \begin{equation}
-	\int_{0}^{1} \ell_j J \pder{\eulerref{\vect{U}}}{t} \sdi \xi_1 + \int_{0}^{1} \ell_j \pder{\eulerref{\vect{F}}_1}{\xi_1} \sdi \xi_1 + \left[\ell_j (\eulerref{\vect{F}}_1^*-\eulerref{\vect{F}}_1) \right]_{\xi_1=0}^{\xi_1=1} = \vect{0},
+	\int_{0}^{1} \ell_j J \pder{\vect{\eulerref{U}}}{t} \sdi \xi + \int_{0}^{1} \ell_j \pder{\vect{\eulerref{F}}}{\xi} \sdi \xi + \left[\ell_j (\vect{\eulerref{F}}^*-\vect{\eulerref{F}}) \right]_{\xi=0}^{\xi=1} = \vect{0},
 	\label{eq:1d_euler_strong_form}
 \end{equation}
-where $\eulerref{\vect{F}}_1^*$ is the numerical flux function introduced at the element ends to ensure conservation. \cref{eq:1d_euler_strong_form} can be written component-wise conveniently in a matrix form as follows
+where $\vect{\eulerref{F}}^*$ is the numerical flux function introduced at the element boundaries to ensure conservation. \cref{eq:1d_euler_strong_form} can be written for the Euler equation system (\cref{eq:1d_euler_refelem}) conveniently using tensor notation as follows
 \begin{equation}
-	\linalgmat{M} J \linalgvect{\dot{U}_k} + \linalgmat{S} {\linalgvect{F_{1k}}} + \linalgmat{B} \left( {\linalgvect{F_{1k}}^*} - {\linalgvect{F_{1k}}} \right) = 0, \quad k=1,2,\ldots,5
-	\label{eq:1d_euler_matrix_form1}
+	M_{ij} J \dot{\vect{\eulerref{U}}}_j + S_{ij} \vect{\eulerref{F}}_j + B_{ij} \left( \vect{\eulerref{F}}^*_j - \vect{\eulerref{F}}_j \right) = 0, \quad i=0,1,\ldots,N
+	\label{eq:1d_euler_tensor_form1}
 \end{equation}
-where the elements of matrices \linalgmat{M} and \linalgmat{S} are given by
-\begin{align*}
-	M_{ij} &\defeq \int_{0}^{1} \ell_i \ell_j \sdi \xi_1,\\
-	S_{ij} &\defeq \int_{0}^{1} \ell_i \der{\ell_j}{\xi_1} \sdi \xi_1,
-\end{align*}
-$\linalgmat{B} \defeq \diag (-1,\ 0,\ \ldots,\ 0,\ 1)$, and the vectors given by
-\begin{align*}
-	\linalgvect{\dot{U}_k} &= ({\dot{U}_{k_0}},\ {\dot{U}_{k_1}},\ \ldots,\ {\dot{U}_{k_N}})^T,\\
-	\linalgvect{F_{1k}} &= (F_{1k_0},\ F_{1k_1},\ \ldots,\ F_{1k_N})^T,\\
-	\linalgvect{F_{1k}}^* &= \left(F_{1k}^*(U_L, U_0),\ 0,\ \ldots,\ 0,\ F_{1k}^*(U_N, U_R) \right)^T.
-\end{align*}
+where $\linalgmat{M}$ and $\linalgmat{S}$ are the \newword{mass} and \newword{stiffness} matrices respectively given by
+\begin{gather*}
+	M_{ij} \defeq \int_{0}^{1} \ell_i \ell_j \sdi \xi, \quad i,j=0,1,\ldots,N\\
+	S_{ij} \defeq \int_{0}^{1} \ell_i \der{\ell_j}{\xi} \sdi \xi, \quad i,j=0,1,\ldots,N
+\end{gather*}
+and $\linalgmat{B} \defeq \diag (-1,\ 0,\ \ldots,\ 0,\ 1)$ is the surface evaluation matrix of size $N=1$ as well. $\dot{\vect{\eulerref{U}}}_j$, $\vect{\eulerref{F}}_j$ and $\vect{\eulerref{F}}^*_j$, for $j=0,1,\ldots,N$, are the nodal values.
+
+The DGSEM uses co-located quadrature to evaluate mass and stiffness matrices which simplifies the matrix element expressions
+\begin{gather}
+	\linalgmat{M} = \diag(w_0,\ w_1,\ \ldots,\ w_N),
+	\label{eq:dgsem_mass_matrix}\\
+	\linalgmat{S} = \linalgmat{M} \linalgmat{D}, \quad D_{ij} = \der{\ell_j}{\xi}(\xi_i)
+	\label{eq:dgsem_polynomial_derivative_matrix}
+\end{gather}
+where $\{w_i\}_{i=0}^{N}$ are the weights of the GL quadrature and $\linalgmat{D}$ is the \newword{polynomial derivative} matrix. The co-located quadrature also gives special properties to $\linalgmat{D}$ namely \cite{fisherCarpenterNordstrom2013}
+\begin{equation}
+	D_{ij} \vect{\eulerref{F}}_j = \frac{\delta_{ij}}{w_j} \Delta_{jk} \hat{\vect{\eulerref{F}}}_k
+	\label{eq:telescopic_form_definition}
+\end{equation}
+where $\linalgmat{\Delta}$ is the FV differencing matrix given by
+\begin{equation}
+	\linalgmat{\Delta} \defeq
+	\begin{bmatrix}
+		-1 & 1 & 0 & \ldots & \ldots & 0\\
+		0 & -1 & 1 & 0 & \ldots & 0\\
+		\vdots & \ddots & \ddots & \ddots & \ddots & \vdots\\
+		0 & \ldots & 0 & -1 & 1 & 0\\
+		0 & \ldots & \ldots & 0 & -1 & 1\\
+	\end{bmatrix}
+	\in \mathbb{R}^{(N+1)\times(N+2)},
+	\label{eq:fv_differencing_matrix_definition}
+\end{equation}
+and $\hat{\vect{\eulerref{F}}}_k$ are the consistent fluxes defined on the \newword{flux points} $\{\hat{\xi}\}_{i=0}^{N+1}$. The flux points are related to the quadrature (or interpolation) points through the weights as follows.
+\begin{equation}
+	\hat{\xi}_0 = \xi_0; \quad \hat{\xi}_{N+1} = \xi_N;\quad
+	\hat{\xi}_{i+1} - \hat{\xi}_i = w_i,\ \text{for}\ i=0,\ 1,\ \ldots,\ N
+	\label{eq:flux_points}
+\end{equation}
 
 \printbibliography
 \end{document}
