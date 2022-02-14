@@ -1554,6 +1554,7 @@ void PLENS::calc_surf_flux(
                     // first get ghost state
                     CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
                     Tensor<1,dim> normal = fe_face_values.normal_vector(face_dof);
+                    bc_list.at(bid)->set_time(cur_time);
                     bc_list.at(bid)->get_ghost_wrappers[stage_id](ldd, cav, normal,cav_gh);
 
                     // now get the flux
