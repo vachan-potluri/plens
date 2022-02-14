@@ -19,7 +19,7 @@ void UniformTempWall::get_ghost_stage1(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     State cons_pr; // cons_pr will be defined here
     
@@ -49,7 +49,7 @@ void UniformTempWall::get_ghost_stage2(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     // total energy doesn't change in both cases the since velocity magnitude remains same
     cons_gh[0] = cons[0];
@@ -87,7 +87,7 @@ void UniformTempWall::get_ghost_stage3(
     const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
-) const
+)
 {
     State cons_pr;
     const State& cons = cav.get_state();

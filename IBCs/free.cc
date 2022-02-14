@@ -18,7 +18,7 @@ void Free::get_ghost_stage1(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     cons_gh = cons;
 }
@@ -36,7 +36,7 @@ void Free::get_ghost_stage2(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     cons_gh = cons;
 }
@@ -53,7 +53,7 @@ void Free::get_ghost_stage3(
     const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
-) const
+)
 {
     cav_gh = cav;
 }

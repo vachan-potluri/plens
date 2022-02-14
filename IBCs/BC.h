@@ -165,7 +165,7 @@ class BC
         const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
-    ) const {}
+    ) {}
     
     /**
      * @brief Get ghost values of conservative variables for inviscid flux calculation
@@ -177,7 +177,7 @@ class BC
         const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
-    ) const {}
+    ) {}
     
     /**
      * @brief Get ghost values of conservative and auxiliary variables for calculation of viscous
@@ -190,7 +190,7 @@ class BC
         const CAvars &cav,
         const Tensor<1,dim> &normal,
         CAvars &cav_gh
-    ) const {}
+    ) {}
     
     psize get_global_dof_id(const FaceLocalDoFData &ldd) const;
     void get_state(const FaceLocalDoFData &ldd, State &s) const;

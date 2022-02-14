@@ -9,6 +9,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/base/function_parser.h>
+#include <deal.II/base/point.h>
 
 #include <modelling/state.h>
 #include <modelling/avars.h>
@@ -19,6 +20,9 @@
 #include <dgsem/dtype_aliases.h>
 #include <dgsem/face_local_dof_data.h>
 #include "BC.h"
+
+#include <string>
+#include <map>
 
 namespace BCs{
 
@@ -31,11 +35,13 @@ namespace BCs{
  * spatially and temporally varying. Since it can be temporally varying, the simulation time has to
  * be set for this BC for the getters to give accurate values. Since this setting of time is not
  * anything specific to this class, the time setter is inherited from the base class BCs::BC.
+ *
+ * For the spatially varying part, BCs::BC::get_global_dof_id() is used along with
+ * VaryingInflow::dof_locations to evaluate the function parsers.
  */
 class VaryingInflow: public BC
 {
     private:
-    
     /**
      * Pointer to a NavierStokes instance. Required for stage getting conservative variables from
      * prescribed states.
@@ -45,18 +51,50 @@ class VaryingInflow: public BC
     /**
      * Prescribed pressure function.
      */
-    FunctionParser<dim> p_pr_;
+    FunctionParser<dim> p_pr_fn_;
 
     /**
      * Prescribed temperature function.
      */
-    FunctionParser<dim> T_pr_;
+    FunctionParser<dim> T_pr_fn_;
 
     /**
-     * Prescribed velocity function. Unlike VaryingInflow::p_pr_ and VaryingInflow::T_pr_, this is
-     * a vector valued function.
+     * Prescribed velocity function. Unlike VaryingInflow::p_pr_fn_ and VaryingInflow::T_pr_fn_,
+     * this is a vector valued function.
      */
-    FunctionParser<dim> velocity_pr_;
+    FunctionParser<dim> velocity_pr_fn_;
+
+    void calculate_prescribed_state(const FaceLocalDoFData &ldd, State &s);
+
+    public:
+    /**
+     * Constant reference to dof locations. Set in the constructor.
+     */
+    const std::map<psize, Point<dim>>& dof_locations;
+
+    VaryingInflow(
+        const DoFHandler<dim>& dh,
+        const std::array<LA::MPI::Vector, 5>& gcv,
+        const std::array<LA::MPI::Vector, 9>& gav,
+        const std::map<psize, Point<dim>> &dl,
+        const std::string& p_expr,
+        const std::string& T_expr,
+        const std::string& velocity_expr
+    );
+
+    virtual void get_ghost_stage1(
+        const FaceLocalDoFData &ldd,
+        const State &cons,
+        const Tensor<1,dim> &normal,
+        State &cons_gh
+    ) override;
+
+    virtual void get_ghost_stage2(
+        const FaceLocalDoFData &ldd,
+        const State &cons,
+        const Tensor<1,dim> &normal,
+        State &cons_gh
+    ) override;
 };
 
 } // namespace BCs

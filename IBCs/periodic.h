@@ -108,21 +108,21 @@ class Periodic: public BC
         const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
-    ) const override;
+    ) override;
     
     virtual void get_ghost_stage2(
         const FaceLocalDoFData &ldd,
         const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
-    ) const override;
+    ) override;
     
     virtual void get_ghost_stage3(
         const FaceLocalDoFData &ldd,
         const CAvars &cav,
         const Tensor<1,dim> &normal,
         CAvars &ca_gh
-    ) const override;
+    ) override;
 
     #ifdef DEBUG
     static void test();

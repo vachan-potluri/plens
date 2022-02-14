@@ -25,7 +25,7 @@ void UniformInflow::get_ghost_stage1(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr_[var] - cons[var];
 }
@@ -42,7 +42,7 @@ void UniformInflow::get_ghost_stage2(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     cons_gh = cons_pr_;
 }
@@ -65,7 +65,7 @@ void UniformInflow::get_ghost_stage3(
     const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
-) const
+)
 {
     const State& cons = cav.get_state();
     State& cons_gh = cav_gh.get_state();

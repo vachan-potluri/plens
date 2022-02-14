@@ -79,21 +79,21 @@ class Empty: public BC
         const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
-    ) const override;
+    ) override;
     
     virtual void get_ghost_stage2(
         const FaceLocalDoFData &ldd,
         const State &cons,
         const Tensor<1,dim> &normal,
         State &cons_gh
-    ) const override;
+    ) override;
     
     virtual void get_ghost_stage3(
         const FaceLocalDoFData &ldd,
         const CAvars &cav,
         const Tensor<1,dim> &normal,
         CAvars &cav_gh
-    ) const override;
+    ) override;
 };
 
 } // namespace BCs

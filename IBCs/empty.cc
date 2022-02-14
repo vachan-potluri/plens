@@ -17,7 +17,7 @@ void Empty::get_ghost_stage1(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     State cons_pr; // cons_pr will be set in this fn
     
@@ -46,7 +46,7 @@ void Empty::get_ghost_stage2(
     const State &cons,
     const Tensor<1,dim> &normal,
     State &cons_gh
-) const
+)
 {
     Tensor<1,dim> vel_in, vel_gh;
     for(int d=0; d<dim; d++) vel_in[d] = cons[1+d]/cons[0];
@@ -69,7 +69,7 @@ void Empty::get_ghost_stage3(
     const CAvars &cav,
     const Tensor<1,dim> &normal,
     CAvars &cav_gh
-) const
+)
 {
     State cons_pr; // cons_pr will be set in this fn
     State& cons_gh = cav_gh.get_state();
