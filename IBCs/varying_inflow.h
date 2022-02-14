@@ -95,6 +95,13 @@ class VaryingInflow: public BC
         const Tensor<1,dim> &normal,
         State &cons_gh
     ) override;
+    
+    virtual void get_ghost_stage3(
+        const FaceLocalDoFData &ldd,
+        const CAvars &cav,
+        const Tensor<1,dim> &normal,
+        CAvars &ca_gh
+    ) override;
 };
 
 } // namespace BCs

@@ -112,3 +112,28 @@ void VaryingInflow::get_ghost_stage2(
     calculate_prescribed_state(ldd, cons_pr);
     cons_gh = cons_pr;
 }
+
+
+
+/**
+ * Ghost getter for stage 3. Again, the implementation is exactly similar to that in
+ * BCs::UniformInflow::get_ghost_stage3(). Uses
+ * VaryingInflow::calculate_prescribed_state() internally to calculate the ghost state.
+ */
+void VaryingInflow::get_ghost_stage3(
+    const FaceLocalDoFData &ldd,
+    const CAvars &cav,
+    const Tensor<1,dim> &normal,
+    CAvars &cav_gh
+)
+{
+    const State& cons = cav.get_state();
+    State& cons_gh = cav_gh.get_state();
+    State cons_pr;
+    calculate_prescribed_state(ldd, cons_pr);
+    for(cvar var: cvar_list) cons_gh[var] = 2*cons_pr[var] - cons[var];
+    
+    const Avars& av = cav.get_avars();
+    Avars& av_gh = cav_gh.get_avars();
+    av_gh = av;
+}
