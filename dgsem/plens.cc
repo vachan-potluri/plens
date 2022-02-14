@@ -275,7 +275,7 @@ void PLENS::declare_parameters()
                     "none",
                     Patterns::Selection(
                         "none|free|outflow|uniform inflow|uniform temp wall|symmetry|empty|"
-                        "periodic|insulated wall"
+                        "periodic|insulated wall|varying inflow"
                     ),
                     "Type of BC. Options: 'none|free|outflow|uniform inflow|uniform temp wall"
                     "|symmetry|empty|periodic|insulated wall'. 'none' type cannot be specified "
@@ -286,26 +286,28 @@ void PLENS::declare_parameters()
                 prm.declare_entry(
                     "prescribed p",
                     "1e5",
-                    Patterns::Double(1e-16),
-                    "Presribed pressure. Must lie in [1e-16, infty). Relevant for: outflow, "
-                    "uniform inflow"
+                    Patterns::Anything(),
+                    "Presribed pressure. Relevant for: outflow, uniform inflow, varying inflow."
                 );
 
                 prm.declare_entry(
                     "prescribed T",
                     "1",
-                    Patterns::Double(1e-16),
-                    "Prescribed temperature. Must lie in [1e-16, infty). Relevant for: "
-                    "uniform inflow, uniform temp wall"
+                    Patterns::Anything(),
+                    "Prescribed temperature. Relevant for: uniform inflow, uniform temp wall, "
+                    "varying inflow."
                 );
 
                 prm.declare_entry(
                     "prescribed velocity",
                     "0 0 0",
-                    Patterns::List(Patterns::Double(), dim, dim, " "),
-                    "Space-separated values for prescribed velocity. Relevant for: "
-                    "uniform inflow, uniform temp wall,insulated wall. For walls, this describes "
-                    "the wall velocity."
+                    Patterns::Anything(),
+                    "Values for prescribed velocity. Relevant for: uniform inflow, "
+                    "uniform temp wall, insulated wall, varying inflow. For walls, this describes "
+                    "the wall velocity. For all types except varying inflow, the velocity "
+                    "components must be separated by spaces. For varying inflow, they must be "
+                    "separated by semicolons to facilitate dealii's function parser object read "
+                    "them as components."
                 );
 
                 prm.declare_entry(
@@ -1204,6 +1206,23 @@ void PLENS::set_BC()
                         gcrk_avars,
                         vel,
                         ns_ptr.get()
+                    );
+                }
+                else if(type == "varying inflow"){
+                    const std::string p_expr = prm.get("prescribed p");
+                    const std::string T_expr = prm.get("prescribed T");
+                    const std::string vel_expr = prm.get("prescribed velocity");
+                    pcout << "\t Prescribed p, T and U:\n\t"
+                        << p_expr << "\n\t" << T_expr << "\n\t" << vel_expr << "\n";
+
+                    bc_list[cur_bid] = new BCs::VaryingInflow(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        dof_locations,
+                        p_expr,
+                        T_expr,
+                        vel_expr
                     );
                 }
                 else{

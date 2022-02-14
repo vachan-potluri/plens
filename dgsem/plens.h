@@ -76,6 +76,7 @@
 #include <IBCs/symmetry.h>
 #include <IBCs/empty.h>
 #include <IBCs/periodic.h>
+#include <IBCs/varying_inflow.h>
 
 #ifdef DEBUG
 #include <utilities/printing.h>
