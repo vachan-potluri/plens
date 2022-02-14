@@ -139,6 +139,12 @@ class BC
      * cell iterator.
      */
     std::map<psize, DoFHandler<dim>::active_cell_iterator> cell_map_;
+
+    /**
+     * The simulation time. This is set using BC::set_time(). This is required for time varying
+     * BCs like BCs::VaryingInflow. Initialised to 0 in the constructor.
+     */
+    double time_;
     
     public:
     BC(
@@ -190,6 +196,7 @@ class BC
     void get_state(const FaceLocalDoFData &ldd, State &s) const;
     void get_avars(const FaceLocalDoFData &ldd, Avars &a) const;
     void get_cavars(const FaceLocalDoFData &ldd, CAvars &ca) const;
+    void set_time(const double t);
     
     protected:
     void form_cell_map();

@@ -21,7 +21,8 @@ type(bc_type),
 dof_handler(dh),
 g_cvars(gcv),
 g_avars(gav),
-fdi(dh.get_fe().degree)
+fdi(dh.get_fe().degree),
+time_(0)
 {
     form_cell_map();
     set_wrappers();
@@ -135,6 +136,16 @@ void BC::get_cavars(const FaceLocalDoFData &ldd, CAvars &ca) const
     Avars& a = ca.get_avars();
     for(cvar var: cvar_list) s[var] = g_cvars[var][gdof_id];
     for(avar var: avar_list) a[var] = g_avars[var][gdof_id];
+}
+
+
+
+/**
+ * @brief Sets BC::time to the value provided.
+ */
+void BC::set_time(const double t)
+{
+    time_ = t;
 }
 
 

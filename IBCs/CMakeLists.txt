@@ -8,6 +8,7 @@ ADD_LIBRARY(IBCs SHARED
     empty.cc
     periodic.cc
     insulated_wall.cc
+    varying_inflow.cc
     IC.cc
     piecewise_function.cc
     from_archive.cc
