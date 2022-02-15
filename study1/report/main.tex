@@ -145,6 +145,8 @@ sorting=none]%important to specify this
 
 \tableofcontents
 
+
+
 \section{Introduction}
 \label{sec:intro}
 
@@ -191,7 +193,7 @@ Here, $\rho$ and $p$ represent density and pressure respectively, $u_i$ are the 
 \section{Numerical method}
 \label{sec:num_method}
 
-The split form DGSEM algorithm along with the subcell limiter of \citear{hennemannRamirezHindenlang2021} is used. The algorithm is described here in brief for the 1d system of equations
+The split form DGSEM algorithm \cite{gassnerWintersKopriva2016} along with the subcell limiter of \citear{hennemannRamirezHindenlang2021} is used. The algorithm is described here in brief for the 1d system of equations
 \begin{equation}
 	\pder{\vect{\eulerphy{U}}}{t} + \pder{\vect{\eulerphy{F}}_1}{x_1} = \vect{0} \quad (t \geq 0,\ x_1 \in \Omega).
 	\label{eq:1d_euler}
@@ -205,10 +207,10 @@ For simplicity, the subscript `1' is dropped in this section. The domain $\Omega
 \end{gather*}
 where $\vect{\eulerref{U}}(\xi,t) \defeq \vect{\eulerphy{U}}(x,t)$, $\vect{\eulerref{F}}(\vect{\eulerref{U}}) \defeq \vect{\eulerphy{F}}(\vect{\eulerref{U}})$ are the conservative state and flux in reference space, and $J \defeq \sdd \elemmapone/\sdd \xi = (b-a)$ is the Jacobian of the mapping. $\vect{\eulerref{U}}$ and $\vect{\eulerref{F}}$ are approximated to lie in a linear polynomial space of $N$-th degree polynomials
 \begin{equation*}
-	\vect{\eulerref{U}}(\xi,t) \approx \sum_{i=0}^{N} \vect{\eulerref{U}}_i(t) \ell_i(\xi), \quad \eulerref{\vect{F}}(\xi,t) \approx \sum_{i=0}^{N} \eulerref{\vect{F}}(U_i(t)) \ell_i(\xi),
+	\vect{\eulerref{U}}(\xi,t) \approx \sum_{i=0}^{N} \vect{\eulerref{U}}_i(t) \ell_i(\xi), \quad \eulerref{\vect{F}}(\xi,t) \approx \sum_{i=0}^{N} \eulerref{\vect{F}}(\vect{\eulerref{U}}_i(t)) \ell_i(\xi),
 	\label{eq:1d_euler_state_flux_interpolation}
 \end{equation*}
-where $\{\ell_i(\xi)\}_{i=0}^{N}$ are the basis Lagrange functions constructed using the $(N+1)$ Gauss-Lobatto points as nodes. The error in this approximation is minimised using the Galerkin approach in a strong sense for the test functions $\{\ell_j\}_{j=0}^{N}$:
+where $\{\ell_i(\xi)\}_{i=0}^{N}$ are the basis Lagrange functions constructed using the $(N+1)$ Gauss-Lobatto (GL) points as nodes, and $\{\vect{\eulerref{U}}_i\}_{i=0}^{N}$ are the nodal values. The error in this approximation is minimised using the Galerkin approach in a strong sense for the test functions $\{\ell_j\}_{j=0}^{N}$:
 \begin{equation}
 	\int_{0}^{1} \ell_j J \pder{\vect{\eulerref{U}}}{t} \sdi \xi + \int_{0}^{1} \ell_j \pder{\vect{\eulerref{F}}}{\xi} \sdi \xi + \left[\ell_j (\vect{\eulerref{F}}^*-\vect{\eulerref{F}}) \right]_{\xi=0}^{\xi=1} = \vect{0}\quad (j=0,1,\ldots,N),
 	\label{eq:1d_euler_strong_form}
@@ -218,12 +220,12 @@ where $\vect{\eulerref{F}}^*$ is the numerical flux function introduced at the e
 	\sum_{j=0}^{N} M_{ij} J \dot{\vect{\eulerref{U}}}_j + S_{ij} \vect{\eulerref{F}}_j + B_{ij} \left( \vect{\eulerref{F}}^*_j - \vect{\eulerref{F}}_j \right) = 0 \quad (i=0,1,\ldots,N),
 	\label{eq:1d_euler_tensor_form1}
 \end{equation}
-where,
+where $\vect{\eulerref{F}}_j=\eulerref{\vect{F}}(\vect{\eulerref{U}}_j)$, $\vect{\eulerref{F}}^*_j$ is the inter-element numerical flux (non-zero only for $j=0,N$),
 \begin{gather*}
 	M_{ij} \defeq \int_{0}^{1} \ell_i \ell_j \sdi \xi \quad (i,j=0,1,\ldots,N),\\
 	S_{ij} \defeq \int_{0}^{1} \ell_i \der{\ell_j}{\xi} \sdi \xi \quad (i,j=0,1,\ldots,N),
 \end{gather*}
-and $\linalgmat{B} \defeq \diag (-1,\ 0,\ \ldots,\ 0,\ 1)$ is the surface evaluation matrix of size $(N+1)$ as well. $\dot{\vect{\eulerref{U}}}_j$, $\vect{\eulerref{F}}_j$ and $\vect{\eulerref{F}}^*_j$, for $j=0,1,\ldots,N$, are the nodal values ($\vect{\eulerref{F}}^*_j$ is non-zero only for $j=0,N$).
+and $\linalgmat{B} \defeq \diag (-1,\ 0,\ \ldots,\ 0,\ 1)$ is the surface evaluation matrix of size $(N+1)$ as well.
 
 The DGSEM uses co-located quadrature to evaluate mass and stiffness matrices which simplifies the matrix element expressions, and also the strong form discretization given in \cref{eq:1d_euler_tensor_form1} as follows
 \begin{gather}
@@ -234,18 +236,24 @@ The DGSEM uses co-located quadrature to evaluate mass and stiffness matrices whi
 	J \dot{\vect{\eulerref{U}}}_i + \sum_{j=0}^{N} \left[ D_{ij} \vect{\eulerref{F}}_j \right] - \frac{\delta_{0i}}{w_0} \left( \vect{\eulerref{F}}^*_0 - \vect{\eulerref{F}}_0 \right) + \frac{\delta_{Ni}}{w_N} \left( \vect{\eulerref{F}}^*_N - \vect{\eulerref{F}}_N \right) = 0 \quad (i=0,1,\ldots,N),
 	\label{eq:1d_euler_tensor_form2}
 \end{gather}
-where $\{w_i\}_{i=0}^{N}$ are the weights of the GL quadrature and $\linalgmat{D}$ is the \newword{polynomial derivative} matrix. The co-located quadrature also gives a summation-by-parts property to $\linalgmat{S}$ which allows writing the volumetric term of \cref{eq:1d_euler_tensor_form2} as a FV flux difference \cite{fisherCarpenterNordstrom2013}:
+where $\{w_i\}_{i=0}^{N}$ are the weights of the GL quadrature and $\linalgmat{D}$ is the \newword{polynomial derivative} matrix. The co-located quadrature also gives summation-by-parts property to $\linalgmat{S}$ which allows writing the volumetric term of \cref{eq:1d_euler_tensor_form2} as a FV flux difference \cite{fisherCarpenterNordstrom2013}:
 \begin{equation}
 	\sum_{j=0}^{N} D_{ij} \vect{\eulerref{F}}_j = \frac{\hat{\vect{\eulerref{F}}}_{i+1} - \hat{\vect{\eulerref{F}}}_i}{w_i} \quad (i=0,1,\ldots,N),
 	\label{eq:telescopic_form}
 \end{equation}
-where $\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$ are the consistent volumetric fluxes defined on the \newword{flux points} $\{\hat{\xi}_i\}_{i=0}^{N+1}$. These flux points are related to the quadrature (or interpolation) points through the weights as follows.
+where $\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$ are the corresponding consistent volumetric fluxes defined on the \newword{flux points} $\{\hat{\xi}_i\}_{i=0}^{N+1}$. This gives an effective subcell decomposition for every element which is visually shown in \cref{fig:dgsem_subcell_fc_equivalence}. These flux points are related to the quadrature (or interpolation) points through the weights as follows.
 \begin{equation*}
 	\hat{\xi}_0 = \xi_0; \quad \hat{\xi}_{N+1} = \xi_N;\quad
-	\hat{\xi}_{i+1} - \hat{\xi}_i = w_i\ \  (i=0,1,\ldots,N),
+	\hat{\xi}_{i+1} - \hat{\xi}_i = w_i\ \  (i=0,1,\ldots,N)
 	\label{eq:flux_points}
 \end{equation*}
-While the relation between $\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$ and $\{\vect{\eulerref{F}}_j\}_{j=0}^{N}$ is given in \cite{fisherCarpenterNordstrom2013}, \citear{gassnerWintersKopriva2016} (extending the work of \citear{fisherCarpenter2013}) suggested the \newword{split form} DGSEM, where the volumetric fluxes $\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$ are constructed independently using
+\begin{figure}[htbp]
+	\centering
+	\includestandalone{figures/dgsem_subcell_fv_equivalence}
+	\caption{Equivalent subcell FV decomposition for a DGSEM element with $N=3$. Figure shows the GL interpolation (or quadrature) nodes (circles) and the flux points (crosses). In this case, 4 subcells of sizes $w_0,\ w_1,\ w_2$ and $w_3$ between 5 flux points are obtained.}
+	\label{fig:dgsem_subcell_fc_equivalence}
+\end{figure}
+While the relation between volumetric fluxes ($\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$) and nodal fluxes ($\{\vect{\eulerref{F}}_j\}_{j=0}^{N}$) is given in \cite{fisherCarpenterNordstrom2013}, \citear{gassnerWintersKopriva2016} (extending the work of \citear{fisherCarpenter2013}) suggested the \newword{split form} DGSEM, in which the volumetric fluxes are constructed independent of nodal fluxes using
 \begin{equation}
 	\begin{gathered}
 		\hat{\vect{\eulerref{F}}}_0 \approx \vect{\eulerref{F}}_0, \quad \hat{\vect{\eulerref{F}}}_{N+1} \approx \vect{\eulerref{F}}_N,\\
@@ -253,12 +261,12 @@ While the relation between $\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$ and $\{
 	\end{gathered}
 	\label{eq:split_form_subcell_flux}
 \end{equation}
-where $\vect{\eulerref{F}}^\#$ is an entropy-satisfying \newword{volumetric two-point flux function}. Substituting \cref{eq:split_form_subcell_flux,eq:telescopic_form} in \cref{eq:1d_euler_tensor_form2}, the split-form DGSEM discretization can be written as follows.
+where $\vect{\eulerref{F}}^\#$ is a \newword{volumetric two-point flux function}. Substituting \cref{eq:split_form_subcell_flux,eq:telescopic_form} in \cref{eq:1d_euler_tensor_form2}, the split-form DGSEM discretization can be written as follows.
 \begin{equation}
 	J \dot{\vect{\eulerref{U}}}_i + 2\sum_{j=0}^{N} D_{ij} \vect{\eulerref{F}}^\#(\vect{\eulerref{U}}_i, \vect{\eulerref{U}}_j) - \frac{\delta_{0i}}{w_0} \left( \vect{\eulerref{F}}^*_0 - \vect{\eulerref{F}}_0 \right) + \frac{\delta_{Ni}}{w_N} \left( \vect{\eulerref{F}}^*_N - \vect{\eulerref{F}}_N \right) = 0 \quad (i=0,1,\ldots,N)
 	\label{eq:1d_euler_tensor_form3}
 \end{equation}
-The usage of split-form gives entropy conservation property to the resulting discretization. In this work, the Chandrashekhar volumetric flux \cite{gassnerWintersKopriva2016} is used
+In this work, the Chandrashekhar volumetric flux \cite{gassnerWintersKopriva2016} is used,
 \begin{equation*}
 	\vect{\eulerref{F}}^\#_\textch(\vect{\eulerref{U}}_a, \vect{\eulerref{U}}_b) =
 	\begin{bmatrix}
@@ -272,7 +280,7 @@ The usage of split-form gives entropy conservation property to the resulting dis
 \end{equation*}
 where $\avg{x} \defeq (x_a + x_b)/2$, $x^\textln \defeq (x_a - x_b)/(\ln (x_a/x_b))$ and $\beta = \rho/2p$.
 
-\citear{hennemannRamirezHindenlang2021} proposed a limiting technique where the split-form high order DGSEM scheme is blended with a low order scheme. Since the introduction of flux points and volumetric fluxes (\cref{eq:telescopic_form}) provides a natural subcell decomposition of the finite element, the low order scheme was constructed by using the regular numerical flux as follows.
+\citear{hennemannRamirezHindenlang2021} proposed a limiting technique where the split-form high order DGSEM scheme is blended with a low order scheme. Since the introduction of flux points and volumetric fluxes (\cref{eq:telescopic_form,fig:dgsem_subcell_fc_equivalence}) provides a natural subcell decomposition of the finite element, the low order scheme was constructed by defining the volumetric fluxes using standard numerical flux as follows.
 \begin{equation}
 	\begin{gathered}
 		\hat{\vect{\eulerref{F}}}^\textlo_0 \approx \vect{\eulerref{F}}_0, \quad \hat{\vect{\eulerref{F}}}^\textlo_{N+1} \approx \vect{\eulerref{F}}_N,\\
@@ -282,9 +290,20 @@ where $\avg{x} \defeq (x_a + x_b)/2$, $x^\textln \defeq (x_a - x_b)/(\ln (x_a/x_
 \end{equation}
 Using \cref{eq:low_order_subcell_flux,eq:telescopic_form} in \cref{eq:1d_euler_tensor_form2} gives a first order subcell discretization, which is blended with the high order discretization (\cref{eq:1d_euler_tensor_form3}) using a factor $\alpha$.
 \begin{equation}
-	J \dot{\vect{\eulerref{U}}}_i + 2 (1-\alpha) \sum_{j=0}^{N} D_{ij} \vect{\eulerref{F}}^\#(\vect{\eulerref{U}}_i, \vect{\eulerref{U}}_j) + \alpha \frac{\hat{\vect{\eulerref{F}}}^\textlo_{i+1} - \hat{\vect{\eulerref{F}}}^\textlo_i}{w_i} - \frac{\delta_{0i}}{w_0} \left( \vect{\eulerref{F}}^*_0 - \vect{\eulerref{F}}_0 \right) + \frac{\delta_{Ni}}{w_N} \left( \vect{\eulerref{F}}^*_N - \vect{\eulerref{F}}_N \right) = 0 \quad (i=0,1,\ldots,N)
+	\begin{aligned}
+		J \dot{\vect{\eulerref{U}}}_i + (1-\alpha) \sum_{j=0}^{N} 2 D_{ij} \vect{\eulerref{F}}^\#(\vect{\eulerref{U}}_i, \vect{\eulerref{U}}_j) + \alpha \frac{\hat{\vect{\eulerref{F}}}^\textlo_{i+1} - \hat{\vect{\eulerref{F}}}^\textlo_i}{w_i} &-\\
+		\frac{\delta_{0i}}{w_0} \left( \vect{\eulerref{F}}^*_0 - \vect{\eulerref{F}}_0 \right) + \frac{\delta_{Ni}}{w_N} \left( \vect{\eulerref{F}}^*_N - \vect{\eulerref{F}}_N \right) &= 0 \quad (i=0,1,\ldots,N)
+	\end{aligned}
 	\label{eq:1d_euler_tensor_form4}
 \end{equation}
+A modification of the energy indicator of \citear{perssonPeraire2006} is used to calculate $\alpha$. Following \cite{hennemannRamirezHindenlang2021}, in this work, the variable the product of pressure and density ($p\rho$) is used calculate $\alpha$ and its value is capped at $\alpha_\textmax=0.5$ unless mentioned otherwise.
+
+The boundary conditions for all problems are applied in a `weak-Riemann' sense, following the approach of \citear{mengaldoDeGraziaPeiro2014}.
+
+
+
+\section{One-dimensional test results}
+\label{sec:1d_tests}
 
 \printbibliography
 \end{document}

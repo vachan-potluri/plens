@@ -1,0 +1,37 @@
+% !TeX root = ../main.tex
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{arrows,calc}
+\begin{document}
+	\begin{tikzpicture}[x=1cm, y=1cm]
+		
+		\pgfmathsetmacro\linewd{\linewidth/1cm} % the linewidth
+		\pgfmathsetmacro\cl{0.75*\linewd} % characteristic length
+		\pgfmathsetmacro\w{0.075*\cl} % height/depth of finite volume
+		
+		\tikzstyle{element line}=[thick];
+		\tikzstyle{fv line}=[thick, black, <->, >=stealth];
+		\tikzstyle{fv label}=[black, fill=white, inner sep=2pt];
+		\tikzstyle{quadrature point}=[circle, inner sep=2pt, fill=red];
+		\tikzstyle{flux point}=[cross out, inner sep=3pt, draw=blue];
+		
+		% quadrature and flux points pre-calculated for N=3
+		\def\quadpoints{{0, 0.276393, 0.723607, 1}};
+		\def\fluxpoints{{0, 0.0833333, 0.5, 0.916667, 1}};
+		
+        \draw[element line] (0,0) -- (\cl,0);
+        
+        \foreach \i in {0, 1, ..., 3}{
+        	\node[quadrature point] at (\quadpoints[\i]*\cl,0) {};
+        	\node at (\quadpoints[\i]*\cl,0) [above=2pt] {{\color{red}$\vect{\eulerref{F}}_\i$}};
+        	\draw[fv line] (\fluxpoints[\i]*\cl,-\w) -- node [fv label] {$w_\i$} (\fluxpoints[\i+1]*\cl,-\w);
+    	}
+    	
+    	\foreach \i in {0, 1, ..., 4}{
+    		\node[flux point] at (\fluxpoints[\i]*\cl,0) {};
+    		\node at (\fluxpoints[\i]*\cl,0) [below=2pt] {{\color{blue}$\hat{\vect{\eulerref{F}}}_\i$}};
+    		\draw[element line] (\fluxpoints[\i]*\cl,-1.15*\w) -- (\fluxpoints[\i]*\cl,-0.85*\w);
+    	}
+        
+	\end{tikzpicture}
+\end{document}
