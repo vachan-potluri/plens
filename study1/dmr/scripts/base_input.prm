@@ -1,13 +1,13 @@
 subsection mesh
 	set type = straight
 	set format = msh
-	set file name = base_mesh.msh
+	set file name = mesh.msh
 end
 
 subsection Navier-Stokes
 	set gas name = air
 	set inviscid = true
-	set inviscid surface flux scheme = Rusanov
+	set inviscid surface flux scheme = HLLC
 end
 
 subsection IC
@@ -55,7 +55,7 @@ subsection blender parameters
 end
 
 subsection time integration
-    set RK order = 3
+    set RK order = 4
     set Courant number = 0.5
     set end time = 0.2
 end
