@@ -1,0 +1,67 @@
+subsection mesh
+	set type = straight
+	set format = msh
+	set file name = base_mesh.msh
+end
+
+subsection Navier-Stokes
+	set gas name = air
+	set inviscid = true
+	set inviscid surface flux scheme = Rusanov
+end
+
+subsection IC
+	set type = double mach reflection
+end
+
+subsection BCs
+    subsection bid1
+		# post shock
+		set type = uniform inflow
+		set prescribed p = 116.5
+		set prescribed velocity = 7.144709581221619 -4.125 0
+		set prescribed T = 0.050792519
+	end
+	subsection bid2
+		# moving shock
+		set type = varying inflow
+		set prescribed p = ( x - 1.3213672 - 11.547005*t > 0 ? 1 : 116.5 )
+		set prescribed T = ( x - 1.3213672 - 11.547005*t > 0 ? 0.0024913559 : 0.050792519 )
+		set prescribed velocity = ( x - 1.3213672 - 11.547005*t > 0 ? 0 : 7.144709581221619 );\
+								  ( x - 1.3213672 - 11.547005*t > 0 ? 0 : -4.125);\
+								  0
+	end
+	subsection bid3
+		# pre shock
+		set type = uniform inflow
+		set prescribed p = 1
+		set prescribed velocity = 0 0 0
+		set prescribed T = 0.0024913559
+	end
+	subsection bid4
+		set type = uniform temp wall
+	end
+	subsection bid5
+		set type = symmetry
+	end
+	subsection bid6
+		set type = symmetry
+	end
+end
+
+subsection blender parameters
+    set variable = pxrho
+    set wall blender limit = 0
+end
+
+subsection time integration
+    set RK order = 3
+    set Courant number = 0.5
+    set end time = 0.2
+end
+
+subsection data output
+    set write frequency = 25
+    set directory = result
+end
+
