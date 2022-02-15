@@ -350,8 +350,11 @@ void PLENS::declare_parameters()
         prm.declare_entry(
             "type",
             "piecewise function",
-            Patterns::Selection("piecewise function|from archive|from archive restart"),
-            "Options: 'piecewise function|from archive|from archive restart'"
+            Patterns::Selection(
+                "piecewise function|from archive|from archive restart|double mach reflection"
+            ),
+            "Options: 'piecewise function|from archive|from archive restart|"
+            "double mach reflection'"
         );
 
         prm.declare_entry(
@@ -384,6 +387,30 @@ void PLENS::declare_parameters()
             Patterns::Integer(1,9),
             "Relevant for: 'from archive'. The fe degree of the solution stored in archive."
         );
+
+        // entries for double Mach reflection
+        prm.enter_subsection("double mach reflection");
+        {
+            prm.declare_entry(
+                "wedge leading edge location",
+                "0.1666667 0 0",
+                Patterns::List(Patterns::Double(), dim, dim, " "),
+                "Space separated coordinates of wedge LE. Default: '1/6 0 0'."
+            );
+            prm.declare_entry(
+                "wedge angle",
+                "0",
+                Patterns::Double(),
+                "Wedge angle in degrees."
+            );
+            prm.declare_entry(
+                "shock offset",
+                "0 0 0",
+                Patterns::List(Patterns::Double(), dim, dim, " "),
+                "Offset coordinate vector for shock position from wedge LE. Default: '0 0 0'."
+            );
+        }
+        prm.leave_subsection();
     }
     prm.leave_subsection(); // subsection IC
 
@@ -991,7 +1018,7 @@ void PLENS::set_IC()
                 ar_filename
             );
         }
-        else{
+        else if(type == "from archive restart"){
             // from archive restart
             const std::string ar_filename = prm.get("file name");
             ic_ptr = std::make_unique<ICs::FromArchiveRestart>(
@@ -999,6 +1026,38 @@ void PLENS::set_IC()
                 dof_locations,
                 g_cvars,
                 ar_filename
+            );
+        }
+        else if(type == "double mach reflection"){
+            std::string temp;
+            std::vector<std::string> splits;
+            Point<dim> wedge_le_loc;
+            double wedge_angle;
+            Tensor<1,dim> shock_offset;
+            prm.enter_subsection("double mach reflection");
+            {
+                temp = prm.get("wedge leading edge location");
+                utilities::split_string(temp, " ", splits);
+                for(int d=0; d<dim; d++) wedge_le_loc[d] = std::stod(splits[d]);
+                wedge_angle = prm.get_double("wedge angle");
+                temp = prm.get("shock offset");
+                utilities::split_string(temp, " ", splits);
+                for(int d=0; d<dim; d++) shock_offset[d] = std::stod(splits[d]);
+            }
+            prm.leave_subsection();
+            ic_ptr = std::make_unique<ICs::DoubleMachReflection>(
+                dof_handler,
+                dof_locations,
+                g_cvars,
+                wedge_le_loc,
+                wedge_angle,
+                shock_offset
+            );
+        }
+        else{
+            AssertThrow(
+                false,
+                StandardExceptions::ExcMessage("Invalid IC type")
             );
         }
     }

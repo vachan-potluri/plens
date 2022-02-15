@@ -67,6 +67,7 @@
 #include <IBCs/piecewise_function.h>
 #include <IBCs/from_archive.h>
 #include <IBCs/from_archive_restart.h>
+#include <IBCs/double_mach_reflection.h>
 #include <IBCs/BC.h>
 #include <IBCs/free.h>
 #include <IBCs/outflow.h>
