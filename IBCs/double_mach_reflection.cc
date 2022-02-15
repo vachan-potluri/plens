@@ -24,7 +24,7 @@ DoubleMachReflection::DoubleMachReflection(
 IC(dh, dl, gcv),
 shock_pos_function_(1)
 {
-    std::string variables("x,y");
+    std::string variables("x,y,z");
     std::map<std::string, double> constants;
     constants["pi"] = numbers::PI;
 
