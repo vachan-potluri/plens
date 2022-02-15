@@ -50,10 +50,12 @@ VaryingInflow::VaryingInflow(
     const std::map<psize, Point<dim>> &dl,
     const std::string& p_expr,
     const std::string& T_expr,
-    const std::string& velocity_expr
+    const std::string& velocity_expr,
+    const NavierStokes* ns_ptr
 ):
 BC("varying inflow", dh, gcv, gav),
 dof_locations(dl),
+ns_ptr_(ns_ptr),
 p_pr_fn_(1),
 T_pr_fn_(1),
 velocity_pr_fn_(dim)

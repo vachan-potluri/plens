@@ -79,7 +79,8 @@ class VaryingInflow: public BC
         const std::map<psize, Point<dim>> &dl,
         const std::string& p_expr,
         const std::string& T_expr,
-        const std::string& velocity_expr
+        const std::string& velocity_expr,
+        const NavierStokes* ns_ptr
     );
 
     virtual void get_ghost_stage1(

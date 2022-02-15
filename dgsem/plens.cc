@@ -1212,7 +1212,7 @@ void PLENS::set_BC()
                     const std::string p_expr = prm.get("prescribed p");
                     const std::string T_expr = prm.get("prescribed T");
                     const std::string vel_expr = prm.get("prescribed velocity");
-                    pcout << "\t Prescribed p, T and U:\n\t"
+                    pcout << "\tPrescribed p, T and U:\n\t"
                         << p_expr << "\n\t" << T_expr << "\n\t" << vel_expr << "\n";
 
                     bc_list[cur_bid] = new BCs::VaryingInflow(
@@ -1222,7 +1222,8 @@ void PLENS::set_BC()
                         dof_locations,
                         p_expr,
                         T_expr,
-                        vel_expr
+                        vel_expr,
+                        ns_ptr.get()
                     );
                 }
                 else{
