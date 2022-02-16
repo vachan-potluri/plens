@@ -711,23 +711,66 @@ void NavierStokes::get_xKinv(
  * @f]
  * where @f$\tilde{\cdot}@f$ represents Roe average.
  *
+ * @note See WJ-16-Feb-2022. A couple of other wave speed estimates are also implemented now. See
+ * Toro, 3rd ed, sections 10.5 and 10.6.
+ *
  * @pre @p lcs and @p rcs must pass the test of NavierStokes::assert_positivity()
  */
 void NavierStokes::hllc_xflux(const State &lcs, const State &rcs, State &f) const
 {
     dealii::Tensor<1,dim> xdir({1,0,0});
+
     // wave speed estimates
-    double sql = sqrt(lcs[0]), sqr = sqrt(rcs[0]); // 'sq'uare roots of densities
-    double pl = get_p(lcs), pr = get_p(rcs); // pressures
-    double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0];
+    // 1. Using Roe averaged speeds (direct estimation)
+    // see Toro section 10.5.1
+    /*
+    const double sql = sqrt(lcs[0]), sqr = sqrt(rcs[0]); // 'sq'uare roots of densities
+    const double pl = get_p(lcs), pr = get_p(rcs); // pressures
+    const double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0];
     
-    double ut = (ul*sql + ur*sqr)/(sql + sqr); // u tilde
-    double Ht = ( (lcs[4]+pl)/sql + (rcs[4]+pr)/sqr )/(sql + sqr); // H tilde
-    double at = sqrt((gma_-1)*(Ht - 0.5*ut*ut)); // a tilde
+    const double ut = (ul*sql + ur*sqr)/(sql + sqr); // u tilde
+    const double Ht = ( (lcs[4]+pl)/sql + (rcs[4]+pr)/sqr )/(sql + sqr); // H tilde
+    const double at = sqrt((gma_-1)*(Ht - 0.5*ut*ut)); // a tilde
     
-    double sl = ut-at, sr = ut+at; // left and right wave speeds
+    const double sl = ut-at, sr = ut+at; // left and right wave speeds
+    */
+    // 2. Using adaptive noninterative pressure estimate for star region
+    // (pressure-based wave speed estimation)
+    // see Toro section 10.6, section 9.5.2 and section 9.4
+    // /*
+    const double pl = get_p(lcs), pr = get_p(rcs); // pressures
+    const double pmin = std::min(pl,pr), pmax = std::max(pl,pr);
+    const double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0];
+    const double al = std::sqrt(gma_*pl/lcs[0]), ar = std::sqrt(gma_*pr/rcs[0]);
+    const double p_pvrs = 0.5*(pl+pr) - 0.5*(ur-ul)*0.5*(lcs[0]+rcs[0])*0.5*(al+ar);
+    double ps; // p star
+    if(pmax/pmin < 2 && pmin <= p_pvrs && p_pvrs <= pmax){
+        // use pvrs estimate
+        ps = p_pvrs;
+    }
+    else if(p_pvrs < pmin){
+        // use trrs estimate (two rarefactions)
+        const double z = (gma_-1)/(2*gma_);
+        ps = std::pow(
+            ((al+ar)-(gma_-1)/2*(ur-ul))/(al/std::pow(pl,z)+ar/std::pow(pr,z)),
+            1/z
+        );
+    }
+    else{
+        // use tsrs estimate (two shocks)
+        const double p0 = std::max(0.0, p_pvrs);
+        const double gl = std::sqrt(2/((gma_+1)*lcs[0])/(p0+(gma_-1)/(gma_+1)*pl)),
+            gr = std::sqrt(2/((gma_+1)*rcs[0])/(p0+(gma_-1)/(gma_+1)*pr));
+        ps = (gl*pl + gr*pr - (ur-ul))/(gl+gr);
+    }
+
+    const double ql = ( ps <= pl ? 1 : std::sqrt(1+(gma_+1)/(2*gma_)*(ps/pl-1)) ),
+        qr = ( ps <= pr ? 1 : std::sqrt(1+(gma_+1)/(2*gma_)*(ps/pr-1)) );
+    const double sl = ul-al*ql, sr = ur+ar*qr;
+    // */
+
     // star wave speed
-    double s = ( pr-pl + lcs[1]*(sl-ul) - rcs[1]*(sr-ur) )/(lcs[0]*(sl-ul) - rcs[0]*(sr-ur));
+    const double s = ( pr-pl + lcs[1]*(sl-ul) - rcs[1]*(sr-ur) )/(lcs[0]*(sl-ul) - rcs[0]*(sr-ur));
     
     // cases
     if(sl>0){

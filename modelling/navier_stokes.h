@@ -12,6 +12,7 @@
 
 #include <cmath> // for pow
 #include <array>
+#include <iostream>
 
 #include "var_enums.h"
 #include "state.h"
