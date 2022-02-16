@@ -53,6 +53,8 @@ namespace BCs{
  * this class requires a NavierStokes instance.
  *
  * @warning This class uses a raw pointer to a NavierStokes instance.
+ *
+ * @warning This class functionality is incorrect for a moving wall. See WJ-16-Feb-2022.
  */
 class InsulatedWall: public BC
 {

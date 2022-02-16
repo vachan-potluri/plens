@@ -393,7 +393,7 @@ void PLENS::declare_parameters()
         {
             prm.declare_entry(
                 "wedge leading edge location",
-                "0.1666667 0 0",
+                "0.16666667 0 0",
                 Patterns::List(Patterns::Double(), dim, dim, " "),
                 "Space separated coordinates of wedge LE. Default: '1/6 0 0'."
             );
