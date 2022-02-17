@@ -163,7 +163,8 @@ class NavierStokes
         ausm_plus_up,
         rusanov_hllc_blend,
         rusanov_ausm_plus_up_blend,
-        modified_sw
+        modified_sw,
+        chandrashekhar
     };
     enum class inv_vol_flux_scheme{
         chandrashekhar
@@ -195,8 +196,9 @@ class NavierStokes
     void rusanov_hllc_blend_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_ausm_plus_up_blend_xflux(const State &lcs, const State &rcs, State &f) const;
     void modified_sw_xflux(const State &lcs, const State &rcs, State &f) const;
+    void chandrashekhar_xflux(const State &lcs, const State &rcs, State &f) const;
     
-    void chandrashekhar_flux(
+    void chandrashekhar_vol_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
     ) const; // inv vol flux
     

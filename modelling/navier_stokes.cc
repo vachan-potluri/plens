@@ -164,9 +164,14 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->rusanov_ausm_plus_up_blend_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::modified_sw){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->modified_sw_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->chandrashekhar_xflux(lcs, rcs, f);
         };
     }
 }
@@ -184,7 +189,7 @@ void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
     // only one option available currently
     get_inv_vol_flux = [=](
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f){
-        this->chandrashekhar_flux(cs1, cs2, dir, f);
+        this->chandrashekhar_vol_flux(cs1, cs2, dir, f);
     };
 }
 
@@ -1009,6 +1014,76 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
 
 
 /**
+ * Chandrashekhar x-directional surface (numerical) flux. See Gassner et al (2016) section 3.4,
+ * particularly eqs (3.20) and (3.27-29) for the expression. This is essentially Chandrashekhar's
+ * volume flux added with a stabilisation term similar to the 2nd term in a Rusanov flux.
+ *
+ * Much of the implementation follows directly from chandrashekhar_vol_flux(), just that here the
+ * direction is fixed to point in x.
+ *
+ * @note See WJ-17-Feb-2022. This was added much later compared to other surface flux schemes.
+ */
+void NavierStokes::chandrashekhar_xflux(
+    const State &lcs, const State &rcs, State &f
+) const
+{
+    const double pl = get_p(lcs), pr = get_p(rcs);
+    const double betal = 0.5*lcs[0]/pl, betar = 0.5*rcs[0]/pr;
+    double beta_ln(betal);
+    double denom = log(betal) - log(betar);
+    if(fabs(denom) > 1e-8) beta_ln = (betal-betar)/(denom);
+    
+    const double p_hat = 0.5*(lcs[0]+rcs[0])/(betal+betar);
+    double rho_ln(lcs[0]);
+    denom = log(lcs[0]) - log(rcs[0]);
+    if(fabs(denom) > 1e-8) rho_ln = (lcs[0]-rcs[0])/(denom);
+
+    dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
+    dealii::Tensor<1,dim> vl, vr; // left and right velocities
+    const double rho_invl = 1/lcs[0], rho_invr = 1/rcs[0];
+    for(int d=0; d<dim; d++){
+        vl[d] = lcs[1+d]*rho_invl;
+        vr[d] = rcs[1+d]*rho_invr;
+        vel_avg[d] = 0.5*(vl[d]+vr[d]);
+        vel_sq_avg[d] = 0.5*(vl[d]*vl[d] + vr[d]*vr[d]);
+    }
+
+    double H_hat = 0.5/((gma_-1)*beta_ln) + p_hat/rho_ln; // initialise
+    for(int d=0; d<dim; d++){
+        H_hat += vel_avg[d]*vel_avg[d] - 0.5*vel_sq_avg[d];
+    }
+
+    const double lambda_max = std::max(
+        fabs(vl[0]) + std::sqrt(gma_*pl*rho_invl),
+        fabs(vr[0]) + std::sqrt(gma_*pr*rho_invr)
+    );
+
+    // volume flux (symmetric part)
+    f[0] = rho_ln*vel_avg[0];
+    f[1] = rho_ln*vel_avg[0]*vel_avg[0] + p_hat;
+    f[2] = rho_ln*vel_avg[0]*vel_avg[1];
+    f[3] = rho_ln*vel_avg[0]*vel_avg[2];
+    f[4] = rho_ln*vel_avg[0]*H_hat;
+
+    // stabilisation part
+    for(int i=0; i<4; i++){
+        // first 4 components
+        f[i] -= 0.5*lambda_max*(rcs[i]-lcs[i]);
+    }
+    f[4] -= 0.5*lambda_max*(
+        (0.5/((gma_-1)*beta_ln) + vl[0]*vr[0] + vl[1]*vr[1] + vl[2]*vr[2])*(rcs[0]-lcs[0]) +
+        0.5*(lcs[0] + rcs[0])*(
+            vel_avg[0]*(vr[0]-vl[0]) +
+            vel_avg[1]*(vr[1]-vl[1]) +
+            vel_avg[2]*(vr[2]-vl[2]) +
+            (pr*rho_invr - pl*rho_invl)/(gma_-1)
+        )
+    );
+}
+
+
+
+/**
  * @brief Chandrashekhar inviscid volume flux.
  *
  * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016).
@@ -1021,7 +1096,7 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
  * @pre @p dir has to be a unit vector
  * @pre @p cs1 and @p cs2 must pass the test of NavierStokes::assert_positivity()
  */
-void NavierStokes::chandrashekhar_flux(
+void NavierStokes::chandrashekhar_vol_flux(
     const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
 ) const
 {
