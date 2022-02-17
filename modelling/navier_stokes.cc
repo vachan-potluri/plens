@@ -1088,6 +1088,8 @@ void NavierStokes::chandrashekhar_xflux(
 
     // 2. hybrid matrix based stabilisation
     // see sections 6 and 8 of Chandrashekhar (2013)
+    // Chandrashekhar (2013) uses entropy variables to calculate this, while I am using
+    // conservative variables; thus making this term similar to Roe's flux term
     const double rhosql = std::sqrt(lcs[0]), rhosqr = std::sqrt(rcs[0]); // 'sq'uare root density
     
     // Roe averages
@@ -1097,8 +1099,8 @@ void NavierStokes::chandrashekhar_xflux(
     }
     const double Ht = ( (lcs[4]+pl)/rhosql + (rcs[4]+pr)/rhosqr )/(rhosql + rhosqr); // H tilde
     const double at = sqrt((gma_-1)*(Ht - 0.5*dealii::scalar_product(vt, vt))); // a tilde
-    const double a_ln = std::sqrt(0.5*gma_/beta_ln); // see section 6.1 of Chandrashekhar (2013)
-    const double H_ln = a_ln*a_ln/(gma_-1) + 0.5*dealii::scalar_product(vt, vt); // see section 6.1
+    // const double a_ln = std::sqrt(0.5*gma_/beta_ln); // see section 6.1 of Chandrashekhar (2013)
+    // const double H_ln = a_ln*a_ln/(gma_-1) + 0.5*dealii::scalar_product(vt, vt); // see section 6.1
     dealii::FullMatrix<double> K(dim+2), Kinv(dim+2), A(dim+2);
     get_xK(vt, at, Ht, K);
     get_xKinv(vt, at, Ht, Kinv);
@@ -1125,7 +1127,7 @@ void NavierStokes::chandrashekhar_xflux(
     // 1/2 * A * (rcs - lcs)
     for(int i=0; i<dim+2; i++){
         for(int j=0; j<dim+2; j++){
-            f[i] -= 0.5*A(i,j)*(rcs[i] - lcs[i]);
+            f[i] -= 0.5*A(i,j)*(rcs[j] - lcs[j]);
         }
     }
 }
