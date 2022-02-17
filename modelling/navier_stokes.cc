@@ -1021,6 +1021,8 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
  * Much of the implementation follows directly from chandrashekhar_vol_flux(), just that here the
  * direction is fixed to point in x.
  *
+ * For matrix based stabilisation, see Chandrashekhar (2013).
+ *
  * @note See WJ-17-Feb-2022. This was added much later compared to other surface flux schemes.
  */
 void NavierStokes::chandrashekhar_xflux(
@@ -1053,11 +1055,6 @@ void NavierStokes::chandrashekhar_xflux(
         H_hat += vel_avg[d]*vel_avg[d] - 0.5*vel_sq_avg[d];
     }
 
-    const double lambda_max = std::max(
-        fabs(vl[0]) + std::sqrt(gma_*pl*rho_invl),
-        fabs(vr[0]) + std::sqrt(gma_*pr*rho_invr)
-    );
-
     // volume flux (symmetric part)
     f[0] = rho_ln*vel_avg[0];
     f[1] = rho_ln*vel_avg[0]*vel_avg[0] + p_hat;
@@ -1065,20 +1062,72 @@ void NavierStokes::chandrashekhar_xflux(
     f[3] = rho_ln*vel_avg[0]*vel_avg[2];
     f[4] = rho_ln*vel_avg[0]*H_hat;
 
+    const double lambda_max = std::max(
+        fabs(vl[0]) + std::sqrt(gma_*pl*rho_invl),
+        fabs(vr[0]) + std::sqrt(gma_*pr*rho_invr)
+    );
+
     // stabilisation part
+    // 1. scalar stabilisation (see Hennemann et al (2021) section 5)
+    /*
     for(int i=0; i<4; i++){
         // first 4 components
         f[i] -= 0.5*lambda_max*(rcs[i]-lcs[i]);
     }
     f[4] -= 0.5*lambda_max*(
-        (0.5/((gma_-1)*beta_ln) + 0.5*(vl[0]*vr[0] + vl[1]*vr[1] + vl[2]*vr[2]))*(rcs[0]-lcs[0]) +
+        (0.5/((gma_-1)*beta_ln) + 0.5*(dealii::scalar_product(vl,vr)))*(rcs[0]-lcs[0]) +
         0.5*(lcs[0] + rcs[0])*(
-            vel_avg[0]*(vr[0]-vl[0]) +
-            vel_avg[1]*(vr[1]-vl[1]) +
-            vel_avg[2]*(vr[2]-vl[2]) +
+            dealii::scalar_product(vel_avg, vr-vl) +
+            // vel_avg[0]*(vr[0]-vl[0]) +
+            // vel_avg[1]*(vr[1]-vl[1]) +
+            // vel_avg[2]*(vr[2]-vl[2]) +
             (pr*rho_invr - pl*rho_invl)/(gma_-1)
         )
     );
+    */
+
+    // 2. hybrid matrix based stabilisation
+    // see sections 6 and 8 of Chandrashekhar (2013)
+    const double rhosql = std::sqrt(lcs[0]), rhosqr = std::sqrt(rcs[0]); // 'sq'uare root density
+    
+    // Roe averages
+    dealii::Tensor<1,dim> vt; // velocity tilde
+    for(int d=0; d<dim; d++){
+        vt[d] = (vl[d]*rhosql + vr[d]*rhosqr)/(rhosql + rhosqr);
+    }
+    const double Ht = ( (lcs[4]+pl)/rhosql + (rcs[4]+pr)/rhosqr )/(rhosql + rhosqr); // H tilde
+    const double at = sqrt((gma_-1)*(Ht - 0.5*dealii::scalar_product(vt, vt))); // a tilde
+    const double a_ln = std::sqrt(0.5*gma_/beta_ln); // see section 6.1 of Chandrashekhar (2013)
+    const double H_ln = a_ln*a_ln/(gma_-1) + 0.5*dealii::scalar_product(vt, vt); // see section 6.1
+    dealii::FullMatrix<double> K(dim+2), Kinv(dim+2), A(dim+2);
+    get_xK(vt, at, Ht, K);
+    get_xKinv(vt, at, Ht, Kinv);
+    // get_xK(vt, a_ln, H_ln, K);
+    // get_xKinv(vt, a_ln, H_ln, Kinv);
+    // eigen values: blending Roe and Rusanov eigenvalues with flux blender value
+    std::array<double, dim+2> eig = {
+        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]-at),
+        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]),
+        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]),
+        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]),
+        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]+at)
+    };
+    A = 0;
+    // A = K * Delta * Kinv
+    for(int i=0; i<dim+2; i++){
+        for(int j=0; j<dim+2; j++){
+            for(int k=0; k<dim+2; k++){
+                A(i,j) += K(i,k)*eig[k]*Kinv(k,j);
+            }
+        }
+    }
+    // stabilisation term
+    // 1/2 * A * (rcs - lcs)
+    for(int i=0; i<dim+2; i++){
+        for(int j=0; j<dim+2; j++){
+            f[i] -= 0.5*A(i,j)*(rcs[i] - lcs[i]);
+        }
+    }
 }
 
 
