@@ -1071,7 +1071,7 @@ void NavierStokes::chandrashekhar_xflux(
         f[i] -= 0.5*lambda_max*(rcs[i]-lcs[i]);
     }
     f[4] -= 0.5*lambda_max*(
-        (0.5/((gma_-1)*beta_ln) + vl[0]*vr[0] + vl[1]*vr[1] + vl[2]*vr[2])*(rcs[0]-lcs[0]) +
+        (0.5/((gma_-1)*beta_ln) + 0.5*(vl[0]*vr[0] + vl[1]*vr[1] + vl[2]*vr[2]))*(rcs[0]-lcs[0]) +
         0.5*(lcs[0] + rcs[0])*(
             vel_avg[0]*(vr[0]-vl[0]) +
             vel_avg[1]*(vr[1]-vl[1]) +
