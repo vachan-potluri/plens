@@ -237,7 +237,7 @@ void PLENS::declare_parameters()
         );
         prm.declare_entry(
             "inviscid surface flux scheme",
-            "HLLC",
+            "Chandrashekhar",
             Patterns::Selection(
                 "HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|Chandrashekhar|KG"
             ),
