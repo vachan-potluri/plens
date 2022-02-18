@@ -1178,6 +1178,22 @@ void NavierStokes::kennedy_gruber_xflux(
 
 
 /**
+ * Blend of Rusanov and Kennedy-Gruber surface fluxes.
+ */
+void NavierStokes::rusanov_kennedy_gruber_blend_xflux(
+    const State &lcs, const State &rcs, State &f
+) const
+{
+    State f_rus, f_kg;
+    rusanov_xflux(lcs, rcs, f_rus);
+    kennedy_gruber_xflux(lcs, rcs, f_kg);
+    for(cvar var: cvar_list) f[var] = flux_blender_value*f_rus[var] +
+        (1-flux_blender_value)*f_kg[var];
+}
+
+
+
+/**
  * @brief Chandrashekhar inviscid volume flux.
  *
  * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016).
