@@ -199,7 +199,7 @@ class NavierStokes
     void rusanov_ausm_plus_up_blend_xflux(const State &lcs, const State &rcs, State &f) const;
     void modified_sw_xflux(const State &lcs, const State &rcs, State &f) const;
     void chandrashekhar_xflux(const State &lcs, const State &rcs, State &f) const;
-    void kennedy_gruber_xflux(const State &lcs, const State &rcs, State &f) const {};
+    void kennedy_gruber_xflux(const State &lcs, const State &rcs, State &f) const;
     
     // inv vol fluxes
     void chandrashekhar_vol_flux(
@@ -207,7 +207,7 @@ class NavierStokes
     ) const;
     void kennedy_gruber_vol_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
-    ) const {};
+    ) const;
     
     static void br1_flux(const State &cs1, const State &cs2, State &f); // aux surf & vol flux
     

@@ -1139,6 +1139,45 @@ void NavierStokes::chandrashekhar_xflux(
 
 
 /**
+ * See eq (3.10) and (3.28) of Gassner et al (2016).
+ */
+void NavierStokes::kennedy_gruber_xflux(
+    const State &lcs, const State &rcs, State &f
+) const
+{
+    dealii::Tensor<1,dim> vel_avg;
+    dealii::Tensor<1,dim> vl, vr;
+    const double rho_invl = 1/lcs[0], rho_invr = 1/rcs[0];
+    for(int d=0; d<dim; d++){
+        vl[d] = lcs[1+d]*rho_invl;
+        vr[d] = rcs[1+d]*rho_invr;
+        vel_avg[d] = 0.5*(vl[d]+vr[d]);
+    }
+    const double rho_avg = 0.5*(lcs[0] + rcs[0]);
+    const double el = get_e(lcs), er = get_e(rcs);
+    const double E_avg = 0.5*(
+        el + er +
+        0.5*(dealii::scalar_product(vl,vl) + dealii::scalar_product(vr,vr))
+    );
+    const double p_avg = (gma_-1)*0.5*(lcs[0]*el + rcs[0]*er);
+    f[0] = vel_avg[0]*rho_avg;
+    for(int d=0; d<dim; d++){
+        f[1+d] = rho_avg*vel_avg[0]*vel_avg[d];
+    }
+    f[1] += p_avg;
+    f[4] = vel_avg[0]*(rho_avg*E_avg + p_avg);
+
+    // stabilisation term
+    const double lambda_max = std::max(
+        fabs(vl[0]) + std::sqrt(gma_*(gma_-1)*el),
+        fabs(vr[0]) + std::sqrt(gma_*(gma_-1)*er)
+    );
+    for(cvar var: cvar_list) f[var] -= 0.5*lambda_max*(rcs[var] - lcs[var]);
+}
+
+
+
+/**
  * @brief Chandrashekhar inviscid volume flux.
  *
  * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016).
@@ -1183,6 +1222,38 @@ void NavierStokes::chandrashekhar_vol_flux(
         f[1+d] = rho_ln*vel_n*vel_avg[d] + p_hat*dir[d];
     }
     f[4] = rho_ln*vel_n*H_hat;
+}
+
+
+
+/**
+ * See eq (3.10) of Gassner et al (2016).
+ */
+void NavierStokes::kennedy_gruber_vol_flux(
+    const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
+) const
+{
+    dealii::Tensor<1,dim> vel_avg;
+    dealii::Tensor<1,dim> vel1, vel2;
+    const double rho_inv1 = 1/cs1[0], rho_inv2 = 1/cs2[0];
+    for(int d=0; d<dim; d++){
+        vel1[d] = cs1[1+d]*rho_inv1;
+        vel2[d] = cs2[1+d]*rho_inv2;
+        vel_avg[d] = 0.5*(vel1[d]+vel2[d]);
+    }
+    const double rho_avg = 0.5*(cs1[0] + cs2[0]);
+    const double e1 = get_e(cs1), e2 = get_e(cs2);
+    const double E_avg = 0.5*(
+        e1 + e2 +
+        0.5*(dealii::scalar_product(vel1, vel1) + dealii::scalar_product(vel2,vel2))
+    );
+    const double p_avg = (gma_-1)*0.5*(cs1[0]*e1 + cs2[0]*e2);
+    const double vel_n = dealii::scalar_product(vel_avg, dir); // velocity in the direction 'dir'
+    f[0] = vel_n*rho_avg;
+    for(int d=0; d<dim; d++){
+        f[1+d] = rho_avg*vel_n*vel_avg[d] + p_avg*dir[d];
+    }
+    f[4] = vel_n*(rho_avg*E_avg + p_avg);
 }
 
 

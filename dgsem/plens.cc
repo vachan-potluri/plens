@@ -743,10 +743,12 @@ void PLENS::set_NS()
         else if(temp == "Rusanov-AUSM+-up")
             isfs = NavierStokes::inv_surf_flux_scheme::rusanov_ausm_plus_up_blend;
         else if(temp == "Modified SW") isfs = NavierStokes::inv_surf_flux_scheme::modified_sw;
-        else isfs = NavierStokes::inv_surf_flux_scheme::chandrashekhar;
+        else if(temp == "Chandrashekhar") isfs = NavierStokes::inv_surf_flux_scheme::chandrashekhar;
+        else isfs = NavierStokes::inv_surf_flux_scheme::kennedy_gruber;
 
         temp = prm.get("inviscid volume flux scheme");
         if(temp == "Chandrashekhar") ivfs = NavierStokes::inv_vol_flux_scheme::chandrashekhar;
+        else ivfs = NavierStokes::inv_vol_flux_scheme::kennedy_gruber;
 
         temp = prm.get("diffusive surface flux scheme");
         if(temp == "BR1") dsfs = NavierStokes::dif_surf_flux_scheme::BR1;
