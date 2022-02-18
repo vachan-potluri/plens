@@ -239,16 +239,16 @@ void PLENS::declare_parameters()
             "inviscid surface flux scheme",
             "HLLC",
             Patterns::Selection(
-                "HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|Chandrashekhar"
+                "HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|Chandrashekhar|KG"
             ),
             "Options: 'HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|"
-            "Chandrashekhar'"
+            "Chandrashekhar|KG'"
         );
         prm.declare_entry(
             "inviscid volume flux scheme",
             "Chandrashekhar",
-            Patterns::Selection("Chandrashekhar"),
-            "Options: 'Chandrashekhar'"
+            Patterns::Selection("Chandrashekhar|KG"),
+            "Options: 'Chandrashekhar|KG'"
         );
         prm.declare_entry(
             "diffusive surface flux scheme",
