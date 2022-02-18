@@ -169,9 +169,14 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->modified_sw_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::chandrashekhar){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->chandrashekhar_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->kennedy_gruber_xflux(lcs, rcs, f);
         };
     }
 }
@@ -180,17 +185,23 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
 
 /**
  * @brief Sets the invsicid volume flux function NavierStokes::inv_vol_flux
- *
- * @note Currently only Chandrashekhar volume flux is available. So he parameter @p ivfs is not used
- * at all currently.
  */
 void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
 {
-    // only one option available currently
-    get_inv_vol_flux = [=](
-        const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f){
-        this->chandrashekhar_vol_flux(cs1, cs2, dir, f);
-    };
+    if(ivfs == inv_vol_flux_scheme::chandrashekhar){
+        get_inv_vol_flux = [=](
+            const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
+        ){
+            this->chandrashekhar_vol_flux(cs1, cs2, dir, f);
+        };
+    }
+    else{
+        get_inv_vol_flux = [=](
+            const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
+        ){
+            this->kennedy_gruber_vol_flux(cs1, cs2, dir, f);
+        };
+    }
 }
 
 
