@@ -1039,15 +1039,10 @@ void NavierStokes::chandrashekhar_xflux(
 ) const
 {
     const double pl = get_p(lcs), pr = get_p(rcs);
-    const double betal = 0.5*lcs[0]/pl, betar = 0.5*rcs[0]/pr;
-    double beta_ln(betal);
-    double denom = log(betal) - log(betar);
-    if(fabs(denom) > 1e-8) beta_ln = (betal-betar)/(denom);
+    const double betal = 0.5*lcs[0]/pl, betar = 0.5*rcs[0]/pr, beta_ln = log_avg(betal, betar);
     
     const double p_hat = 0.5*(lcs[0]+rcs[0])/(betal+betar);
-    double rho_ln(lcs[0]);
-    denom = log(lcs[0]) - log(rcs[0]);
-    if(fabs(denom) > 1e-8) rho_ln = (lcs[0]-rcs[0])/(denom);
+    const double rho_ln = log_avg(lcs[0], rcs[0]);
 
     dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
     dealii::Tensor<1,dim> vl, vr; // left and right velocities
@@ -1160,16 +1155,11 @@ void NavierStokes::chandrashekhar_vol_flux(
     const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
 ) const
 {
-    double p1 = get_p(cs1), p2 = get_p(cs2);
-    double beta1 = 0.5*cs1[0]/p1, beta2 = 0.5*cs2[0]/p2;
-    double beta_ln(beta1);
-    double denom = log(beta1) - log(beta2);
-    if(fabs(denom) > 1e-8) beta_ln = (beta1-beta2)/(denom);
+    const double p1 = get_p(cs1), p2 = get_p(cs2);
+    const double beta1 = 0.5*cs1[0]/p1, beta2 = 0.5*cs2[0]/p2, beta_ln = log_avg(beta1, beta2);
     
-    double p_hat = 0.5*(cs1[0]+cs2[0])/(beta1+beta2);
-    double rho_ln(cs1[0]);
-    denom = log(cs1[0]) - log(cs2[0]);
-    if(fabs(denom) > 1e-8) rho_ln = (cs1[0]-cs2[0])/(denom);
+    const double p_hat = 0.5*(cs1[0]+cs2[0])/(beta1+beta2);
+    const double rho_ln = log_avg(cs1[0], cs2[0]);
     
     dealii::Tensor<1,dim> vel_avg, vel_sq_avg; // sq for 'sq'uare
     double v1, v2; // temporary quantities
@@ -1186,7 +1176,7 @@ void NavierStokes::chandrashekhar_vol_flux(
         H_hat += vel_avg[d]*vel_avg[d] - 0.5*vel_sq_avg[d];
     }
     
-    double vel_n = dealii::scalar_product(vel_avg, dir); // velocity in the direction 'dir'
+    const double vel_n = dealii::scalar_product(vel_avg, dir); // velocity in the direction 'dir'
     
     f[0] = vel_n*rho_ln;
     for(int d=0; d<dim; d++){

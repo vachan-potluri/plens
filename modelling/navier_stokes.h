@@ -392,6 +392,31 @@ class NavierStokes
     {
         return 0.5*(x - std::sqrt(x*x + eps*eps));
     }
+
+    /**
+     * Function to calculate logarithmic average. The algo used here is by Ismail & Roe (2009) (see
+     * appendix B of this ref).
+     * @f[
+     * x^{ln} = \frac{x_l + x_r}{\ln \xi} \frac{\xi-1}{\xi+1}\\[1em]
+     * \xi := \frac{x_l}{x_r},\quad f := \frac{\xi-1}{\xi+1}, \quad u := f^2\\[1em]
+     * F = \left\{
+     *   \begin{array}{ll}
+     *     1 + \frac{u}{3} + \frac{u^2}{5} + \frac{u^3}{7} & \text{if}\ u < 10^{-2}\\
+     *     \frac{\ln \xi}{2f} & \text{otherwise}
+     *   \end{array}
+     * \right.\\[1em]
+     * x^{ln} \approx \frac{x_l + x_r}{2F}\\
+     * @f]
+     * @pre @p xl and @p xr must be positive
+     */
+    inline static double log_avg(const double xl, const double xr)
+    {
+        const double xi = xl/xr,
+            f = (xi-1)/(xi+1),
+            u = f*f,
+            F = ( u<1e-2 ? 1 + u/3 + u*u/5 + u*u*u/7 : 0.5*log(xi)/f );
+        return 0.5*(xl+xr)/F;
+    }
     
     #ifdef DEBUG
     static void test();
