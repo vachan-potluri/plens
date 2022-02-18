@@ -1111,12 +1111,13 @@ void NavierStokes::chandrashekhar_xflux(
     // get_xK(vt, a_ln, H_ln, K);
     // get_xKinv(vt, a_ln, H_ln, Kinv);
     // eigen values: blending Roe and Rusanov eigenvalues with flux blender value
+    const double lambda_rus = fabs(vt[0]) + at;
     std::array<double, dim+2> eig = {
-        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]-at),
-        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]),
-        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]),
-        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]),
-        flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]+at)
+        flux_blender_value*lambda_rus + (1-flux_blender_value)*fabs(vt[0]-at),
+        flux_blender_value*lambda_rus + (1-flux_blender_value)*fabs(vt[0]),
+        flux_blender_value*lambda_rus + (1-flux_blender_value)*fabs(vt[0]),
+        flux_blender_value*lambda_rus + (1-flux_blender_value)*fabs(vt[0]),
+        flux_blender_value*lambda_rus + (1-flux_blender_value)*fabs(vt[0]+at)
     };
     A = 0;
     // A = K * Lambda * Kinv
