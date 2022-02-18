@@ -283,14 +283,14 @@ class NavierStokes
         const dealii::Tensor<1,dim> &vel,
         const double a,
         const double H,
-        dealii::FullMatrix<double> &K
+        dealii::Tensor<2,dim+2> &K
     ) const;
 
     void get_xKinv(
         const dealii::Tensor<1,dim> &vel,
         const double a,
         const double H,
-        dealii::FullMatrix<double> &K
+        dealii::Tensor<2,dim+2> &K
     ) const;
     
     /**

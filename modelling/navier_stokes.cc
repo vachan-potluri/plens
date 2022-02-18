@@ -600,9 +600,6 @@ void NavierStokes::get_dif_flux(
  * @param[in] H Total enthalpy (@f$ e + \frac{\vec{u} \cdot \vec{u}}{2} + \frac{p}{\rho} @f$)
  * @param[out] K The right eigen vector matrix
  *
- * @pre @p K must be a square matrix of size 5. No assertions on this are made. So the behaviour
- * maybe unexpected when this condition is not met.
- *
  * @note Although in principle this function can be static, it is not being done because get_xKinv
  * cannot be static.
  */
@@ -610,90 +607,91 @@ void NavierStokes::get_xK(
     const dealii::Tensor<1,dim> &vel,
     const double a,
     const double H,
-    dealii::FullMatrix<double> &K
+    dealii::Tensor<2,dim+2> &K
 ) const
 {
     // 1st col
-    K(0,0) = 1;
-    for(int d=0; d<dim; d++) K(1+d, 0) = vel[d];
-    K(1,0) -= a;
-    K(4,0) = H - vel[0]*a;
+    K[0][0] = 1;
+    for(int d=0; d<dim; d++) K[1+d][0] = vel[d];
+    K[1][0] -= a;
+    K[4][0] = H - vel[0]*a;
 
     // 2nd col
-    K(0,1) = 1;
-    for(int d=0; d<dim; d++) K(1+d, 1) = vel[d];
-    K(4,1) = 0.5*dealii::scalar_product(vel, vel);
+    K[0][1] = 1;
+    for(int d=0; d<dim; d++) K[1+d][1] = vel[d];
+    K[4][1] = 0.5*dealii::scalar_product(vel, vel);
 
     // 3rd col
-    K(0,2) = 0;
-    K(1,2) = 0;
-    K(2,2) = 1;
-    K(3,2) = 0;
-    K(4,2) = vel[1];
+    K[0][2] = 0;
+    K[1][2] = 0;
+    K[2][2] = 1;
+    K[3][2] = 0;
+    K[4][2] = vel[1];
 
     // 4th col
-    K(0,3) = 0;
-    K(1,3) = 0;
-    K(2,3) = 0;
-    K(3,3) = 1;
-    K(4,3) = vel[2];
+    K[0][3] = 0;
+    K[1][3] = 0;
+    K[2][3] = 0;
+    K[3][3] = 1;
+    K[4][3] = vel[2];
 
     // 5th col
-    K(0,4) = 1;
-    for(int d=0; d<dim; d++) K(1+d, 4) = vel[d];
-    K(1,4) += a;
-    K(4,4) = H + vel[0]*a;
+    K[0][4] = 1;
+    for(int d=0; d<dim; d++) K[1+d][4] = vel[d];
+    K[1][4] += a;
+    K[4][4] = H + vel[0]*a;
 }
 
 
 
 /**
  * Gives the inverse of x-directional right eigen vector matrix as @p Kinv. All other details and
- * requirements are exactly as for get_xK(). This function depends on NavierStoes::gma_ and thus
+ * requirements are exactly as for get_xK(). This function depends on NavierStokes::gma_ and thus
  * cannot be static.
  */
 void NavierStokes::get_xKinv(
     const dealii::Tensor<1,dim> &vel,
     const double a,
     const double H,
-    dealii::FullMatrix<double> &Kinv
+    dealii::Tensor<2,dim+2> &Kinv
 ) const
 {
+    const double temp = 1/(gma_-1);
     // 1st row
-    Kinv(0,0) = H + a*(vel[0]-a)/(gma_-1);
-    for(int d=0; d<dim; d++) Kinv(0,1+d) = -vel[d];
-    Kinv(0,1) -= a/(gma_-1);
-    Kinv(0,4) = 1;
+    Kinv[0][0] = H + a*(vel[0]-a)*temp;
+    for(int d=0; d<dim; d++) Kinv[0][1+d] = -vel[d];
+    Kinv[0][1] -= a*temp;
+    Kinv[0][4] = 1;
 
     // 2nd row
-    Kinv(1,0) = 2*(2*a*a/(gma_-1) - H);
-    for(int d=0; d<dim; d++) Kinv(1,1+d) = 2*vel[d];
-    Kinv(1,4) = -2;
+    Kinv[1][0] = 2*(2*a*a*temp - H);
+    for(int d=0; d<dim; d++) Kinv[1][1+d] = 2*vel[d];
+    Kinv[1][4] = -2;
 
     // 3rd row
-    Kinv(2,0) = -2*vel[1]*a*a/(gma_-1);
-    Kinv(2,1) = 0;
-    Kinv(2,2) = 2*a*a/(gma_-1);
-    Kinv(2,3) = 0;
-    Kinv(2,4) = 0;
+    Kinv[2][0] = -2*vel[1]*a*a*temp;
+    Kinv[2][1] = 0;
+    Kinv[2][2] = 2*a*a*temp;
+    Kinv[2][3] = 0;
+    Kinv[2][4] = 0;
 
     // 4th row
-    Kinv(3,0) = -2*vel[2]*a*a/(gma_-1);
-    Kinv(3,1) = 0;
-    Kinv(3,2) = 0;
-    Kinv(3,3) = 2*a*a/(gma_-1);
-    Kinv(3,4) = 0;
+    Kinv[3][0] = -2*vel[2]*a*a*temp;
+    Kinv[3][1] = 0;
+    Kinv[3][2] = 0;
+    Kinv[3][3] = 2*a*a*temp;
+    Kinv[3][4] = 0;
 
     // 5th row
-    Kinv(4,0) = H - a*(vel[0]+a)/(gma_-1);
-    for(int d=0; d<dim; d++) Kinv(4,1+d) = -vel[d];
-    Kinv(4,1) += a/(gma_-1);
-    Kinv(4,4) = 1;
+    Kinv[4][0] = H - a*(vel[0]+a)*temp;
+    for(int d=0; d<dim; d++) Kinv[4][1+d] = -vel[d];
+    Kinv[4][1] += a*temp;
+    Kinv[4][4] = 1;
 
     const double factor = 0.5*(gma_-1)/(a*a);
     for(int i=0; i<dim+2; i++){
         for(int j=0; j<dim+2; j++){
-            Kinv(i,j) *= factor;
+            Kinv[i][j] *= factor;
         }
     }
 }
@@ -974,7 +972,7 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
         H_neg = gma_*p_neg/((gma_-1)*rho_neg) + 0.5*dealii::scalar_product(vel_neg, vel_neg);
 
     // pos and neg eigenvector matrices
-    dealii::FullMatrix<double> K_pos(dim+2), Kinv_pos(dim+2), K_neg(dim+2), Kinv_neg(dim+2);
+    dealii::Tensor<2,dim+2> K_pos, Kinv_pos, K_neg, Kinv_neg;
     get_xK(vel_pos, a_pos, H_pos, K_pos);
     get_xK(vel_neg, a_neg, H_neg, K_neg);
     get_xKinv(vel_pos, a_pos, H_pos, Kinv_pos);
@@ -990,14 +988,14 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
     for(int d=0; d<dim; d++) eig_neg[1+d] = neg_smooth(vel_neg[0], eps*a_neg);
     eig_neg[4] = neg_smooth(vel_neg[0] + a_neg, eps*a_neg);
 
-    dealii::FullMatrix<double> A_pos(dim+2), A_neg(dim+2);
+    dealii::Tensor<2,dim+2> A_pos, A_neg;
     A_pos = 0;
     A_neg = 0;
     for(int i=0; i<dim+2; i++){
         for(int j=0; j<dim+2; j++){
             for(int k=0; k<dim+2; k++){
-                A_pos(i,j) += K_pos(i,k)*eig_pos[k]*Kinv_pos(k,j);
-                A_neg(i,j) += K_neg(i,k)*eig_neg[k]*Kinv_neg(k,j);
+                A_pos[i][j] += K_pos[i][k]*eig_pos[k]*Kinv_pos[k][j];
+                A_neg[i][j] += K_neg[i][k]*eig_neg[k]*Kinv_neg[k][j];
             }
         }
     }
@@ -1006,7 +1004,7 @@ void NavierStokes::modified_sw_xflux(const State &lcs, const State &rcs, State &
     for(int i=0; i<dim+2; i++){
         f[i] = 0;
         for(int j=0; j<dim+2; j++){
-            f[i] += A_pos(i,j)*lcs[j] + A_neg(i,j)*rcs[j];
+            f[i] += A_pos[i][j]*lcs[j] + A_neg[i][j]*rcs[j];
         }
     }
 }
@@ -1101,7 +1099,7 @@ void NavierStokes::chandrashekhar_xflux(
     const double at = sqrt((gma_-1)*(Ht - 0.5*dealii::scalar_product(vt, vt))); // a tilde
     // const double a_ln = std::sqrt(0.5*gma_/beta_ln); // see section 6.1 of Chandrashekhar (2013)
     // const double H_ln = a_ln*a_ln/(gma_-1) + 0.5*dealii::scalar_product(vt, vt); // see section 6.1
-    dealii::FullMatrix<double> K(dim+2), Kinv(dim+2), A(dim+2);
+    dealii::Tensor<2,dim+2> K, Kinv, A;
     get_xK(vt, at, Ht, K);
     get_xKinv(vt, at, Ht, Kinv);
     // get_xK(vt, a_ln, H_ln, K);
@@ -1115,11 +1113,11 @@ void NavierStokes::chandrashekhar_xflux(
         flux_blender_value*lambda_max + (1-flux_blender_value)*fabs(vt[0]+at)
     };
     A = 0;
-    // A = K * Delta * Kinv
+    // A = K * Lambda * Kinv
     for(int i=0; i<dim+2; i++){
         for(int j=0; j<dim+2; j++){
             for(int k=0; k<dim+2; k++){
-                A(i,j) += K(i,k)*eig[k]*Kinv(k,j);
+                A[i][j] += K[i][k]*eig[k]*Kinv[k][j];
             }
         }
     }
@@ -1127,7 +1125,7 @@ void NavierStokes::chandrashekhar_xflux(
     // 1/2 * A * (rcs - lcs)
     for(int i=0; i<dim+2; i++){
         for(int j=0; j<dim+2; j++){
-            f[i] -= 0.5*A(i,j)*(rcs[j] - lcs[j]);
+            f[i] -= 0.5*A[i][j]*(rcs[j] - lcs[j]);
         }
     }
 }
