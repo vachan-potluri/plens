@@ -41,19 +41,26 @@ ADD_EXECUTABLE(plens.out
     main.cc
 )
 
+# Gets git information
+# This is only executed when the ".h.in" file is updated
+# A hack to do that is to call "touch utilities/plens_git_revision.h.in"
+# This will change the timestamp and force cmake to rerun
+# See https://stackoverflow.com/questions/50102893/rebuild-configuration-file-when-there-are-no-cmake-changes
 DEAL_II_QUERY_GIT_INFORMATION(PLENS)
-MESSAGE("-- plens-branch:       " ${PLENS_GIT_BRANCH})
-MESSAGE("-- plens-hash (full):  " ${PLENS_GIT_REVISION})
-MESSAGE("-- plens-hash (short): " ${PLENS_GIT_SHORTREV})
-cmake_policy(SET CMP0053 OLD)
-SET(PLENS_GIT_BRANCH "@PLENS_GIT_BRANCH@")
-SET(PLENS_GIT_REVISION "@PLENS_GIT_REVISION@")
-SET(PLENS_GIT_SHORTREV "@PLENS_GIT_SHORTREV@")
-CONFIGURE_FILE(
-    ${CMAKE_SOURCE_DIR}/utilities/plens_git_revision.h.in
-    ${CMAKE_SOURCE_DIR}/utilities/plens_git_revision.h
-)
-
+IF(GIT_FOUND AND EXISTS ${CMAKE_SOURCE_DIR}/.git/HEAD)
+    # git exists on the system and this directory is a git repo
+    MESSAGE("-- plens-branch:       " ${PLENS_GIT_BRANCH})
+    MESSAGE("-- plens-hash (full):  " ${PLENS_GIT_REVISION})
+    MESSAGE("-- plens-hash (short): " ${PLENS_GIT_SHORTREV})
+    cmake_policy(SET CMP0053 OLD)
+    SET(PLENS_GIT_BRANCH "@PLENS_GIT_BRANCH@")
+    SET(PLENS_GIT_REVISION "@PLENS_GIT_REVISION@")
+    SET(PLENS_GIT_SHORTREV "@PLENS_GIT_SHORTREV@")
+    CONFIGURE_FILE(
+        ${CMAKE_SOURCE_DIR}/utilities/plens_git_revision.h.in
+        ${CMAKE_SOURCE_DIR}/utilities/plens_git_revision.h
+    )
+ENDIF()
 DEAL_II_SETUP_TARGET(plens.out)
 
 TARGET_LINK_LIBRARIES(plens.out utilities manifolds modelling IBCs dgsem)
