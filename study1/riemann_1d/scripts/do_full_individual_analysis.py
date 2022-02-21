@@ -4,12 +4,12 @@
 #   - In case simulation had crashed midway, the end time would let us know
 # - Note the CPU time and time steps from `plens.log`
 # - Extract line data (outsourced)
-# - Compute 3d velocity error
-# - Plot line data, save the plotted data for group plotting
-# - Compute the errors wrt exact solution
-# - Additional: note the wall time per time step
+# - Compute 3d velocity error (outsourced)
+# - Plot line data, save the plotted data for group plotting (outsourced)
+# - Compute the errors wrt exact solution (outsourced)
+# - Note the wall time per time step
 
-# All this data is saved in `full_analysis.log`
+# All this data is saved in `full_analysis.log` (in the same dir)
 
 
 
@@ -27,7 +27,7 @@ from ic_data import test_options
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "test",
+    "flux",
     help="The test case analysed. Options are: {}.".format(test_options)
 )
 args = parser.parse_args()
@@ -53,7 +53,7 @@ def parse_value_in_string(s, substr, size=10):
 
 
 logfile = open("full_analysis.log", "a")
-print("Doing full analysis in current directory")
+print("Doing full analysis in {}".format(os.getcwd()))
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
 
@@ -118,7 +118,7 @@ subprocess.run([
 
 
 
-## 4. Compute 3d velocity error
+## 4. Compute 3d velocity error using `compute_3d_error.py`
 print("\nStep 4")
 print("Computing 3d velocity error (outsourced)")
 runlog = subprocess.run(
@@ -131,7 +131,7 @@ logfile.write("3d absolute velocity error, {}\n".format(abs_vel_error_3d))
 
 
 
-## 5. Plotting line data and comparing with exact solution
+## 5. Plotting line data and comparing with exact solution using `plot_individual.py`
 # first getting diaphragm location from IC (0th output)
 print("\nStep 5")
 jump_vars = {
