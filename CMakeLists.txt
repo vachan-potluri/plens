@@ -41,6 +41,19 @@ ADD_EXECUTABLE(plens.out
     main.cc
 )
 
+DEAL_II_QUERY_GIT_INFORMATION(PLENS)
+MESSAGE("-- plens-branch:       " ${PLENS_GIT_BRANCH})
+MESSAGE("-- plens-hash (full):  " ${PLENS_GIT_REVISION})
+MESSAGE("-- plens-hash (short): " ${PLENS_GIT_SHORTREV})
+cmake_policy(SET CMP0053 OLD)
+SET(PLENS_GIT_BRANCH "@PLENS_GIT_BRANCH@")
+SET(PLENS_GIT_REVISION "@PLENS_GIT_REVISION@")
+SET(PLENS_GIT_SHORTREV "@PLENS_GIT_SHORTREV@")
+CONFIGURE_FILE(
+    ${CMAKE_SOURCE_DIR}/utilities/plens_git_revision.h.in
+    ${CMAKE_SOURCE_DIR}/utilities/plens_git_revision.h
+)
+
 DEAL_II_SETUP_TARGET(plens.out)
 
 TARGET_LINK_LIBRARIES(plens.out utilities manifolds modelling IBCs dgsem)
