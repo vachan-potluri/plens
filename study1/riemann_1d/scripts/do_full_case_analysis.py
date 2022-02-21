@@ -18,13 +18,15 @@
 
 import os
 import subprocess
+import pandas as pd
+import numpy as np
 
 print("Doing full analysis in {}".format(os.getcwd()))
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
 
 
-
+# constant data (generally not required to change this)
 N_values = [1,2,3,5]
 dofs = [200, 400, 800]
 actual_dof_values = [
@@ -34,22 +36,58 @@ actual_dof_values = [
     [34*6, 66*6, 134*6], # N=5
 ]
 
+# varying data (requires user intervention)
+flux = "hllc"
+result_dir = "result_logarithm"
+test_name = "Test 1"
+individual_analysis_file = "full_analysis.log"
+
 
 
 # 1. Group plots showing results with different N for dixed dof
-subprocess.run([
-    "python3",
-    script_dir + "plot_group.py",
-    ".",
-    str(200),
-    "hllc",
-    "result_logarithm",
-    "comparison_data.csv",
-    "Test 1, 200 dof, HLLC",
-    "--save",
-    "../plots",
-    "dof200_12_12_hllc",
-    "--size",
-    "9",
-    "6"
-])
+"""
+for dof in dofs:
+    subprocess.run([
+        "python3",
+        script_dir + "plot_group.py",
+        ".",
+        str(dof),
+        flux,
+        result_dir,
+        "comparison_data.csv",
+        "{}, {} dof, {}".format(test_name, dof, flux),
+        "--save",
+        "../plots",
+        "dof{}_12_12_{}".format(dof, flux),
+        "--size",
+        "9",
+        "6"
+    ])
+"""
+
+
+
+# 2. Error vs dof for different values of N
+# Create a data frame for this purpose
+l2_errors = pd.DataFrame(
+    np.zeros((len(N_values), len(dofs))),
+    index=N_values,
+    columns=dofs
+)
+wtpt = l2_errors.copy() # wall time per time step
+for N in N_values:
+    for dof in dofs:
+        df = pd.read_csv(
+            "dof{}_12_12_N{}_{}/{}/{}".format(
+                dof, N, flux, result_dir, individual_analysis_file
+            ),
+            #sep=r"\s*,\s*",
+            index_col=0,
+            header=None,
+            encoding="utf-8-sig"
+        )
+        print(df)
+        l2_error[str(N)][str(dof)] = df["l2 error"]
+        wtpt[str(N)][str(dof)] = df["wall time per time step"]
+print(l2_errors)
+print(wtpt)
