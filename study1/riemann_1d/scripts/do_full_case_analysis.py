@@ -83,7 +83,10 @@ def plot_convergence_rate(ax, x, y, loc="up"):
 
 
 
-print("Doing full analysis in {}".format(os.getcwd()))
+print("Doing case analysis in {}".format(os.getcwd()))
+
+steps_to_do = [1,2,3]
+
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
 
@@ -102,13 +105,11 @@ actual_dof_values = pd.DataFrame(
 )
 
 # varying data (requires user intervention)
-flux = "hllc"
-flux_display = "HLLC" # how the flux should be printed on plots
+flux = "chandrashekhar"
+flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
 result_dir = "result_logarithm"
 case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
-
-steps_to_do = [1,2,3]
 
 
 
