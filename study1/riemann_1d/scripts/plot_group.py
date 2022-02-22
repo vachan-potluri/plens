@@ -191,9 +191,7 @@ fig.tight_layout(rect=[0,0,1,1])
 #     fig.tight_layout(rect=[0,0,1,1])
 #     fig.canvas.draw()
 # cid = fig.canvas.mpl_connect('resize_event', on_resize)
-plt.show(block=False)
-plt.pause(1)
-plt.close()
+plt.show()
 
 if args.save[0] != "" and args.save[1] != "":
     for fmt in ["png", "pdf"]:

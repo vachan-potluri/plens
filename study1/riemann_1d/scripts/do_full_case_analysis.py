@@ -5,7 +5,7 @@
 #
 # 1. Visual comparison of results for given dof and varying N (outsourced)
 # 2. Error vs dof for different values of N
-# 3. Error vs wall time per time step for different values of N and dof
+# 3. Error vs cpu time per time step for different values of N and across dofs
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -103,32 +103,34 @@ actual_dof_values = pd.DataFrame(
 
 # varying data (requires user intervention)
 flux = "hllc"
+flux_display = "HLLC" # how the flux should be printed on plots
 result_dir = "result_logarithm"
 case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 
+steps_to_do = [1,2,3]
+
 
 
 # 1. Group plots showing results with different N for dixed dof
-"""
-for dof in dofs:
-    subprocess.run([
-        "python3",
-        script_dir + "plot_group.py",
-        ".",
-        str(dof),
-        flux,
-        result_dir,
-        "comparison_data.csv",
-        "{}, {} dof, {}".format(case_name, dof, flux),
-        "--save",
-        "../plots",
-        "dof{}_12_12_{}".format(dof, flux),
-        "--size",
-        "9",
-        "6"
-    ])
-"""
+if 1 in steps_to_do:
+    for dof in dofs:
+        subprocess.run([
+            "python3",
+            script_dir + "plot_group.py",
+            ".",
+            str(dof),
+            flux,
+            result_dir,
+            "comparison_data.csv",
+            "{}, {} dof, {}".format(case_name, dof, flux_display),
+            "--save",
+            "../plots",
+            "dof{}_12_12_{}".format(dof, flux),
+            "--size",
+            "9",
+            "6"
+        ])
 
 
 
@@ -140,6 +142,7 @@ l2_errors = pd.DataFrame(
     columns=dofs
 )
 wtpt = l2_errors.copy() # wall time per time step
+ctpt = l2_errors.copy() # cpu time per time step
 for N in N_values:
     for dof in dofs:
         df = pd.read_csv(
@@ -153,25 +156,63 @@ for N in N_values:
         df = df[~df.index.duplicated(keep="last")]
         l2_errors.loc[N, dof] = df.loc["l2 error", 1]
         wtpt.loc[N, dof] = df.loc["wall time per time step", 1]
+        ctpt.loc[N, dof] = df.loc["cpu time per time step", 1]
 
-N_plotstyles = pd.Series(["ro-", "bs--", "gP-.", "m^:"], index=N_values)
-fig, ax = plt.subplots(1,1)
-for N in N_values:
-    ax.plot(
-        actual_dof_values.loc[N, :],
-        l2_errors.loc[N, :],
-        N_plotstyles.loc[N],
-        label=r"$N={}$".format(N)
-    )
-plot_convergence_rate(ax, actual_dof_values.loc[5, :], l2_errors.loc[5, :], "below")
-ax.set_xscale("log")
-ax.set_yscale("log")
-ax.set_xlabel("Degrees of freedom")
-ax.set_ylabel(r"$L^2$ error")
-ax.set_title("{}, {}".format(case_name, flux))
-ax.legend(loc="best", handlelength=3)
-ax.grid(which="both")
-fig.set_size_inches(6, 4)
-fig.tight_layout(rect=[0,0,1,1])
-plt.show()
-mysavefig(fig, "../plots", "error_vs_dof_{}".format(flux))
+N_linestyles = pd.Series(["-", "--", "-.", ":"], index=N_values)
+N_markers = pd.Series(["o", "s", "P", "^"], index=N_values)
+N_markercolors = pd.Series(["blue", "green", "red", "magenta"], index=N_values)
+dof_linestyles = pd.Series(["-", "--", "-."], index=dofs)
+
+if 2 in steps_to_do:
+    fig, ax = plt.subplots(1,1)
+    for N in N_values:
+        ax.plot(
+            actual_dof_values.loc[N, :],
+            l2_errors.loc[N, :],
+            ls=N_linestyles.loc[N],
+            marker=N_markers[N],
+            c=N_markercolors[N],
+            # markerfacecolor=N_markercolors[N],
+            # markeredgecolor=N_markercolors[N],
+            label=r"$N={}$".format(N)
+        )
+    plot_convergence_rate(ax, actual_dof_values.loc[5, :], l2_errors.loc[5, :], "below")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Degrees of freedom")
+    ax.set_ylabel(r"$L^2$ error")
+    ax.set_title("{}, {}".format(case_name, flux_display))
+    ax.legend(loc="best", handlelength=3)
+    ax.grid(which="both")
+    fig.set_size_inches(6, 4)
+    fig.tight_layout(rect=[0,0,1,1])
+    plt.show()
+    mysavefig(fig, "../plots", "error_vs_dof_{}".format(flux))
+
+
+
+# 3. Plot error vs cpu time for different N and across dofs
+if 3 in steps_to_do:
+    fig, ax = plt.subplots(1,1)
+    for N in N_values:
+        ax.plot(
+            ctpt.loc[N, :],
+            l2_errors.loc[N, :],
+            ls=N_linestyles.loc[N],
+            marker=N_markers[N],
+            c=N_markercolors[N],
+            # markerfacecolor=N_markercolors[N],
+            # markeredgecolor=N_markercolors[N],
+            label=r"$N={}$".format(N)
+        )
+    ax.set_xlabel("CPU time per time step [sec]")
+    ax.set_ylabel(r"$L^2$ error")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_title("{}, {}".format(case_name, flux_display))
+    ax.legend(loc="best", handlelength=3)
+    ax.grid(which="both")
+    fig.set_size_inches(6, 4)
+    fig.tight_layout(rect=[0,0,1,1])
+    plt.show()
+    mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))
