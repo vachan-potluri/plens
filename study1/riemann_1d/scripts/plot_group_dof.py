@@ -1,4 +1,4 @@
-# Plots group plots using saved data from plot_individual.py
+# Plots group plots using saved data from plot_individual.py for a given dof
 
 import numpy as np
 import matplotlib.pyplot as plt

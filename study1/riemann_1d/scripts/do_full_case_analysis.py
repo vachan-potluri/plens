@@ -6,6 +6,7 @@
 # 1. Visual comparison of results for given dof and varying N (outsourced)
 # 2. Error vs dof for different values of N
 # 3. Error vs cpu time per time step for different values of N and across dofs
+# 4. Visual comparison of results for all dofs and all values of N (outsourced)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -85,7 +86,7 @@ def plot_convergence_rate(ax, x, y, loc="up"):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1,2,3]
+steps_to_do = [4]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -113,12 +114,12 @@ individual_analysis_file = "full_analysis.log"
 
 
 
-# 1. Group plots showing results with different N for dixed dof
+# 1. Group plots showing results with different N for dixed dof (outsourced)
 if 1 in steps_to_do:
     for dof in dofs:
         subprocess.run([
             "python3",
-            script_dir + "plot_group.py",
+            script_dir + "plot_group_dof.py",
             ".",
             str(dof),
             flux,
@@ -217,3 +218,24 @@ if 3 in steps_to_do:
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
     mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))
+
+
+
+# 4. Visual comparison for all dofs and all values of N
+# 1. Group plots showing results with different N for dixed dof
+if 4 in steps_to_do:
+    subprocess.run([
+        "python3",
+        script_dir + "plot_group_all.py",
+        ".",
+        flux,
+        result_dir,
+        "comparison_data.csv",
+        "{}, {}".format(case_name, flux_display),
+        "--save",
+        "../plots",
+        "all_{}".format(flux),
+        "--size",
+        "9",
+        "6"
+    ])
