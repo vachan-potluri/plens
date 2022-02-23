@@ -67,10 +67,12 @@ int main(int argc, char** argv){
 
     // plens_test();
     // return 0;
-    std::cout << "Git revision information:\n"
-        << "\tBranch: " << PLENS_GIT_BRANCH << "\n"
-        << "\tGit hash (short): " << PLENS_GIT_SHORTREV << "\n"
-        << "\tGit hash (full): " << PLENS_GIT_REVISION << "\n\n";
+    if(dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0){
+        std::cout << "Git revision information:\n"
+            << "\tBranch: " << PLENS_GIT_BRANCH << "\n"
+            << "\tGit hash (short): " << PLENS_GIT_SHORTREV << "\n"
+            << "\tGit hash (full): " << PLENS_GIT_REVISION << "\n\n";
+    }
     const usi n_args = argc-1;
     AssertThrow(
         n_args == 2,
