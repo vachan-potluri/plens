@@ -7,10 +7,19 @@ plt.rcParams["mathtext.fontset"] = "dejavuserif"
 plt.rcParams["font.size"] = 10
 # plt.rcParams["figure.figsize"] = 7,6
 
+## Some important notes
+# cp is p/rho u^2
+# Although the paper says cp is taken as p/(0.5 rho u^2), the values don't match when this
+# expression is used. I have checked the freestream pressure and verified that the cp formula
+# is missing a factor 2
+
+# Also, the paper plots quantities vs wall coordinate, instead of x-coordinate
+
 p_inf = 9.99473
 rho_inf = 0.0004827
 u_inf = 2401.824
 L = 0.438912
+wedge_angle = 18*np.pi/180
 
 parser = argparse.ArgumentParser(
     description = "A script to plot extracted data for Hung wedge 18 case."
@@ -29,6 +38,7 @@ plate_data = np.genfromtxt(
 ramp_data = np.genfromtxt(
     "{}ramp_data_{}.csv".format(res_dir, counter), delimiter=",", names=True
 )
+
 holden_cp = np.genfromtxt("../data/holden_cp.csv", delimiter=",")
 hung_cp = np.genfromtxt("../data/hung_cp.csv", delimiter=",")
 # harvey_St = np.genfromtxt("../data/St_harvey.csv", delimiter=",")
@@ -36,7 +46,7 @@ hung_cp = np.genfromtxt("../data/hung_cp.csv", delimiter=",")
 
 x_plate = plate_data["Points0"]/L
 x_ramp = ramp_data["Points0"]/L
-x = np.concatenate([x_plate, x_ramp])
+s_wall = np.concatenate([x_plate, 1+(x_ramp-1)/np.cos(wedge_angle)])
 
 cp_plate = 2*(plate_data["p"])/(rho_inf*u_inf**2)
 cp_ramp = 2*(ramp_data["p"])/(rho_inf*u_inf**2)
@@ -54,10 +64,10 @@ cp_mask = np.isfinite(cp)
 # txy_mask = np.isfinite(txy)
 
 fig, ax = plt.subplots(1,1)
-ax.plot(holden_cp[:,0], holden_cp[:,1], "bo", markersize=4, label="Holden \& Moselle\n(1970, experiment)")
-ax.plot(hung_cp[:,0], hung_cp[:,1], "gx", markersize=4, label="Hung \& MacCormack\n(1976, simulation)")
-ax.plot(x[cp_mask], cp[cp_mask], "r-", label="PLENS")
-ax.set_xlabel(r"$x/L$")
+ax.plot(holden_cp[:,0], 2*holden_cp[:,1], "bo", markersize=4, label="Holden \& Moselle\n(1970, experiment)")
+ax.plot(hung_cp[:,0], 2*hung_cp[:,1], "gx", markersize=4, label="Hung \& MacCormack\n(1976, simulation)")
+ax.plot(s_wall[cp_mask], cp[cp_mask], "r-", label="PLENS")
+ax.set_xlabel(r"$s_{\textrm{wall}}/L$")
 ax.set_ylabel(r"$\displaystyle\frac{p}{\frac{1}{2}\rho_\infty u_\infty^2}$", rotation=0, labelpad=20)
 ax.grid()
 ax.legend(loc="best")
