@@ -319,8 +319,6 @@ where superscript $\sim$ is used to denote Roe-averaged quantities, $\vect{K}$ i
 
 Five Riemann 1d problems taken from \citear{toro2009} are considered for comparing performance of polynomial degrees $N=1,\ 2,\ 3$ and $5$. The initial conditions for these tests are given \cref{tab:ic_riemann1d}. The problems were setup on a 3d domain $[0,1] \times [0,0.5]^2$ with $\lcm \{N+1 \mid N=1,2,3,5\}=12$ DoFs in $y$ and $z$ directions. Three sets of simulations on three grid resolutions for $x$ direction were performed with the number of cells given in \cref{tab:nx_riemann1d}. Explicit 5-stage RK4 time integrator \cite{kennedyCarpenterLewis2000} is used with a CFL number of 0.5.
 
-All simulations were performed on a \comment{machine specs}.
-
 \begin{table}[htbp]
 	\centering
 	\caption{Initial conditions for Riemann 1d problems. All values in SI units. The diaphragm location ($x_0$) is where the initial discontinuity is set.}
@@ -351,6 +349,39 @@ All simulations were performed on a \comment{machine specs}.
 	\bottomrule
 \end{tabular}
 \end{table}
+
+All simulations were performed on a \comment{machine specs}. The simulation results and the exact solution are sampled at 6400 equidistant points to calculate the $L^2$ error as
+\begin{equation*}
+\frac{\norm{\phi_\text{numerical} - \phi_\text{exact}}_{L^2}}{\norm{\phi_\text{exact}}_{L^2}}
+\end{equation*}
+where $\norm{\bullet}_{L^2}$ represents the $L^2$ norm and $\phi=\rho$ for all cases except Test 2 for which $\phi=T$.
+
+\subsection{Test 1}
+\label{subsec:test1-1}
+
+The variation of error in simulation with increasing DoF for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. \cref{fig:test1-1_dof800_chandrashekhar} shows a visual comparison of the results at the highest resolution (800 DoFs).
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/error_vs_dof_chandrashekhar.pdf}
+		\caption{Error vs DoFs.}
+		\label{subfig:test1-1_error_vs_dof_chandrashekhar}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/error_vs_cputime_chandrashekhar.pdf}
+		\caption{Error vs CPU time.}
+		\label{subfig:test1-1_error_vs_cputime_chandrashekhar}
+	\end{subfigure}
+	\caption{Statistics for Test 1.}
+	\label{fig:test1-1_error_plots_chandrashekhar}
+\end{figure}
+
+\begin{figure}[htbp]
+	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/dof800_12_12_chandrashekhar.pdf}
+	\caption{Comparison of results for 800 DoFs, Test 1.}
+	\label{fig:test1-1_dof800_chandrashekhar}
+\end{figure}
 
 \printbibliography
 \end{document}
