@@ -133,6 +133,7 @@ sorting=none]%important to specify this
 \newcommand{\textsh}{\text{sh}} % subscript for shock impingement location in Degrez case
 \newcommand{\eulerphy}[1]{\ensuremath{\mathcal{#1}}} % euler equation variables in physical space
 \newcommand{\eulerref}[1]{\ensuremath{#1}} % euler equation variables in physical space
+\DeclareMathOperator{\lcm}{lcm} % LCM
 
 % Define a boolean 'editing' to have 'outline' display
 \providetoggle{editing}
@@ -305,7 +306,7 @@ where $\avg{x} \defeq (x_a + x_b)/2$, $x^\textln \defeq (x_a - x_b)/(\ln (x_a/x_
 \begin{gather}
 	\vect{\eulerref{F}}^*(\vect{\eulerref{U}}_a, \vect{\eulerref{U}}_b) = \vect{\eulerref{F}}^\#_\textch(\vect{\eulerref{U}}_a, \vect{\eulerref{U}}_b) - \frac{1}{2} \vect{K} \abs{\vect{\Lambda}} \vect{K}^{-1} \left( \vect{\eulerref{U}}_b - \vect{\eulerref{U}}_a \right),\\
 	\abs{\vect{\Lambda}} = \alpha \abs{\vect{\Lambda}}^\text{Rusanov} + (1-\alpha) \abs{\vect{\Lambda}}^\text{Roe},\\
-	\abs{\vect{\Lambda}}^\text{Rusanov} = (\abs{\tilde{u}_1} + a) \vect{I},\\
+	\abs{\vect{\Lambda}}^\text{Rusanov} = (\abs{\tilde{u}_1} + \tilde{a}) \vect{I},\\
 	\abs{\vect{\Lambda}}^\text{Roe} = \diag \left( \abs{\tilde{u}_1 - \tilde{a}}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1 + \tilde{a}} \right)
 	\label{eq:1d_chandrashekhar_surface_flux}
 \end{gather}
@@ -315,6 +316,41 @@ where superscript $\sim$ is used to denote Roe-averaged quantities, $\vect{K}$ i
 
 \section{One-dimensional test results}
 \label{sec:1d_tests}
+
+Five Riemann 1d problems taken from \citear{toro2009} are considered for comparing performance of polynomial degrees $N=1,\ 2,\ 3$ and $5$. The initial conditions for these tests are given \cref{tab:ic_riemann1d}. The problems were setup on a 3d domain $[0,1] \times [0,0.5]^2$ with $\lcm \{N+1 \mid N=1,2,3,5\}=12$ DoFs in $y$ and $z$ directions. Three sets of simulations on three grid resolutions for $x$ direction were performed with the number of cells given in \cref{tab:nx_riemann1d}. Explicit 5-stage RK4 time integrator \cite{kennedyCarpenterLewis2000} is used with a CFL number of 0.5.
+
+All simulations were performed on a \comment{machine specs}.
+
+\begin{table}[htbp]
+	\centering
+	\caption{Initial conditions for Riemann 1d problems. All values in SI units. The diaphragm location ($x_0$) is where the initial discontinuity is set.}
+	\label{tab:ic_riemann1d}
+	\begin{tabular}{c c c c c c c c c}
+		\toprule
+		Test \# & $\rho_L$ & $\rho_R$ & $p_L$ & $p_R$ & $u_L$ & $u_R$ & End time & $x_0$ \\ \midrule
+		1 & 1.0 & 0.125 & 1.0 & 0.1 & 0.75 & 0.0 & 0.2 & 0.3 \\
+		2 & 1.0 & 1.0 & 0.4 & 0.4 & -2.0 & 2.0 & 0.15 & 0.5 \\
+		3 & 1.0 & 1.0 & 1000.0 & 0.01 & 0.0 & 0.0 & 0.012 & 0.5 \\
+		4 & 5.99924 & 5.99242 & 460.894 & 46.095 & 19.5975 & -6.19633 & 0.035 & 0.3 \\
+		5 & 1.0 & 1.0 & 1000.0 & 0.01 & -19.59745 & -19.59745 & 0.012 & 0.8 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Number of cells in $x$ direction for Riemann 1d problems.}
+\label{tab:nx_riemann1d}
+\begin{tabular}{lllll}
+	\toprule
+	Nominal DoFs & $N=1$ & $N=2$ & $N=3$ & $N=5$\\
+	\midrule
+	200 & 100 & 66 & 50 & 34 \\
+	400 & 200 & 134 & 100 & 66 \\
+	800 & 400 & 266 & 200 & 134 \\
+	\bottomrule
+\end{tabular}
+\end{table}
 
 \printbibliography
 \end{document}
