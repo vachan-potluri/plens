@@ -222,7 +222,7 @@ if 3 in steps_to_do:
 
 
 # 4. Visual comparison for all dofs and all values of N
-# 1. Group plots showing results with different N for dixed dof
+# Don't look so good though
 if 4 in steps_to_do:
     subprocess.run([
         "python3",
