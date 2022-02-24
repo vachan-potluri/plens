@@ -7,6 +7,8 @@ plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.size"] = 10
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
+plt.rcParams["axes.formatter.limits"] = [-2,2]
+plt.rcParams["axes.formatter.use_mathtext"] = True
 
 parser = argparse.ArgumentParser(
     description = "A script to compare numerical and exact results for different values of N, for "
@@ -182,7 +184,7 @@ for row in axes:
         ax.plot(data[:,0], data[:,2], "r-", label="Simulation")
         ax.set_title(subtitles[i])
         ax.grid()
-        ax.legend(loc="best")
+        ax.legend(loc="best", handlelength=1)
         i += 1
 if figtitle != "": fig.suptitle(figtitle)
 fig.set_size_inches(args.size[0], args.size[1])

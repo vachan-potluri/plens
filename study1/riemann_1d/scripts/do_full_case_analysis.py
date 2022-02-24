@@ -112,7 +112,7 @@ actual_dof_values = pd.DataFrame(
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
 result_dir = "result_logarithm"
-case_name = "Test 1"
+case_name = "Test 5"
 individual_analysis_file = "full_analysis.log"
 
 
@@ -189,9 +189,9 @@ if 2 in steps_to_do:
     ax.xaxis.set_major_formatter(ScalarFormatter())
     # ax.xaxis.set_minor_locator(MultipleLocator(50))
     # ax.xaxis.set_minor_formatter(NullFormatter())
-    ax.yaxis.set_major_locator(MultipleLocator(1e-2))
+    ax.yaxis.set_major_locator(MultipleLocator(2e-2))
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.yaxis.set_minor_locator(MultipleLocator(2.5e-3))
+    ax.yaxis.set_minor_locator(MultipleLocator(5e-3))
     ax.yaxis.set_minor_formatter(NullFormatter())
     ax.set_xlabel("Degrees of freedom")
     ax.set_ylabel(r"$L^2$ error")
@@ -227,9 +227,9 @@ if 3 in steps_to_do:
     ax.xaxis.set_major_formatter(ScalarFormatter())
     ax.xaxis.set_minor_locator(MultipleLocator(0.25))
     ax.xaxis.set_minor_formatter(NullFormatter())
-    ax.yaxis.set_major_locator(MultipleLocator(1e-2))
+    ax.yaxis.set_major_locator(MultipleLocator(2e-2))
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.yaxis.set_minor_locator(MultipleLocator(2.5e-3))
+    ax.yaxis.set_minor_locator(MultipleLocator(5e-3))
     ax.yaxis.set_minor_formatter(NullFormatter())
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
