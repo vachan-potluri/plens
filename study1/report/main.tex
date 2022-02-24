@@ -359,7 +359,13 @@ where $\norm{\bullet}_{L^2}$ represents the $L^2$ norm and $\phi=\rho$ for all c
 \subsection{Test 1}
 \label{subsec:test1-1}
 
-The variation of error in simulation with increasing DoF for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. \cref{fig:test1-1_dof800_chandrashekhar} shows a visual comparison of the results at the highest resolution (800 DoFs).
+This is a relatively mild test with weak right-moving contact and shock waves, and an expansion wave with left-moving head and right-moving tail, thus producing a sonic point in the expansion wave. \cref{fig:test1-1_dof800_chandrashekhar} shows a visual comparison of the results obtained using $N=1,\ 2,\ 3$ and $5$ at the highest resolution (800 DoFs). All simulations capture the sonic point and the shock well, while the resolution of contact wave gets better with increasing $N$. Behaviour of the error in simulations with increasing DoFs for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. It is immediately clear from \cref{subfig:test1-1_error_vs_dof_chandrashekhar} that even high order simulations fail to achieve higher order of convergence in this discontinuous flow. \cref{subfig:test1-1_error_vs_dof_chandrashekhar,subfig:test1-1_error_vs_cputime_chandrashekhar} together show that there is no major improvement in solution when $N=5$ is used over $N=3$, although it costs more CPU time. The error levels for $N=3,5$ are much lower compared to $N=1$ case. \cref{subfig:test1-1_error_vs_cputime_chandrashekhar} also shows that with very small increase in cost, $N=3$ offers more accurate solution over $N=2$. It may be concluded that $N=3$ would be the optimal choice for this case.
+
+\begin{figure}[htbp]
+	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/dof800_12_12_chandrashekhar.pdf}
+	\caption{Comparison of results for 800 DoFs, Test 1.}
+	\label{fig:test1-1_dof800_chandrashekhar}
+\end{figure}
 
 \begin{figure}[htbp]
 	\centering
@@ -375,12 +381,6 @@ The variation of error in simulation with increasing DoF for different values of
 	\end{subfigure}
 	\caption{Statistics for Test 1.}
 	\label{fig:test1-1_error_plots_chandrashekhar}
-\end{figure}
-
-\begin{figure}[htbp]
-	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/dof800_12_12_chandrashekhar.pdf}
-	\caption{Comparison of results for 800 DoFs, Test 1.}
-	\label{fig:test1-1_dof800_chandrashekhar}
 \end{figure}
 
 \printbibliography

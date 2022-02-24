@@ -184,7 +184,7 @@ for row in axes:
         ax.grid()
         ax.legend(loc="best")
         i += 1
-fig.suptitle(figtitle)
+if figtitle != "": fig.suptitle(figtitle)
 fig.set_size_inches(args.size[0], args.size[1])
 fig.tight_layout(rect=[0,0,1,1])
 # def on_resize(event):

@@ -1,3 +1,6 @@
+# 24-Feb-2022: this script is no longer used, but kept for reference since it shows how to
+# 1. Modify ticks on log scale
+# 2. Manually specify legend on complex plots
 # Plots errors in multiple cases with varying N gives a scatter plot of cpu time vs error
 
 import numpy as np

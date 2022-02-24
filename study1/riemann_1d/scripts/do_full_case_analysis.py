@@ -22,11 +22,14 @@ import subprocess
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter, NullFormatter, MultipleLocator
 from scipy.stats import linregress
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
-plt.rcParams["font.size"] = 10
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
+plt.rcParams["font.size"] = 10 # ineffective
+plt.rcParams["axes.formatter.limits"] = [-2,2]
+plt.rcParams["axes.formatter.use_mathtext"] = True
 
 
 
@@ -86,7 +89,7 @@ def plot_convergence_rate(ax, x, y, loc="up"):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [4]
+steps_to_do = [1,2,3]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -125,12 +128,13 @@ if 1 in steps_to_do:
             flux,
             result_dir,
             "comparison_data.csv",
-            "{}, {} dof, {}".format(case_name, dof, flux_display),
+            # "{}, {} dof, {}".format(case_name, dof, flux_display),
+            "",
             "--save",
             "../plots",
             "dof{}_12_12_{}".format(dof, flux),
             "--size",
-            "9",
+            "7",
             "6"
         ])
 
@@ -181,12 +185,20 @@ if 2 in steps_to_do:
     plot_convergence_rate(ax, actual_dof_values.loc[5, :], l2_errors.loc[5, :], "below")
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.xaxis.set_major_locator(MultipleLocator(100))
+    ax.xaxis.set_major_formatter(ScalarFormatter())
+    # ax.xaxis.set_minor_locator(MultipleLocator(50))
+    # ax.xaxis.set_minor_formatter(NullFormatter())
+    ax.yaxis.set_major_locator(MultipleLocator(1e-2))
+    ax.yaxis.set_major_formatter(ScalarFormatter())
+    ax.yaxis.set_minor_locator(MultipleLocator(2.5e-3))
+    ax.yaxis.set_minor_formatter(NullFormatter())
     ax.set_xlabel("Degrees of freedom")
     ax.set_ylabel(r"$L^2$ error")
-    ax.set_title("{}, {}".format(case_name, flux_display))
+    # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
-    ax.grid(which="both")
-    fig.set_size_inches(6, 4)
+    ax.grid(which="major")
+    fig.set_size_inches(4, 4)
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
     mysavefig(fig, "../plots", "error_vs_dof_{}".format(flux))
@@ -211,10 +223,18 @@ if 3 in steps_to_do:
     ax.set_ylabel(r"$L^2$ error")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_title("{}, {}".format(case_name, flux_display))
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.xaxis.set_major_formatter(ScalarFormatter())
+    ax.xaxis.set_minor_locator(MultipleLocator(0.25))
+    ax.xaxis.set_minor_formatter(NullFormatter())
+    ax.yaxis.set_major_locator(MultipleLocator(1e-2))
+    ax.yaxis.set_major_formatter(ScalarFormatter())
+    ax.yaxis.set_minor_locator(MultipleLocator(2.5e-3))
+    ax.yaxis.set_minor_formatter(NullFormatter())
+    # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
-    ax.grid(which="both")
-    fig.set_size_inches(6, 4)
+    ax.grid(which="major")
+    fig.set_size_inches(4, 4)
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
     mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))
@@ -236,6 +256,6 @@ if 4 in steps_to_do:
         "../plots",
         "all_{}".format(flux),
         "--size",
-        "9",
+        "7",
         "6"
     ])
