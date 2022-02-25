@@ -2194,11 +2194,39 @@ void PLENS::calc_aux_vars()
     // now set (factored) avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
+    ChangeOfBasisMatrix<dim> cbm(fe.degree);
+    std::array<State, dim> cons_grad_mode0; // 0-th legendre mode (or avg) of cons grad
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
         // calculate conservative gradients
         calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
+
+        // calculate the average of conservative gradient
+        for(usi d=0; d<dim; d++){
+            for(cvar var: cvar_list){
+                cons_grad_mode0[d][var] = 0;
+                for(usi i=0; i<fe.dofs_per_cell; i++){
+                    cons_grad_mode0[d][var] += cbm(0,i)*cons_grad[i][d][var];
+                }
+            }
+        }
+
+        // limit cons grad
+        const double alpha = gcrk_alpha[cell->global_active_cell_index()];
+        const double ho_grad_factor = std::max(
+            1.0,
+            // double(!cell->at_boundary()),
+            (1-alpha/blender_calc.get_blender_max_value())
+        ); // only required near wall cells
+        for(usi i=0; i<fe.dofs_per_cell; i++){
+            for(usi d=0; d<dim; d++){
+                for(cvar var: cvar_list){
+                    cons_grad[i][d][var] = ho_grad_factor*cons_grad[i][d][var] +
+                        (1-ho_grad_factor)*cons_grad_mode0[d][var];
+                }
+            }
+        }
 
         cell->get_dof_indices(dof_ids);
 
@@ -2798,6 +2826,7 @@ void PLENS::calc_rhs()
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
         const double ho_dif_factor = std::max(
+            // 1.0,
             double(!cell->at_boundary()),
             (1-alpha/blender_calc.get_blender_max_value())
         ); // nonzero only for boundary cells
