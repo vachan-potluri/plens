@@ -2730,6 +2730,8 @@ void PLENS::calc_cell_lo_inv_residual(
  */
 void PLENS::calc_rhs()
 {
+    ChangeOfBasisMatrix<3> cbm(fe.degree);
+
     TimerOutput::Scope timer_section(timer, "Calc RHS");
     assert_positivity();
     {
@@ -2754,6 +2756,7 @@ void PLENS::calc_rhs()
         ho_dif_residual(fe.dofs_per_cell),
         lo_inv_residual(fe.dofs_per_cell);
     std::vector<psize> dof_ids(fe.dofs_per_cell);
+    State ho_dif_res_mode0; // 0-th legendre mode (constant mode) of high order diffusive residual
 
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
@@ -2773,6 +2776,14 @@ void PLENS::calc_rhs()
                 s3_surf_flux,
                 ho_dif_residual
             ); // high order viscous
+
+            // get constant mode of high order diffusive residual
+            for(cvar var: cvar_list){
+                ho_dif_res_mode0[var] = 0;
+                for(int k=0; k<fe.dofs_per_cell; k++){
+                    ho_dif_res_mode0[var] += cbm(0,k)*ho_dif_residual[k][var];
+                }
+            }
         }
 
         {
@@ -2786,16 +2797,19 @@ void PLENS::calc_rhs()
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
+        const double ho_dif_factor = std::max(
+            double(!cell->at_boundary()),
+            (1-alpha/blender_calc.get_blender_max_value())
+        ); // nonzero only for boundary cells
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list){
                 // gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
                 //     alpha*lo_inv_residual[i][var] +
                 //     (1-alpha)*ho_inv_residual[i][var];
-                gcrk_rhs[var][dof_ids[i]] = std::max(
-                        0.0,
-                        (1-alpha/blender_calc.get_blender_max_value())
-                    )*ho_dif_residual[i][var] +
+                gcrk_rhs[var][dof_ids[i]] =
+                    // (1-ho_dif_factor)*ho_dif_res_mode0[var] +
+                    ho_dif_factor*ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
             }
