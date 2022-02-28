@@ -2318,7 +2318,7 @@ void PLENS::calc_aux_vars()
  * The blender variable used in this function is simply based on PLENS::gcrk_cvars. No
  * fluxes/boundary conditions are required.
  */
-void PLENS::calc_blender()
+void PLENS::calc_blender(const bool print_wall_blender_limit)
 {
     // first update gcrk_blender_var and read wall blender limit
     prm.enter_subsection("blender parameters");
@@ -2353,7 +2353,7 @@ void PLENS::calc_blender()
     // evaluate the wall blender limit
     wall_blender_limit_function.set_time(cur_time);
     const double wall_blender_limit = wall_blender_limit_function.value(Point<dim>());
-    pcout << "\tWall blender limit: " << wall_blender_limit << "\n";
+    if(print_wall_blender_limit) pcout << "Wall blender limit: " << wall_blender_limit << "\n";
 
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
@@ -2763,7 +2763,7 @@ void PLENS::calc_cell_lo_inv_residual(
  *   - Calculate the final residual (using blender value)
  *   - Set the residual in gcrk_rhs
  */
-void PLENS::calc_rhs()
+void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_viscous_blending_status)
 {
     ChangeOfBasisMatrix<3> cbm(fe.degree);
 
@@ -2775,7 +2775,7 @@ void PLENS::calc_rhs()
     }
     {
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate blender");
-        calc_blender();
+        calc_blender(print_wall_blender_limit);
     }
     
     // calculate stages 2 & 3 flux
@@ -2799,7 +2799,8 @@ void PLENS::calc_rhs()
         do_viscous_res_blending = cur_time <= vis_blending_cutoff_time;
     }
     prm.leave_subsection();
-    pcout << "\t\tViscous residual blending status: " << do_viscous_res_blending << "\n";
+    if(print_viscous_blending_status)
+        pcout << "Viscous residual blending status: " << do_viscous_res_blending << "\n";
 
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
@@ -3307,7 +3308,7 @@ void PLENS::write()
 void PLENS::update_rk4()
 {
     // stage 1
-    calc_rhs();
+    calc_rhs(true, true);
     // time step must be calculated after calling calc_rhs(), otherwise gcrk_mu would be unset and
     // positivity would be unasserted
     calc_time_step();
@@ -3393,7 +3394,7 @@ void PLENS::update_rk4()
 void PLENS::update_rk3()
 {
     // stage 1
-    calc_rhs();
+    calc_rhs(true, true);
     // time step must be calculated after calling calc_rhs(), otherwise gcrk_mu would be unset and
     // positivity would be unasserted
     calc_time_step();

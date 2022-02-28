@@ -788,7 +788,7 @@ class PLENS
     ) const;
     void assert_positivity() const;
     void calc_aux_vars();
-    void calc_blender();
+    void calc_blender(const bool print_wall_blender_limit = false);
     void calc_cell_ho_residual(
         const usi stage,
         const DoFHandler<dim>::active_cell_iterator& cell,
@@ -800,7 +800,10 @@ class PLENS
         const locly_ord_surf_flux_term_t<double>& s_surf_flux,
         std::vector<State>& residual
     ) const;
-    void calc_rhs();
+    void calc_rhs(
+        const bool print_wall_blender_limit = false,
+        const bool print_viscous_blending_status = false
+    );
     void calc_time_step();
     void multiply_time_step_to_rhs();
     void post_process();
