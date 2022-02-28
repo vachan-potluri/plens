@@ -2222,8 +2222,9 @@ void PLENS::calc_aux_vars()
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(usi d=0; d<dim; d++){
                 for(cvar var: cvar_list){
-                    cons_grad[i][d][var] = ho_grad_factor*cons_grad[i][d][var] +
-                        (1-ho_grad_factor)*cons_grad_mode0[d][var];
+                    cons_grad[i][d][var] =
+                        (1-ho_grad_factor)*cons_grad_mode0[d][var] +
+                        ho_grad_factor*cons_grad[i][d][var];
                 }
             }
         }
