@@ -3191,11 +3191,12 @@ void PLENS::write()
     data_out.set_flags(flags);
 
     data_out.attach_dof_handler(dof_handler);
-    for(cvar var: cvar_list) data_out.add_data_vector(gh_gcrk_cvars[var], cvar_names[var]);
+    // for(cvar var: cvar_list) data_out.add_data_vector(gh_gcrk_cvars[var], cvar_names[var]);
     for(avar var: avar_list) data_out.add_data_vector(gh_gcrk_avars[var], avar_names[var]);
 
-    data_out.add_data_vector(gcrk_mu, "mu");
-    data_out.add_data_vector(gcrk_k, "k");
+    // data_out.add_data_vector(gcrk_mu, "mu");
+    // data_out.add_data_vector(gcrk_k, "k");
+    data_out.add_data_vector(gh_gcrk_cvars[cvar::rho], cvar_names[cvar::rho]);
     data_out.add_data_vector(gcrk_p, "p");
     data_out.add_data_vector(gcrk_T, "T");
     data_out.add_data_vector(gcrk_vel[0], "u");
@@ -3205,7 +3206,7 @@ void PLENS::write()
     // subdomain id
     Vector<float> subdom(triang.n_active_cells());
     for(float &x: subdom) x = triang.locally_owned_subdomain();
-    data_out.add_data_vector(subdom, "Subdomain");
+    data_out.add_data_vector(subdom, "subdomain");
 
     // for alpha, direct addition not possible, see WJ-15-Jun-2021 and
     // https://groups.google.com/g/dealii/c/_lmP3VCLBsw
@@ -3230,8 +3231,16 @@ void PLENS::write()
     Vector<double> cell_ss_error(triang.n_active_cells());
     if(calculate_ss_error){
         ss_error = calc_ss_error(cell_ss_error);
-        data_out.add_data_vector(cell_ss_error, "steady_state_error");
+        // data_out.add_data_vector(cell_ss_error, "steady_state_error");
     }
+
+    // active cell global index
+    Vector<float> cell_index(triang.n_active_cells());
+    for(auto &cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+        cell_index[cell->active_cell_index()] = cell->global_active_cell_index();
+    }
+    data_out.add_data_vector(cell_index, "global_active_cell_index");
 
     data_out.build_patches(
         *mapping_ptr,
