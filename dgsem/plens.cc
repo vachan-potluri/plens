@@ -2219,18 +2219,15 @@ void PLENS::calc_aux_vars()
         }
 
         // limit cons grad
-        const double alpha = gcrk_alpha[cell->global_active_cell_index()];
-        const double ho_grad_factor = std::max(
-            1.0,
-            // double(!cell->at_boundary()),
-            (1-alpha/blender_calc.get_blender_max_value())
-        ); // only required near wall cells
-        for(usi i=0; i<fe.dofs_per_cell; i++){
-            for(usi d=0; d<dim; d++){
-                for(cvar var: cvar_list){
-                    cons_grad[i][d][var] =
-                        (1-ho_grad_factor)*cons_grad_mode0[d][var] +
-                        ho_grad_factor*cons_grad[i][d][var];
+        if(cell->at_boundary()){
+            for(usi i=0; i<fe.dofs_per_cell; i++){
+                for(usi d=0; d<dim; d++){
+                    for(cvar var: cvar_list){
+                        cons_grad[i][d][var] = utilities::minmod(
+                            cons_grad[i][d][var],
+                            cons_grad_mode0[d][var]
+                        );
+                    }
                 }
             }
         }
