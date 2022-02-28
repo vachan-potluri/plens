@@ -465,6 +465,12 @@ void PLENS::declare_parameters()
             Patterns::Anything(),
             "A limit on the blender value at the wall. Can be a function of simulation time (t)."
         );
+        prm.declare_entry(
+            "viscous blending cutoff time",
+            "1e-2",
+            Patterns::Double(0),
+            "The simulation time after which viscous blending is not done anymore."
+        );
     }
     prm.leave_subsection(); // blender parameters
 
@@ -2786,6 +2792,14 @@ void PLENS::calc_rhs()
         lo_inv_residual(fe.dofs_per_cell);
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     State ho_dif_res_mode0; // 0-th legendre mode (constant mode) of high order diffusive residual
+    bool do_viscous_res_blending(false);
+    prm.enter_subsection("blender parameters");
+    {
+        const double vis_blending_cutoff_time = prm.get_double("viscous blending cutoff time");
+        do_viscous_res_blending = cur_time <= vis_blending_cutoff_time;
+    }
+    prm.leave_subsection();
+    pcout << "\t\tViscous residual blending status: " << do_viscous_res_blending << "\n";
 
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
@@ -2826,11 +2840,14 @@ void PLENS::calc_rhs()
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
-        const double ho_dif_factor = std::max(
-            // 1.0,
-            double(!cell->at_boundary()),
-            (1-alpha/blender_calc.get_blender_max_value())
-        ); // nonzero only for boundary cells
+        const double ho_dif_factor = (
+            do_viscous_res_blending ?
+            std::max(
+                double(!cell->at_boundary()),
+                (1-alpha/blender_calc.get_blender_max_value())
+            ) : // less than 1 only for boundary cells
+            1.0 // simulation time greater than cutoff time
+        );
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list){
