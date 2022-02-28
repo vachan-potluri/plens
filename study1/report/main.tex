@@ -317,7 +317,7 @@ where superscript $\sim$ is used to denote Roe-averaged quantities, $\vect{K}$ i
 \section{One-dimensional test results}
 \label{sec:1d_tests}
 
-Five Riemann 1d problems taken from \citear{toro2009} are considered for comparing performance of polynomial degrees $N=1,\ 2,\ 3$ and $5$. The initial conditions for these tests are given \cref{tab:ic_riemann1d}. The problems were setup on a 3d domain $[0,1] \times [0,0.5]^2$ with $\lcm \{N+1 \mid N=1,2,3,5\}=12$ DoFs in $y$ and $z$ directions. Three sets of simulations on three grid resolutions for $x$ direction were performed with the number of cells given in \cref{tab:nx_riemann1d}. Explicit low-storage 5-stage RK4 time integrator \cite{kennedyCarpenterLewis2000} is used with a CFL number of 0.5.
+Five Riemann 1d problems taken from \citear{toro2009} are considered for comparing performance of polynomial degrees $N=1,\ 2,\ 3$ and $5$. The initial conditions for these tests are given \cref{tab:ic_riemann1d}. The problems were setup on a 3d domain $[0,1] \times [0,0.5]^2$ with $\lcm \{N+1 \mid N=1,2,3,5\}=12$ DoFs in $y$ and $z$ directions. Three sets of simulations on three grid resolutions for $x$ direction were performed with the number of cells given in \cref{tab:nx_riemann1d}. Explicit low-storage 5-stage RK4 time integrator \cite{kennedyCarpenterLewis2000} is used with a CFL number of 0.5. As suggested in \cite{mengaldoDeGraziaPeiro2014}, exact boundary conditions are used for all cases.
 
 \begin{table}[htbp]
 	\centering
@@ -357,11 +357,11 @@ All simulations were performed on a \comment{machine specs}. The simulation resu
 where $\norm{\bullet}_{L^2}$ represents the $L^2$ norm and $\phi=\rho$ for all cases except Test 2, for which $\phi=T$ was used.
 
 \subsection{Test 1}
-\label{subsec:test1-1}
+\label[subsection]{subsec:test1-1}
 
-This is a relatively mild test with weak right-moving shock (at $x/t \approx 0.75/0.2$) and contact (at $x/t \approx 0.6/0.2$) waves, and an expansion wave with a left-moving head and a right-moving tail, thus producing a sonic point in the expansion wave. \cref{fig:test1-1_dof800_chandrashekhar} shows a visual comparison of the results obtained using $N=1,\ 2,\ 3$ and $5$ at the highest resolution (800 DoFs). All simulations capture the sonic point and the shock well, while the resolution of contact wave keeps getting better with increasing $N$.
+This is a relatively mild test with weak right-moving shock (at $x \approx 0.75$) and contact (at $x \approx 0.6$) waves, and an expansion wave with a left-moving head and a right-moving tail; thus producing a sonic point in the expansion wave. \cref{fig:test1-1_dof800_chandrashekhar} shows a visual comparison of the results obtained using $N=1,\ 2,\ 3$ and $5$ at the highest resolution (800 DoFs). All simulations capture the sonic point and the shock well, while the resolution of contact wave keeps getting better with increasing $N$.
 
-Behaviour of the error in simulations with increasing DoFs for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. It is immediately clear from \cref{subfig:test1-1_error_vs_dof_chandrashekhar} that even high order simulations fail to achieve any higher order of convergence in this discontinuous flow. \cref{subfig:test1-1_error_vs_dof_chandrashekhar,subfig:test1-1_error_vs_cputime_chandrashekhar} together immediately highlight that there is no major improvement in solution when $N=5$ is used over $N=3$, although it only costs more CPU time. The error levels for $N=3,5$ are much lower compared to $N=1$ case for a given DoF resolution. In fact, even with 200 DoFs, simulations using $N=3,5$ give more accurate results than 800 DoF simulation with $N=1$. \cref{subfig:test1-1_error_vs_cputime_chandrashekhar} also shows that with a very small increase in cost, $N=3$ offers more accurate solution over $N=2$. It maybe concluded that $N=3$ would be the optimal choice for this case, and there is no real benefit in using $N=5$ over $N=3$.
+Behaviour of the error in simulations with increasing DoFs for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. It is immediately clear from \cref{subfig:test1-1_error_vs_dof_chandrashekhar} that even high order simulations fail to achieve any higher order of convergence in this discontinuous flow. \cref{subfig:test1-1_error_vs_dof_chandrashekhar,subfig:test1-1_error_vs_cputime_chandrashekhar} together immediately highlight that there is no major improvement in solution when $N=5$ is used over $N=3$, and it only costs more CPU time. The error levels for $N=3,5$ are much lower compared to $N=1$ case for a given DoF resolution. In fact, even with 200 DoFs, simulations using $N=3,5$ give more accurate results than the 800 DoF simulation with $N=1$. \cref{subfig:test1-1_error_vs_cputime_chandrashekhar} also shows that with a very small increase in cost, $N=3$ offers more accurate solution over $N=2$. It maybe concluded that $N=3$ would be the optimal choice for this case, and there is no real benefit in using $N=5$ over $N=3$.
 
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/dof800_12_12_chandrashekhar.pdf}
@@ -386,11 +386,11 @@ Behaviour of the error in simulations with increasing DoFs for different values 
 \end{figure}
 
 \subsection{Test 2}
-\label{subsec:test1-2}
+\label[subsection]{subsec:test1-2}
 
 This test consists of two symmetric expansion waves moving away from each other generating very low density and pressure behind their tails and is a relatively difficult case to simulate. It is well known that behaviour of temperature profile in the low pressure region generated behind the tails of the expansion waves is highly dependent on the particulars of the numerical scheme \cite{toro2009}. \cref{fig:test1-2_dof800_chandrashekhar} shows the comparison of results obtained using 800 DoFs for this case. All results show a temperature peak, failing to faithfully capture the exact variation in the vacuum. However, the extent of discrepancy keeps decreasing with $N$, even though the peak itself does not.
 
-Correspondingly, \cref{subfig:test1-2_error_vs_dof_chandrashekhar} shows that simulations using higher values of $N$ perform more accurately in this case. The error levels keep dropping with $N$ and drop by about a factor of 2 from $N=1$ to $N=5$ for a given DoF resolution. A comparison of the cost shown in \cref{subfig:test1-2_error_vs_cputime_chandrashekhar} tells that $N=5$ simulations also cost much lower than those with $N=2,3$ to get the same error level. Thus in this test case dominated by smooth flow, higher order simulations perform very well.
+Correspondingly, \cref{subfig:test1-2_error_vs_dof_chandrashekhar} shows that simulations using higher values of $N$ perform more accurately in this case. The error levels keep dropping with $N$: by about a factor of 2 from $N=1$ to $N=5$ for a given DoF resolution. A comparison of the cost shown in \cref{subfig:test1-2_error_vs_cputime_chandrashekhar} tells that $N=5$ simulations also cost much lower than those using $N=2,3$ to get the same error level. Thus in this test case dominated by smooth flow, higher order simulations perform very well and seem to have a clear edge.
 
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-2/dof800_12_12_chandrashekhar.pdf}
@@ -415,11 +415,11 @@ Correspondingly, \cref{subfig:test1-2_error_vs_dof_chandrashekhar} shows that si
 \end{figure}
 
 \subsection{Test 3}
-\label{subsec:test1-3}
+\label[subsection]{subsec:test1-3}
 
-This is again a very severe test case which produces very strong right moving shock (at $x/t \approx 0.8/0.012$) and contact (at $x/t \approx 0.75/0.012$) waves and a left moving expansion wave. All results capture the shock wave position correctly, but produce oscillations before and/or after the shock. While $N=1$ results show a slightly more diffused contact wave, $N=2,3,5$ virtually have an equally good resolution of the same. The peak value of density between the very thin region between contact and shock waves is well-predicted by all simulations.
+This is again a very severe test case which produces very strong right moving shock (at $x \approx 0.8$) and contact (at $x \approx 0.75$) waves and a left moving expansion wave. The relative speed of the shock and contact waves is very small which makes capturing the high density variation in this region difficult. All results capture the density jump across shock accurately without any diffusion, but produce oscillations before and/or after the shock. While $N=1$ results show a slightly more diffused contact wave, $N=2,3,5$ virtually have an equally good resolution of the same. None of the simulations were able to capture the contact wave as sharply as the shock. The plateau value of density between the very thin region enclosed by contact and shock waves is well-predicted by all simulations.
 
-\cref{subfig:test1-3_error_vs_dof_chandrashekhar} reveals that unlike for Tests 1 and 2, the error levels drop only mildly with increasing $N$ (at a given DoF resolution) for this test. \cref{subfig:test1-3_error_vs_cputime_chandrashekhar} highlights that there is really no benefit in using 5th degree polynomial basis here, and simulations with $N=3$ perform better than both $N=2$ and $N=5$ in terms of the cost. One can conclude here that $N=3$ is the optimal choice, like in Test 1.
+\cref{subfig:test1-3_error_vs_dof_chandrashekhar} reveals that unlike for Tests 1 and 2, the error levels drop only marginally with increasing $N$ (at a given DoF resolution) for this test. It also shows that there is really no benefit in using $N=5$ here over $N=3$. In fact, they are only more costly than $N=2$ or $N=3$ for a given error level, as is clear from \cref{subfig:test1-3_error_vs_cputime_chandrashekhar}. Considering the visual comparison (shown in \cref{fig:test1-3_dof800_chandrashekhar}) and these error plots together, one can conclude here that $N=3$ is the optimal choice, like in Test 1.
 
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-3/dof800_12_12_chandrashekhar.pdf}
@@ -443,6 +443,13 @@ This is again a very severe test case which produces very strong right moving sh
 	\label{fig:test1-3_error_plots_chandrashekhar}
 \end{figure}
 
+\subsection{Test 4}
+\label[subsection]{subsec:test1-4}
+
+This test case is a strong test case which is generated by impingement of two shocks moving towards each other. The resulting flow contains three discontinuities, all right moving: a slow `left' shock at $x \approx 0.3$, a contact wave at $x \approx 0.6$ and a `right' shock at $x \approx 0.75$. The results obtained with 800 DoFs using $N=1,2,3,5$ are shown in \cref{fig:test1-4_dof800_chandrashekhar}. All simulations capture the left shock sharply and accurately. While the right shock is also sharply resolved, oscillations around the shock are also produced. The resolution of contact wave is almost equally sharp for $N=2,3,5$, while $N=1$ diffuses it slightly more. The most noticeable difference between this test and the previous ones is the presence of significant oscillations in the regions between waves for $N=2,3,5$. Numerical methods are known to produce low frequency oscillations in this test \cite{toro2009,liskaWendroff2003}. The result with $N=3$ seems to have the lowest oscillation level among the three.
+
+Correspondingly, \cref{subfig:test1-4_error_vs_dof_chandrashekhar} reveals that there is hardly any difference made by increasing $N$ beyond 2 for this case. A look at \cref{subfig:test1-4_error_vs_cputime_chandrashekhar} also provides the same conclusion, only that $N=5$ costs higher to give the same error level. While $N=2$ and $N=3$ seem to perform equally well in terms of error and cost, the visual comparison shown in \cref{fig:test1-4_dof800_chandrashekhar}, except for the higher overshoot near the right shock, may lead to concluding in favour of $N=3$ in this case.
+
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-4/dof800_12_12_chandrashekhar.pdf}
 	\caption{Comparison of density plots for 800 DoFs, Test 4.}
@@ -465,6 +472,13 @@ This is again a very severe test case which produces very strong right moving sh
 	\label{fig:test1-4_error_plots_chandrashekhar}
 \end{figure}
 
+\subsection{Test 5}
+\label[subsection]{subsec:test1-5}
+
+This test is a variation of Test 3 (\cref{subsec:test1-3}) where a background velocity is imposed such that the contact wave becomes stationary. The resulting wave structure thus has two slowly moving waves: a slow right-moving shock (at $x \approx 8.25$) and the stationary contact (at $x=0.8$), in addition to a left-moving expansion. \cref{fig:test1-5_dof800_chandrashekhar} shows the results obtained with 800 DoFs using $N=1,2,3,5$. All simulations achieve sharp resolution of the shock, although, with overshoot and/or undershoot. Like in Tests 3 and 4, $N=2,3,5$ have an equally good resolution of the stationary contact, while $N=1$ has it slightly more diffused. All high order simulations produce oscillations in the region between contact and shock waves, similar to those seen in Test 4. Unlike in Test 4, all high order simulations have produced oscillations of equal magnitudes in this case.
+
+The behaviour of error in this case, shown in \cref{subfig:test1-5_error_vs_dof_chandrashekhar} is also similar to that in Test 4 (\cref{subfig:test1-4_error_vs_dof_chandrashekhar}). There is no remarkable drop in error for a given DoF resolution as $N$ is increased beyond 2. \cref{subfig:test1-5_error_vs_cputime_chandrashekhar} shows that $N=2$ and $N=3$ cost about the same while producing very similar error levels, while $N=5$ costs higher to only produce a small drop in error. Considering the visual comparison of results (\cref{fig:test1-5_dof800_chandrashekhar}), one may conclude that $N=2$ is the optimal choice for this case.
+
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-5/dof800_12_12_chandrashekhar.pdf}
 	\caption{Comparison of density plots for 800 DoFs, Test 5.}
@@ -486,6 +500,14 @@ This is again a very severe test case which produces very strong right moving sh
 	\caption{Statistics for Test 5.}
 	\label{fig:test1-5_error_plots_chandrashekhar}
 \end{figure}
+
+
+
+\section{Two-dimensional test results}
+\label{sec:2d_tests}
+
+\subsection{Forward step in a Mach 3 wind tunnel}
+\label[subsection]{subsec:forward_facing_step}
 
 \printbibliography
 \end{document}
