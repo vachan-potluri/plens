@@ -982,6 +982,14 @@ void PLENS::set_sol_vecs()
         cell_partitioner->ghost_indices(),
         mpi_comm
     );
+    for(cvar var: cvar_list){
+        gcrk_cvar_avg[var].reinit(cell_partitioner->locally_owned_range(), mpi_comm);
+        gh_gcrk_cvar_avg[var].reinit(
+            cell_partitioner->locally_owned_range(),
+            cell_partitioner->ghost_indices(),
+            mpi_comm
+        );
+    }
 
     pcout << "Completed\n";
 
@@ -2113,6 +2121,90 @@ void PLENS::calc_cell_cons_grad(
 
 
 /**
+ * Calculates cell conservative gradients in a FV sense. Returns a single value of the gradient,
+ * unlike calc_cell_cons_grad() which returns a dof-wise vector.
+ *
+ * The trailing `_gl` in the function name indicate that the gradient is calculated in
+ * __Gauss Linear__ sense (the terminology is from OpenFOAM). See eqs. (B.2), (B.5) and (B.8) of
+ * BTP report. Also see fig. B.1 of the same.
+ *
+ * This function uses PLENS::gcrk_cvar_avg and PLENS::gh_gcrk_cvar_avg for calculation and hence
+ * assumes that these variables have the required values. For boundary faces, boundary conditions
+ * are used assuming that a ghost cell center lies symmetrically opposite to the owner cell for a
+ * corresponding face.
+ *
+ * @note This function was added as an experimental feature on 01-Mar-2022. See the notes around
+ * WJ-01-Mar-2022.
+ *
+ * @warning This function passes a dummy FaceLocalDoFData object to BC::get_ghost_stage1(). So any
+ * BC classes that would use this data will give unexpected results.
+ */
+void PLENS::calc_cell_cons_grad_fv_gl(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    std::array<State, 3>& cons_grad
+)
+{
+    // initialise
+    for(usi d=0; d<dim; d++){
+        for(cvar var: cvar_list) cons_grad[d][var] = 0;
+    }
+
+    // calculate the gauss integral
+    FEFaceValues<dim> fe_face_values(
+        FE_Nothing<dim>(),
+        QGaussLobatto<dim-1>(1),
+        update_normal_vectors
+    ); // to get (unit) normal vectors on face
+    for(usi fid=0; fid<n_faces_per_cell; fid++){
+        fe_face_values.reinit(cell, fid);
+        const auto face = cell->face(fid);
+        const Tensor<1,dim> face_normal = fe_face_values.normal_vector(0);
+        State cons_face, // conservative variable values on the face
+            cell_cons_avg; // average conservative state of the cell
+        for(cvar var: cvar_list){
+            cell_cons_avg[var] = gcrk_cvar_avg[var][cell->global_active_cell_index()];
+        }
+
+        if(face->at_boundary()){
+            // boundary face
+            const double wf = 0.5;
+            State cons_gh;
+            bc_list.at(face->boundary_id())->get_ghost_stage1(
+                FaceLocalDoFData(), cell_cons_avg, face_normal, cons_gh
+            );
+            for(cvar var: cvar_list){
+                cons_face[var] = wf*cell_cons_avg[var] + (1-wf)*cons_gh[var];
+            }
+        }
+        else{
+            // internal face
+            const auto neighbor = cell->neighbor(fid);
+            const double wf = fabs(
+                scalar_product(face_normal, Point<dim>(neighbor->center() - face->center()))/
+                scalar_product(face_normal, Point<dim>(neighbor->center() - cell->center()))
+            );
+            for(cvar var: cvar_list){
+                cons_face[var] = wf*cell_cons_avg[var] +
+                    (1-wf)*gh_gcrk_cvar_avg[var][neighbor->global_active_cell_index()];
+            }
+        }
+
+        for(usi d=0; d<dim; d++){
+            for(cvar var: cvar_list){
+                cons_grad[d][var] += cons_face[var]*face_normal[d]*face->measure();
+            }
+        }
+    } // loop over faces
+
+    // divide by cell volume
+    for(usi d=0; d<dim; d++){
+        for(cvar var: cvar_list) cons_grad[d][var] /= cell->measure();
+    }
+}
+
+
+
+/**
  * Asserts the positivity of PLENS::gcrk_cvars. This is a requirement for using the DGSEM limiter
  * algo and NavierStokes functions. Uses NavierStokes::assert_positivity() for the task.
  */
@@ -2218,19 +2310,19 @@ void PLENS::calc_aux_vars()
             }
         }
 
-        // limit cons grad
-        if(cell->at_boundary()){
-            for(usi i=0; i<fe.dofs_per_cell; i++){
-                for(usi d=0; d<dim; d++){
-                    for(cvar var: cvar_list){
-                        cons_grad[i][d][var] = utilities::minmod(
-                            cons_grad[i][d][var],
-                            cons_grad_mode0[d][var]
-                        );
-                    }
-                }
-            }
-        }
+        // limit cons grad to mode 0 value
+        // if(cell->at_boundary()){
+        //     for(usi i=0; i<fe.dofs_per_cell; i++){
+        //         for(usi d=0; d<dim; d++){
+        //             for(cvar var: cvar_list){
+        //                 cons_grad[i][d][var] = utilities::minmod(
+        //                     cons_grad[i][d][var],
+        //                     cons_grad_mode0[d][var]
+        //                 );
+        //             }
+        //         }
+        //     }
+        // }
 
         cell->get_dof_indices(dof_ids);
 

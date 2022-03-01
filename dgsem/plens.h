@@ -39,6 +39,7 @@
 #include <deal.II/fe/mapping_q_generic.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_nothing.h>
 #include <deal.II/fe/fe_face.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -767,6 +768,17 @@ class PLENS
      */
     std::vector<std::pair<double, std::string>> times_and_names;
 
+    /**
+     * Cell-averaged values of conservative variables. Used in calc_cell_cons_grad_fv_gl() for
+     * calculating conservative gradients in FV sense.
+     */
+    std::array<LA::MPI::Vector, 5> gcrk_cvar_avg;
+
+    /**
+     * Ghosted version of PLENS::gcrk_cvar_avg
+     */
+    std::array<LA::MPI::Vector, 5> gh_gcrk_cvar_avg;
+
 
 
     void form_neighbor_face_matchings(
@@ -787,6 +799,10 @@ class PLENS
         const locly_ord_surf_flux_term_t<double>& s1_surf_flux,
         std::vector<std::array<State, 3>>& cons_grad
     ) const;
+    void calc_cell_cons_grad_fv_gl(
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        std::array<State, 3>& cons_grad
+    );
     void assert_positivity() const;
     void calc_aux_vars();
     void calc_blender(const bool print_wall_blender_limit = false);
