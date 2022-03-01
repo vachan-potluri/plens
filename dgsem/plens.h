@@ -779,6 +779,16 @@ class PLENS
      */
     std::array<LA::MPI::Vector, 5> gh_gcrk_cvar_avg;
 
+    /**
+     * Auxiliary variables calculated in FV sense. They have a single value for a given cell.
+     */
+    std::array<LA::MPI::Vector, 9> gcrk_avar_fv;
+
+    /**
+     * Ghosted version of PLENS::gcrk_avar_fv.
+     */
+    std::array<LA::MPI::Vector, 9> gh_gcrk_avar_fv;
+
 
 
     void form_neighbor_face_matchings(
@@ -806,6 +816,7 @@ class PLENS
     void calc_cvar_avg();
     void assert_positivity() const;
     void calc_aux_vars();
+    void calc_aux_vars_fv();
     void calc_blender(const bool print_wall_blender_limit = false);
     void calc_cell_ho_residual(
         const usi stage,
@@ -817,6 +828,10 @@ class PLENS
         const DoFHandler<dim>::active_cell_iterator& cell,
         const locly_ord_surf_flux_term_t<double>& s_surf_flux,
         std::vector<State>& residual
+    ) const;
+    void calc_cell_dif_residual_fv_gl(
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        State& residual
     ) const;
     void calc_rhs(
         const bool print_wall_blender_limit = false,

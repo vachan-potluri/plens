@@ -990,6 +990,14 @@ void PLENS::set_sol_vecs()
             mpi_comm
         );
     }
+    for(avar var: avar_list){
+        gcrk_avar_fv[var].reinit(cell_partitioner->locally_owned_range(), mpi_comm);
+        gh_gcrk_avar_fv[var].reinit(
+            cell_partitioner->locally_owned_range(),
+            cell_partitioner->ghost_indices(),
+            mpi_comm
+        );
+    }
 
     pcout << "Completed\n";
 
@@ -2129,9 +2137,9 @@ void PLENS::calc_cell_cons_grad(
  * BTP report. Also see fig. B.1 of the same.
  *
  * This function uses PLENS::gcrk_cvar_avg and PLENS::gh_gcrk_cvar_avg for calculation and hence
- * assumes that these variables have the required values. For boundary faces, boundary conditions
- * are used assuming that a ghost cell center lies symmetrically opposite to the owner cell for a
- * corresponding face.
+ * assumes that these variables have the required values (call calc_cvar_avg()). For boundary faces,
+ * boundary conditions are used assuming that a ghost cell center lies symmetrically opposite to the
+ * owner cell for a corresponding face.
  *
  * @note This function was added as an experimental feature on 01-Mar-2022. See the notes around
  * WJ-01-Mar-2022.
@@ -2234,7 +2242,7 @@ void PLENS::calc_cvar_avg()
         gcrk_cvar_avg[var].compress(VectorOperation::insert);
         gh_gcrk_cvar_avg[var] = gcrk_cvar_avg[var];
     }
-}
+} // calc_cvar_avg
 
 
 
@@ -2323,9 +2331,6 @@ void PLENS::calc_aux_vars()
     locly_ord_surf_flux_term_t<double> s1_surf_flux;
     calc_surf_flux(1, s1_surf_flux);
 
-    // calculate cvar cell averages (for calculating gradient in FV sense)
-    calc_cvar_avg();
-
     // now set (factored) avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
@@ -2337,34 +2342,6 @@ void PLENS::calc_aux_vars()
 
         // calculate conservative gradients
         calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
-
-        // limiting cons grad for boundary cells
-        if(cell->at_boundary()){
-            // calculate the average of conservative gradient using high order variation
-            for(usi d=0; d<dim; d++){
-                for(cvar var: cvar_list){
-                    cons_grad_mode0[d][var] = 0;
-                    for(usi i=0; i<fe.dofs_per_cell; i++){
-                        cons_grad_mode0[d][var] += cbm(0,i)*cons_grad[i][d][var];
-                    }
-                }
-            }
-
-            // calculate avg cons grad in FV sense
-            calc_cell_cons_grad_fv_gl(cell, cons_grad_fv);
-
-            for(usi i=0; i<fe.dofs_per_cell; i++){
-                for(usi d=0; d<dim; d++){
-                    for(cvar var: cvar_list){
-                        cons_grad[i][d][var] = utilities::minmod({
-                            cons_grad[i][d][var],
-                            cons_grad_mode0[d][var],
-                            cons_grad_fv[d][var]
-                        });
-                    }
-                }
-            }
-        }
 
         cell->get_dof_indices(dof_ids);
 
@@ -2432,6 +2409,98 @@ void PLENS::calc_aux_vars()
     for(usi i=6; i<9; i++) gcrk_avars[i].scale(gcrk_k);
     for(avar var: avar_list) gh_gcrk_avars[var] = gcrk_avars[var];
 } // calc_aux_vars
+
+
+
+/**
+ * Calculates the auxiliary variables in a FV sense. For this purpose, calc_cell_cons_grad_fv_gl()
+ * is used. The calculated data is stored in PLENS::gcrk_avar_fv (PLENS::gh_gcrk_avar_fv is
+ * made ready to use).
+ *
+ * @note This function was added as an experimental feature on 01-Mar-2022. See the notes around
+ * WJ-01-Mar-2022.
+ */
+void PLENS::calc_aux_vars_fv()
+{
+    const double cv = ns_ptr->get_cv();
+    std::array<State, dim> cons_grad_fv;
+    ChangeOfBasisMatrix<dim> cbm(fe.degree);
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    State cons_avg;
+    for(const auto cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        calc_cell_cons_grad_fv_gl(cell, cons_grad_fv);
+        cell->get_dof_indices(dof_ids);
+
+        for(cvar var: cvar_list) cons_avg[var] =
+            gcrk_cvar_avg[var][cell->global_active_cell_index()];
+        std::array<double, dim> vel{
+            cons_avg[1]/cons_avg[0], cons_avg[2]/cons_avg[0], cons_avg[3]/cons_avg[0]
+        };
+        const double e = ns_ptr->get_e(cons_avg),
+            T = e/cv,
+            mu = ns_ptr->get_mu(T),
+            k = ns_ptr->get_k(mu);
+
+        // calculate velocity gradient
+        std::array<std::array<double, dim>, dim> vel_grad; // access: vel_grad[vel_dir][grad_dir]
+        for(usi vel_dir=0; vel_dir<dim; vel_dir++){
+            for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+                vel_grad[vel_dir][grad_dir] = (
+                    cons_grad_fv[grad_dir][1+vel_dir] - // grad (rho u)
+                    cons_grad_fv[grad_dir][0]* // grad rho
+                        vel[vel_dir] // u
+                )/cons_avg[0];
+            } // loop over gradient directions
+        } // loop over velocity directions
+
+        // set (factored) stress components
+        // the loop is set such that it follows the ordering given in var_enums.h
+        usi stress_id = 0;
+        double vel_grad_trace = 0;
+        for(usi d=0; d<dim; d++) vel_grad_trace += vel_grad[d][d];
+        for(usi row=0; row<dim; row++){
+            for(usi col=row; col<dim; col++){
+                if(col == row){
+                    // somehow operator -= doesn't work together with operator=
+                    // hence this split is required
+                    gcrk_avar_fv[stress_id][cell->global_active_cell_index()] = mu*(
+                        2*vel_grad[row][row] - 2.0/3*vel_grad_trace
+                    );
+                }
+                else{
+                    gcrk_avar_fv[stress_id][cell->global_active_cell_index()] = mu*(
+                        vel_grad[row][col] + vel_grad[col][row]
+                    );
+                }
+                stress_id++;
+            } // loop stress tensor cols
+        } // loop stress tensor rows
+
+        // calculate temperature gradient
+        std::array<double, dim> e_grad;
+        for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+            e_grad[grad_dir] = (
+                cons_grad_fv[grad_dir][4] - cons_grad_fv[grad_dir][0]*e
+            )/cons_avg[0];
+            for(usi vel_dir=0; vel_dir<dim; vel_dir++){
+                e_grad[grad_dir] -= (
+                    0.5*cons_grad_fv[grad_dir][0]*vel[vel_dir]*vel[vel_dir] +
+                    cons_avg[1+vel_dir]*vel_grad[vel_dir][grad_dir]
+                )/cons_avg[0];
+            }
+        }
+
+        for(usi d=0; d<dim; d++)
+            gcrk_avar_fv[6+d][cell->global_active_cell_index()] = -k*e_grad[d]/cv;
+    } // loop over owned cells
+
+    for(avar var: avar_list){
+        gcrk_avar_fv[var].compress(VectorOperation::insert);
+        gh_gcrk_avar_fv[var] = gcrk_avar_fv[var];
+    }
+} // calc_aux_vars_fv
 
 
 
@@ -2880,6 +2949,89 @@ void PLENS::calc_cell_lo_inv_residual(
 
 
 /**
+ * Calculates diffusive residual in FV sense. Uses PLENS::gcrk_avar_fv which is in turn calculated
+ * in calc_aux_vars_fv() using calc_cell_cons_grad_fv_gl() and PLENS::gcrk_cvar_avg. Like
+ * calc_cell_cons_grad_fv_gl(), this function also uses __Gauss Linear__ approximation to calculate
+ * the divergence.
+ *
+ * @note This function was added as an experimental feature on 01-Mar-2022. See the notes around
+ * WJ-01-Mar-2022.
+ */
+void PLENS::calc_cell_dif_residual_fv_gl(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    State& residual
+) const
+{
+    // initialise
+    for(cvar var: cvar_list) residual[var] = 0;
+    
+    // calculate the gauss integral
+    FEFaceValues<dim> fe_face_values(
+        fe,
+        QGaussLobatto<dim-1>(fe.degree+1),
+        update_normal_vectors
+    ); // to get (unit) normal vectors on face
+    for(usi fid=0; fid<n_faces_per_cell; fid++){
+        fe_face_values.reinit(cell, fid);
+        const auto face = cell->face(fid);
+        const Tensor<1,dim> face_normal = fe_face_values.normal_vector(0);
+        State cons_cell, // conservative variables in cell
+            cons_face; // on face
+        for(cvar var: cvar_list){
+            cons_cell[var] = gcrk_cvar_avg[var][cell->global_active_cell_index()];
+        }
+        Avars avar_cell, // aux variables of the cell calculated in FV sense
+            avar_face; // on face
+        for(avar var: avar_list){
+            avar_cell[var] = gcrk_avar_fv[var][cell->global_active_cell_index()];
+        }
+        CAvars cav_cell(&cons_cell, &avar_cell), cav_face(&cons_face, &avar_face);
+
+        if(face->at_boundary()){
+            // boundary face
+            const double wf = 0.5;
+            State cons_gh;
+            Avars av_gh;
+            CAvars cav_gh(&cons_gh, &av_gh);
+            bc_list.at(face->boundary_id())->get_ghost_stage3(
+                FaceLocalDoFData(), cav_cell, face_normal, cav_gh
+            );
+            for(cvar var: cvar_list){
+                cons_face[var] = wf*cons_cell[var] + (1-wf)*cons_gh[var];
+            }
+            for(avar var: avar_list){
+                avar_face[var] = wf*avar_cell[var] + (1-wf)*av_gh[var];
+            }
+        }
+        else{
+            // internal face
+            const auto neighbor = cell->neighbor(fid);
+            const double wf = fabs(
+                scalar_product(face_normal, Point<dim>(neighbor->center() - face->center()))/
+                scalar_product(face_normal, Point<dim>(neighbor->center() - cell->center()))
+            );
+            for(cvar var: cvar_list){
+                cons_face[var] = wf*cons_cell[var] +
+                    (1-wf)*gh_gcrk_cvar_avg[var][neighbor->global_active_cell_index()];
+            }
+            for(avar var: avar_list){
+                avar_face[var] = wf*avar_cell[var] +
+                    (1-wf)*gh_gcrk_avar_fv[var][neighbor->global_active_cell_index()];
+            }
+        }
+
+        State dif_flux;
+        ns_ptr->get_dif_flux(cav_face, face_normal, dif_flux);
+        for(cvar var: cvar_list) residual[var] -= dif_flux[var]*face->measure();
+    } // loop over faces
+
+    // divide by cell volume
+    for(cvar var: cvar_list) residual[var] /= cell->measure();
+} // calc_cell_dif_residual_fv_gl
+
+
+
+/**
  * Calculates the rhs for all dofs and populates PLENS::gcrk_rhs. This function takes ownership of
  * the entire update residual calculation process. In other words, this function calculates the
  * residual using gcrk_cvars right from asserting positivity to calculating low order inviscid
@@ -2903,6 +3055,8 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
     {
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate auxiliary variables");
         calc_aux_vars();
+        calc_cvar_avg();
+        calc_aux_vars_fv();
     }
     {
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate blender");
@@ -2922,7 +3076,6 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
         ho_dif_residual(fe.dofs_per_cell),
         lo_inv_residual(fe.dofs_per_cell);
     std::vector<psize> dof_ids(fe.dofs_per_cell);
-    // State ho_dif_res_mode0; // 0-th legendre mode (constant mode) of high order diffusive residual
     bool do_viscous_res_blending(false);
     prm.enter_subsection("blender parameters");
     {
@@ -2951,14 +3104,6 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 s3_surf_flux,
                 ho_dif_residual
             ); // high order viscous
-
-            // get constant mode of high order diffusive residual
-            // for(cvar var: cvar_list){
-            //     ho_dif_res_mode0[var] = 0;
-            //     for(int k=0; k<fe.dofs_per_cell; k++){
-            //         ho_dif_res_mode0[var] += cbm(0,k)*ho_dif_residual[k][var];
-            //     }
-            // }
         }
 
         {
@@ -2969,6 +3114,9 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 lo_inv_residual
             );
         }
+
+        State dif_residual_fv;
+        calc_cell_dif_residual_fv_gl(cell, dif_residual_fv);
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
@@ -2987,7 +3135,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 //     alpha*lo_inv_residual[i][var] +
                 //     (1-alpha)*ho_inv_residual[i][var];
                 gcrk_rhs[var][dof_ids[i]] =
-                    // (1-ho_dif_factor)*ho_dif_res_mode0[var] +
+                    (1-ho_dif_factor)*dif_residual_fv[var] +
                     ho_dif_factor*ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
