@@ -2142,7 +2142,7 @@ void PLENS::calc_cell_cons_grad(
 void PLENS::calc_cell_cons_grad_fv_gl(
     const DoFHandler<dim>::active_cell_iterator& cell,
     std::array<State, 3>& cons_grad
-)
+) const
 {
     // initialise
     for(usi d=0; d<dim; d++){
@@ -2151,8 +2151,8 @@ void PLENS::calc_cell_cons_grad_fv_gl(
 
     // calculate the gauss integral
     FEFaceValues<dim> fe_face_values(
-        FE_Nothing<dim>(),
-        QGaussLobatto<dim-1>(1),
+        fe,
+        QGaussLobatto<dim-1>(fe.degree+1),
         update_normal_vectors
     ); // to get (unit) normal vectors on face
     for(usi fid=0; fid<n_faces_per_cell; fid++){
@@ -2199,6 +2199,40 @@ void PLENS::calc_cell_cons_grad_fv_gl(
     // divide by cell volume
     for(usi d=0; d<dim; d++){
         for(cvar var: cvar_list) cons_grad[d][var] /= cell->measure();
+    }
+} // calc_cell_cons_grad_fv_gl()
+
+
+
+/**
+ * Calculates conservative variable averages in every cell (stored in PLENS::gcrk_cvar_avg). Also
+ * sets the ghosted vectors PLENS::gh_gcrk_cvar_avg.
+ *
+ * This function uses the ChangeOfBasisMatrix class to get the average.
+ *
+ * @note This function was added as an experimental feature on 01-Mar-2022. See the notes around
+ * WJ-01-Mar-2022.
+ */
+void PLENS::calc_cvar_avg()
+{
+    ChangeOfBasisMatrix<dim> cbm(fe.degree);
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    for(auto cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        cell->get_dof_indices(dof_ids);
+        State cvar_avg({0,0,0,0,0});
+        for(cvar var: cvar_list){
+            for(usi i=0; i<fe.dofs_per_cell; i++){
+                cvar_avg[var] += cbm(0,i)*gcrk_cvars[var][dof_ids[i]];
+            }
+            gcrk_cvar_avg[var][cell->global_active_cell_index()] = cvar_avg[var];
+        }
+    }
+
+    for(cvar var: cvar_list){
+        gcrk_cvar_avg[var].compress(VectorOperation::insert);
+        gh_gcrk_cvar_avg[var] = gcrk_cvar_avg[var];
     }
 }
 
@@ -2289,16 +2323,21 @@ void PLENS::calc_aux_vars()
     locly_ord_surf_flux_term_t<double> s1_surf_flux;
     calc_surf_flux(1, s1_surf_flux);
 
+    // calculate cvar cell averages (for calculating gradient in FV sense)
+    calc_cvar_avg();
+
     // now set (factored) avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
     ChangeOfBasisMatrix<dim> cbm(fe.degree);
-    std::array<State, dim> cons_grad_mode0; // 0-th legendre mode (or avg) of cons grad
+    std::array<State, dim> cons_grad_mode0, // 0-th legendre mode (or avg) of cons grad
+        cons_grad_fv; // cons grad calculated in FV sense
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
         // calculate conservative gradients
         calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
+        calc_cell_cons_grad_fv_gl(cell, cons_grad_fv);
 
         // calculate the average of conservative gradient
         for(usi d=0; d<dim; d++){

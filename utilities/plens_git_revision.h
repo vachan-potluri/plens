@@ -13,11 +13,11 @@
 /**
  * Full sha1 revision of the current git HEAD.
  */
-#define PLENS_GIT_REVISION "5ead06c269792029a1c87a1d5857578e0fa934d5"
+#define PLENS_GIT_REVISION "682ac2424840627c0f04fa784f235d1779162a71"
 
 /**
  * Short sha1 revision of the current git HEAD.
  */
-#define PLENS_GIT_SHORTREV "5ead06c"
+#define PLENS_GIT_SHORTREV "682ac24"
 
 #endif

@@ -802,7 +802,8 @@ class PLENS
     void calc_cell_cons_grad_fv_gl(
         const DoFHandler<dim>::active_cell_iterator& cell,
         std::array<State, 3>& cons_grad
-    );
+    ) const;
+    void calc_cvar_avg();
     void assert_positivity() const;
     void calc_aux_vars();
     void calc_blender(const bool print_wall_blender_limit = false);
