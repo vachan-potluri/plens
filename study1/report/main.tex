@@ -509,5 +509,58 @@ The behaviour of error in this case, shown in \cref{subfig:test1-5_error_vs_dof_
 \subsection{Forward step in a Mach 3 wind tunnel}
 \label[subsection]{subsec:forward_facing_step}
 
+This test case proposed by \citear{woodwardColella1984} is a commonly used 2d validation test case. The domain $\{[0,3] \times [0,1]\} \setminus \{[0.6,3] \times [0,0.2]\}$ contains a step of height $0.2$, at $x=0.6$ in a wind tunnel of length $2$. The height of the wind tunnel is $1$. The domain is initialised with Mach 3 freestream conditions: $p=1$, $\rho=\gamma$ and $u=3$. The left boundary is imposed with an inflow at freestream conditions, while the right boundary has supersonic outflow. All other boundaries are considered as walls. Although the end time is taken as $t=4$.
+
+For this case, the meshes for simulations using $N=1,2,3,5$ are generated to give a nominal grid of size $\Delta x = \Delta y = (N+1)/40$. Further, the mesh is stretched around the corner to give a cell size 4 times smaller than the nominal size. As a sample, the mesh used for $N=5$ simulation is shown in \cref{fig:forward_facing_step_mesh_N5}. In the $z$ direction, $\lcm \{(N+1) \mid N=1,2,3,5\}$ DoFs are used. \cref{tab:forward_facing_step_mesh_cpu} shows the final mesh size in terms of the number of DoFs for each of the 4 cases.
+
+\begin{table}[htbp]
+	\centering
+	\caption{Mesh details and computational cost per time step for forward step case.}
+	\label{tab:forward_facing_step_mesh_cpu}
+	\begin{tabular}{cccc}
+		\toprule
+		$N$ & Number of cells & Number of DoFs & CPU time per time step \\
+		\midrule
+		1 & 24192 & 193536 & 16.24 \\
+		2 & 7624 & 205848 & 12.78 \\
+		3 & 3024 & 193536 & 12.63 \\
+		5 & 978 & 211248 & 16.94 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.8\linewidth]{figures/forward_facing_step/mesh_N5}
+	\caption{Mesh used for $N=5$ simulation of the forward step case.}
+	\label{fig:forward_facing_step_mesh_N5}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/forward_facing_step/res_40_N1_chandrashekhar_t3}
+		\caption{$N=1$.}
+		\label{subfig:forward_facing_step_result_N1}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/forward_facing_step/res_40_N2_chandrashekhar_t3}
+		\caption{$N=2$.}
+		\label{subfig:forward_facing_step_result_N2}
+	\end{subfigure}\\
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/forward_facing_step/res_40_N3_chandrashekhar_t3}
+		\caption{$N=3$.}
+		\label{subfig:forward_facing_step_result_N3}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/forward_facing_step/res_40_N5_chandrashekhar_t3}
+		\caption{$N=5$.}
+		\label{subfig:forward_facing_step_result_N5}
+	\end{subfigure}%
+	\caption{Results for forward step case at simulation time $t \approx 3$. In all plots, the 30 density contours are shown along with a pressure surface plot. The minimum and maximum values for density contours are variable across the cases.}
+	\label{fig:forward_facing_step_results}
+\end{figure}
+
 \printbibliography
 \end{document}
