@@ -3055,8 +3055,8 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
     {
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate auxiliary variables");
         calc_aux_vars();
-        calc_cvar_avg();
-        calc_aux_vars_fv();
+        // calc_cvar_avg();
+        // calc_aux_vars_fv();
     }
     {
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate blender");
@@ -3115,8 +3115,8 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
             );
         }
 
-        State dif_residual_fv;
-        calc_cell_dif_residual_fv_gl(cell, dif_residual_fv);
+        // State dif_residual_fv;
+        // calc_cell_dif_residual_fv_gl(cell, dif_residual_fv);
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
@@ -3135,7 +3135,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 //     alpha*lo_inv_residual[i][var] +
                 //     (1-alpha)*ho_inv_residual[i][var];
                 gcrk_rhs[var][dof_ids[i]] =
-                    (1-ho_dif_factor)*dif_residual_fv[var] +
+                    // (1-ho_dif_factor)*dif_residual_fv[var] +
                     ho_dif_factor*ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
