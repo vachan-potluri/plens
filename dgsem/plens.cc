@@ -2337,32 +2337,34 @@ void PLENS::calc_aux_vars()
 
         // calculate conservative gradients
         calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
-        calc_cell_cons_grad_fv_gl(cell, cons_grad_fv);
 
-        // calculate the average of conservative gradient
-        for(usi d=0; d<dim; d++){
-            for(cvar var: cvar_list){
-                cons_grad_mode0[d][var] = 0;
-                for(usi i=0; i<fe.dofs_per_cell; i++){
-                    cons_grad_mode0[d][var] += cbm(0,i)*cons_grad[i][d][var];
+        // limiting cons grad for boundary cells
+        if(cell->at_boundary()){
+            // calculate the average of conservative gradient using high order variation
+            for(usi d=0; d<dim; d++){
+                for(cvar var: cvar_list){
+                    cons_grad_mode0[d][var] = 0;
+                    for(usi i=0; i<fe.dofs_per_cell; i++){
+                        cons_grad_mode0[d][var] += cbm(0,i)*cons_grad[i][d][var];
+                    }
+                }
+            }
+
+            // calculate avg cons grad in FV sense
+            calc_cell_cons_grad_fv_gl(cell, cons_grad_fv);
+
+            for(usi i=0; i<fe.dofs_per_cell; i++){
+                for(usi d=0; d<dim; d++){
+                    for(cvar var: cvar_list){
+                        cons_grad[i][d][var] = utilities::minmod({
+                            cons_grad[i][d][var],
+                            cons_grad_mode0[d][var],
+                            cons_grad_fv[d][var]
+                        });
+                    }
                 }
             }
         }
-
-        // limit cons grad to mode 0 value
-        // if(cell->at_boundary()){
-        //     for(usi i=0; i<fe.dofs_per_cell; i++){
-        //         for(usi d=0; d<dim; d++){
-        //             for(cvar var: cvar_list){
-        //                 cons_grad[i][d][var] = utilities::minmod({
-        //                     cons_grad[i][d][var],
-        //                     cons_grad_mode0[d][var],
-        //                     cons_grad_fv[d][var]
-        //                 });
-        //             }
-        //         }
-        //     }
-        // }
 
         cell->get_dof_indices(dof_ids);
 
@@ -2920,7 +2922,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
         ho_dif_residual(fe.dofs_per_cell),
         lo_inv_residual(fe.dofs_per_cell);
     std::vector<psize> dof_ids(fe.dofs_per_cell);
-    State ho_dif_res_mode0; // 0-th legendre mode (constant mode) of high order diffusive residual
+    // State ho_dif_res_mode0; // 0-th legendre mode (constant mode) of high order diffusive residual
     bool do_viscous_res_blending(false);
     prm.enter_subsection("blender parameters");
     {
@@ -2951,12 +2953,12 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
             ); // high order viscous
 
             // get constant mode of high order diffusive residual
-            for(cvar var: cvar_list){
-                ho_dif_res_mode0[var] = 0;
-                for(int k=0; k<fe.dofs_per_cell; k++){
-                    ho_dif_res_mode0[var] += cbm(0,k)*ho_dif_residual[k][var];
-                }
-            }
+            // for(cvar var: cvar_list){
+            //     ho_dif_res_mode0[var] = 0;
+            //     for(int k=0; k<fe.dofs_per_cell; k++){
+            //         ho_dif_res_mode0[var] += cbm(0,k)*ho_dif_residual[k][var];
+            //     }
+            // }
         }
 
         {
@@ -2976,7 +2978,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 double(!cell->at_boundary()),
                 (1-alpha/blender_calc.get_blender_max_value())
             ) : // less than 1 only for boundary cells
-            1.0 // simulation time greater than cutoff time
+            1.0 // simulation time greater than cutoff time (do_viscous_res_blending will be false)
         );
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
