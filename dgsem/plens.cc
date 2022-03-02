@@ -2956,6 +2956,9 @@ void PLENS::calc_cell_lo_inv_residual(
  *
  * @note This function was added as an experimental feature on 01-Mar-2022. See the notes around
  * WJ-01-Mar-2022.
+ *
+ * @warning This function passes a dummy FaceLocalDoFData object to BC::get_ghost_stage3(). So any
+ * BC classes that would use this data will give unexpected results.
  */
 void PLENS::calc_cell_dif_residual_fv_gl(
     const DoFHandler<dim>::active_cell_iterator& cell,
@@ -3022,7 +3025,7 @@ void PLENS::calc_cell_dif_residual_fv_gl(
 
         State dif_flux;
         ns_ptr->get_dif_flux(cav_face, face_normal, dif_flux);
-        for(cvar var: cvar_list) residual[var] -= dif_flux[var]*face->measure();
+        for(cvar var: cvar_list) residual[var] += dif_flux[var]*face->measure();
     } // loop over faces
 
     // divide by cell volume
@@ -3135,7 +3138,9 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 //     alpha*lo_inv_residual[i][var] +
                 //     (1-alpha)*ho_inv_residual[i][var];
                 gcrk_rhs[var][dof_ids[i]] =
-                    // (1-ho_dif_factor)*dif_residual_fv[var] +
+                    // (1-ho_dif_factor)*utilities::minmod(
+                    //     dif_residual_fv[var], ho_dif_residual[i][var]
+                    // ) +
                     ho_dif_factor*ho_dif_residual[i][var] +
                     alpha*lo_inv_residual[i][var] +
                     (1-alpha)*ho_inv_residual[i][var];
