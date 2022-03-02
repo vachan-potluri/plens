@@ -3126,9 +3126,10 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
         const double ho_dif_factor = (
             do_viscous_res_blending ?
             std::max(
-                double(!cell->at_boundary()),
+                0.0,
+                // double(!cell->at_boundary()), // less than 1 only for boundary cells
                 (1-alpha/blender_calc.get_blender_max_value())
-            ) : // less than 1 only for boundary cells
+            ) :
             1.0 // simulation time greater than cutoff time (do_viscous_res_blending will be false)
         );
 
