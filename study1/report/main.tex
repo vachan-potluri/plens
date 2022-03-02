@@ -572,5 +572,35 @@ For this case, the meshes for simulations using $N=1,2,3,5$ are generated to giv
 \subsection{Double Mach reflection}
 \label[subsection]{subsec:dmr}
 
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/dmr/res_60_N1_chandrashekhar}
+		\caption{$N=1$.}
+		\label{subfig:dmr_result_N1}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/dmr/res_60_N2_chandrashekhar}
+		\caption{$N=2$.}
+		\label{subfig:dmr_result_N2}
+	\end{subfigure}\\
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/dmr/res_60_N3_chandrashekhar}
+		\caption{$N=3$.}
+		\label{subfig:dmr_result_N3}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/dmr/res_60_N5_chandrashekhar}
+		\caption{$N=5$.}
+		\label{subfig:dmr_result_N5}
+	\end{subfigure}
+	\begin{subfigure}{0.5\linewidth}
+		\includegraphics[width=\linewidth]{figures/dmr/woodward_rho_contour}
+		\caption{Reference solution.}
+		\label{subfig:dmr_woodward_rho_contour}
+	\end{subfigure}
+	\caption{Results for double Mach reflection case. All figures show pressure surface plot with 30 density contours. The contour levels vary across the cases. The reference solution is by \citear{woodwardColella1984} using PPMDE method on a grid of size $\Delta x = \Delta y = 1/120$.}
+\end{figure}
+
 \printbibliography
 \end{document}
