@@ -237,7 +237,7 @@ The DGSEM uses co-located quadrature to evaluate mass and stiffness matrices whi
 	J \dot{\vect{\eulerref{U}}}_i + \sum_{j=0}^{N} \left[ D_{ij} \vect{\eulerref{F}}_j \right] - \frac{\delta_{0i}}{w_0} \left( \vect{\eulerref{F}}^*_0 - \vect{\eulerref{F}}_0 \right) + \frac{\delta_{Ni}}{w_N} \left( \vect{\eulerref{F}}^*_N - \vect{\eulerref{F}}_N \right) = 0 \quad (i=0,1,\ldots,N),
 	\label{eq:1d_euler_tensor_form2}
 \end{gather}
-where $\{w_i\}_{i=0}^{N}$ are the weights of the GL quadrature and $\linalgmat{D}$ is the \newword{polynomial derivative} matrix. The co-located quadrature also gives summation-by-parts property to $\linalgmat{S}$ which allows writing the volumetric term of \cref{eq:1d_euler_tensor_form2} as a FV flux difference \cite{fisherCarpenterNordstrom2013}:
+where $\{w_i\}_{i=0}^{N}$ are the weights of the GL quadrature and $\linalgmat{D}$ is the \newword{polynomial derivative} matrix. The use of such co-located quadrature also gives summation-by-parts property to $\linalgmat{S}$ which allows writing the volumetric term of \cref{eq:1d_euler_tensor_form2} as a FV flux difference \cite{fisherCarpenterNordstrom2013}:
 \begin{equation}
 	\sum_{j=0}^{N} D_{ij} \vect{\eulerref{F}}_j = \frac{\hat{\vect{\eulerref{F}}}_{i+1} - \hat{\vect{\eulerref{F}}}_i}{w_i} \quad (i=0,1,\ldots,N),
 	\label{eq:telescopic_form}
@@ -254,21 +254,21 @@ where $\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$ are the corresponding consis
 	\caption{Equivalent subcell FV decomposition for a DGSEM element with $N=3$. Figure shows the GL interpolation (or quadrature) nodes (circles) and the flux points (crosses). In this case, 4 subcells of sizes $w_0,\ w_1,\ w_2$ and $w_3$ between 5 flux points are obtained.}
 	\label{fig:dgsem_subcell_fc_equivalence}
 \end{figure}
-While the relation between volumetric fluxes ($\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$) and nodal fluxes ($\{\vect{\eulerref{F}}_j\}_{j=0}^{N}$) is given in \cite{fisherCarpenterNordstrom2013}, \citear{gassnerWintersKopriva2016} (extending the work of \citear{fisherCarpenter2013}) suggested the \newword{split form} DGSEM, in which the volumetric fluxes are constructed independent of nodal fluxes using
+While the relation between volumetric fluxes ($\{\hat{\vect{\eulerref{F}}}_i\}_{i=0}^{N+1}$) and nodal fluxes ($\{\vect{\eulerref{F}}_j\}_{j=0}^{N}$) is given in \cite{fisherCarpenterNordstrom2013}, \citear{gassnerWintersKopriva2016}, extending the work of \citear{fisherCarpenter2013} for Euler equations, suggested the \newword{split form} DGSEM, in which the volumetric fluxes are constructed independent of nodal fluxes using a \newword{volumetric two-point flux function} denoted by $\vect{\eulerref{F}}^\#(\bullet, \bullet)$:
 \begin{equation}
 	\begin{gathered}
 		\hat{\vect{\eulerref{F}}}_0 \approx \vect{\eulerref{F}}_0, \quad \hat{\vect{\eulerref{F}}}_{N+1} \approx \vect{\eulerref{F}}_N,\\
-		\hat{\vect{\eulerref{F}}}_i \approx \sum_{j=i}^{N} \sum_{k=0}^{i-1} 2 w_k D_{kj} \vect{\eulerref{F}}^\#(\vect{\eulerref{U}}_k, \vect{\eulerref{U}}_j)\quad (i=1,2,\ldots,N),
+		\hat{\vect{\eulerref{F}}}_i \approx \sum_{j=i}^{N} \sum_{k=0}^{i-1} 2 w_k D_{kj} \vect{\eulerref{F}}^\#(\vect{\eulerref{U}}_k, \vect{\eulerref{U}}_j)\quad (i=1,2,\ldots,N).
 	\end{gathered}
 	\label{eq:split_form_subcell_flux}
 \end{equation}
-where $\vect{\eulerref{F}}^\#$ is a \newword{volumetric two-point flux function}. Substituting \cref{eq:split_form_subcell_flux,eq:telescopic_form} in \cref{eq:1d_euler_tensor_form2}, the split-form DGSEM discretization can be written as follows.
+Substituting \cref{eq:split_form_subcell_flux,eq:telescopic_form} in \cref{eq:1d_euler_tensor_form2}, the split-form DGSEM discretization can be written as follows.
 \begin{equation}
 	J \dot{\vect{\eulerref{U}}}_i + 2\sum_{j=0}^{N} D_{ij} \vect{\eulerref{F}}^\#(\vect{\eulerref{U}}_i, \vect{\eulerref{U}}_j) - \frac{\delta_{0i}}{w_0} \left( \vect{\eulerref{F}}^*_0 - \vect{\eulerref{F}}_0 \right) + \frac{\delta_{Ni}}{w_N} \left( \vect{\eulerref{F}}^*_N - \vect{\eulerref{F}}_N \right) = 0 \quad (i=0,1,\ldots,N)
 	\label{eq:1d_euler_tensor_form3}
 \end{equation}
 
-\citear{hennemannRamirezHindenlang2021} proposed a limiting technique where the split-form high order DGSEM scheme is blended with a low order scheme. Since the introduction of flux points and volumetric fluxes (\cref{eq:telescopic_form,fig:dgsem_subcell_fc_equivalence}) provides a natural subcell decomposition of the finite element, the low order scheme was constructed by defining the volumetric fluxes using standard numerical flux as follows.
+\citear{hennemannRamirezHindenlang2021} proposed a limiting technique where the split-form high order DGSEM scheme is blended with a low order scheme. Since the introduction of flux points and volumetric fluxes (\cref{eq:telescopic_form,fig:dgsem_subcell_fc_equivalence}) provides a natural subcell decomposition of the finite element, the low order scheme was constructed by defining the volumetric fluxes using the standard FV numerical flux as follows.
 \begin{equation}
 	\begin{gathered}
 		\hat{\vect{\eulerref{F}}}^\textlo_0 \approx \vect{\eulerref{F}}_0, \quad \hat{\vect{\eulerref{F}}}^\textlo_{N+1} \approx \vect{\eulerref{F}}_N,\\
@@ -317,7 +317,7 @@ where superscript $\sim$ is used to denote Roe-averaged quantities, $\vect{K}$ i
 \section{One-dimensional test results}
 \label{sec:1d_tests}
 
-Five Riemann 1d problems taken from \citear{toro2009} are considered for comparing performance of polynomial degrees $N=1,\ 2,\ 3$ and $5$. The initial conditions for these tests are given \cref{tab:ic_riemann1d}. The problems were setup on a 3d domain $[0,1] \times [0,0.5]^2$ with $\lcm \{N+1 \mid N=1,2,3,5\}=12$ DoFs in $y$ and $z$ directions. Three sets of simulations on three grid resolutions for $x$ direction were performed with the number of cells given in \cref{tab:nx_riemann1d}. Explicit low-storage 5-stage RK4 time integrator \cite{kennedyCarpenterLewis2000} is used with a CFL number of 0.5. As suggested in \cite{mengaldoDeGraziaPeiro2014}, exact boundary conditions are used on left and right, while symmetry boundary conditions are used on the remaining sides for all cases.
+Five Riemann 1d problems taken from \citear{toro2009} are considered for comparing the performance of polynomial degrees $N=1,2,3,5$. The initial conditions for these tests are given \cref{tab:ic_riemann1d}. The problems were setup on a 3d domain $[0,1] \times [0,0.5]^2$ with $\lcm \{N+1 \mid N=1,2,3,5\}=12$ DoFs in $y$ and $z$ directions. Three sets of simulations on three grid resolutions for $x$ direction were performed with the number of cells given in \cref{tab:nx_riemann1d}. Explicit low-storage 5-stage RK4 time integrator \cite{kennedyCarpenterLewis2000} is used with a CFL number of 0.5. As suggested in \cite{mengaldoDeGraziaPeiro2014}, exact boundary conditions are used on left and right, while symmetry boundary conditions are used on the remaining sides for all cases.
 
 \begin{table}[htbp]
 	\centering
@@ -341,7 +341,7 @@ Five Riemann 1d problems taken from \citear{toro2009} are considered for compari
 \label{tab:nx_riemann1d}
 \begin{tabular}{lllll}
 	\toprule
-	Nominal DoFs & $N=1$ & $N=2$ & $N=3$ & $N=5$\\
+	Nominal DoF resolution & $N=1$ & $N=2$ & $N=3$ & $N=5$\\
 	\midrule
 	200 & 100 & 66 & 50 & 34 \\
 	400 & 200 & 134 & 100 & 66 \\
@@ -350,18 +350,18 @@ Five Riemann 1d problems taken from \citear{toro2009} are considered for compari
 \end{tabular}
 \end{table}
 
-All simulations were performed on a \comment{machine specs}. The simulation results and the exact solution are sampled at 6400 equidistant points to calculate the $L^2$ error as
+All simulations were performed on a \comment{machine specs}. The simulation results and the exact solution are sampled at 6400 equidistant points in $[0,1]$ to calculate the $L^2$ error as
 \begin{equation*}
 \frac{\norm{\phi_\text{numerical} - \phi_\text{exact}}_{L^2}}{\norm{\phi_\text{exact}}_{L^2}}
 \end{equation*}
-where $\norm{\bullet}_{L^2}$ represents the $L^2$ norm and $\phi=\rho$ for all cases except Test 2, for which $\phi=T$ was used.
+where $\norm{\bullet}_{L^2}$ represents the $L^2$ norm of the sampled vector and $\phi=\rho$ for all cases except Test 2, in which case $\phi=T$ was used.
 
 \subsection{Test 1}
 \label[subsection]{subsec:test1-1}
 
 This is a relatively mild test with weak right-moving shock (at $x \approx 0.75$) and contact (at $x \approx 0.6$) waves, and an expansion wave with a left-moving head and a right-moving tail; thus producing a sonic point in the expansion wave. \cref{fig:test1-1_dof800_chandrashekhar} shows a visual comparison of the results obtained using $N=1,\ 2,\ 3$ and $5$ at the highest resolution (800 DoFs). All simulations capture the sonic point and the shock well, while the resolution of contact wave keeps getting better with increasing $N$.
 
-Behaviour of the error in simulations with increasing DoFs for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. It is immediately clear from \cref{subfig:test1-1_error_vs_dof_chandrashekhar} that even high order simulations fail to achieve any higher order of convergence in this discontinuous flow. \cref{subfig:test1-1_error_vs_dof_chandrashekhar,subfig:test1-1_error_vs_cputime_chandrashekhar} together immediately highlight that there is no major improvement in solution when $N=5$ is used over $N=3$, and it only costs more CPU time. The error levels for $N=3,5$ are much lower compared to $N=1$ case for a given DoF resolution. In fact, even with 200 DoFs, simulations using $N=3,5$ give more accurate results than the 800 DoF simulation with $N=1$. \cref{subfig:test1-1_error_vs_cputime_chandrashekhar} also shows that with a very small increase in cost, $N=3$ offers more accurate solution over $N=2$. It maybe concluded that $N=3$ would be the optimal choice for this case, and there is no real benefit in using $N=5$ over $N=3$.
+Behaviour of the error in simulations with increasing DoFs for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. It is immediately clear from \cref{subfig:test1-1_error_vs_dof_chandrashekhar} that even high order simulations fail to achieve any higher order of convergence in this discontinuous flow. \cref{subfig:test1-1_error_vs_dof_chandrashekhar,subfig:test1-1_error_vs_cputime_chandrashekhar} together immediately highlight that there is no major improvement in solution when $N=5$ is used over $N=3$, and it only costs more CPU time. The error levels for $N=3,5$ are much lower compared to $N=1$ case for a given DoF resolution. In fact, even with 200 DoFs, simulations using $N=3,5$ give slightly more accurate results (in terms of the error) than the 800 DoF simulation with $N=1$. \cref{subfig:test1-1_error_vs_cputime_chandrashekhar} also shows that with a very small increase in cost, $N=3$ offers more accurate solution over $N=2$. It maybe concluded that $N=3$ would be the optimal choice for this case, and there is no real benefit in using $N=5$ over $N=3$.
 
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/dof800_12_12_chandrashekhar.pdf}
@@ -388,7 +388,7 @@ Behaviour of the error in simulations with increasing DoFs for different values 
 \subsection{Test 2}
 \label[subsection]{subsec:test1-2}
 
-This test consists of two symmetric expansion waves moving away from each other generating very low density and pressure behind their tails and is a relatively difficult case to simulate. It is well known that behaviour of temperature profile in the low pressure region generated behind the tails of the expansion waves is highly dependent on the particulars of the numerical scheme \cite{toro2009}. \cref{fig:test1-2_dof800_chandrashekhar} shows the comparison of results obtained using 800 DoFs for this case. All results show a temperature peak, failing to faithfully capture the exact variation in the vacuum. However, the extent of discrepancy keeps decreasing with $N$, even though the peak itself does not.
+This test consists of two symmetric expansion waves moving away from each other generating very low density and pressure behind their tails and is a relatively difficult case to simulate. It is well known that the behaviour of temperature profile in the low pressure region generated behind the tails of the expansion waves is highly dependent on the particulars of the numerical scheme \cite{toro2009}. \cref{fig:test1-2_dof800_chandrashekhar} shows the comparison of results obtained using 800 DoFs for this case. All results show a temperature peak, failing to faithfully capture the exact variation in the vacuum. However, the extent of discrepancy keeps decreasing with $N$, even though the peak itself does not.
 
 Correspondingly, \cref{subfig:test1-2_error_vs_dof_chandrashekhar} shows that simulations using higher values of $N$ perform more accurately in this case. The error levels keep dropping with $N$: by about a factor of 2 from $N=1$ to $N=5$ for a given DoF resolution. A comparison of the cost shown in \cref{subfig:test1-2_error_vs_cputime_chandrashekhar} tells that $N=5$ simulations also cost much lower than those using $N=2,3$ to get the same error level. Thus in this test case dominated by smooth flow, higher order simulations perform very well and seem to have a clear edge.
 
@@ -417,9 +417,9 @@ Correspondingly, \cref{subfig:test1-2_error_vs_dof_chandrashekhar} shows that si
 \subsection{Test 3}
 \label[subsection]{subsec:test1-3}
 
-This is again a very severe test case which produces very strong right moving shock (at $x \approx 0.8$) and contact (at $x \approx 0.75$) waves and a left moving expansion wave. The relative speed of the shock and contact waves is very small which makes capturing the high density variation in this region difficult. All results capture the density jump across shock accurately without any diffusion, but produce oscillations before and/or after the shock. While $N=1$ results show a slightly more diffused contact wave, $N=2,3,5$ virtually have an equally good resolution of the same. None of the simulations were able to capture the contact wave as sharply as the shock. The plateau value of density between the very thin region enclosed by contact and shock waves is well-predicted by all simulations.
+This is again a very severe test case which produces very strong right moving shock (at $x \approx 0.8$) and contact (at $x \approx 0.75$) waves and a left moving expansion wave. The relative speed of the shock and contact waves is very small which makes capturing the high density variation between the contact and shock waves difficult. All results capture the density jump across shock accurately without any diffusion, but produce oscillations before and/or after the shock. While $N=1$ results show a slightly more diffused contact wave, $N=2,3,5$ virtually have an equally good resolution of the same. None of the simulations were able to capture the contact wave as sharply as the shock. The plateau value of density between the very thin region enclosed by contact and shock waves is well-predicted by all simulations.
 
-\cref{subfig:test1-3_error_vs_dof_chandrashekhar} reveals that unlike for Tests 1 and 2, the error levels drop only marginally with increasing $N$ (at a given DoF resolution) for this test. It also shows that there is really no benefit in using $N=5$ here over $N=3$. In fact, they are only more costly than $N=2$ or $N=3$ for a given error level, as is clear from \cref{subfig:test1-3_error_vs_cputime_chandrashekhar}. Considering the visual comparison (shown in \cref{fig:test1-3_dof800_chandrashekhar}) and these error plots together, one can conclude here that $N=3$ is the optimal choice, like in Test 1.
+\cref{subfig:test1-3_error_vs_dof_chandrashekhar} reveals that unlike for Tests 1 and 2, the error levels drop only marginally with increasing $N$ (at a given DoF resolution) for this test. It also shows that there is really no benefit in using $N=5$ here over $N=3$. In fact, it is only more costly than $N=2$ or $N=3$ for a given error level, as is clear from \cref{subfig:test1-3_error_vs_cputime_chandrashekhar}. Considering the visual comparison (shown in \cref{fig:test1-3_dof800_chandrashekhar}) and these error plots together, one can conclude here that $N=3$ is the optimal choice, like in Test 1.
 
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-3/dof800_12_12_chandrashekhar.pdf}
@@ -509,7 +509,7 @@ The behaviour of error in this case, shown in \cref{subfig:test1-5_error_vs_dof_
 \subsection{Forward step in a Mach 3 wind tunnel}
 \label[subsection]{subsec:forward_facing_step}
 
-This test case proposed by \citear{woodwardColella1984} is a commonly used 2d validation test case. The domain $\{[0,3] \times [0,1]\} \setminus \{[0.6,3] \times [0,0.2]\}$ contains a step of height $0.2$, at $x=0.6$ in a wind tunnel of length $3$. The height of the wind tunnel is $1$. The domain is initialised with Mach 3 freestream conditions: $p=1$, $\rho=\gamma$ and $u=3$. The left boundary is imposed with an inflow at freestream conditions, while the right boundary has supersonic outflow. All other boundaries are considered as walls. Although the end time is $t=4$ for this case, simulation results will be compared at $t=3$.
+This test case proposed by \citear{woodwardColella1984} is a commonly used as a 2d validation test case. The domain $\{[0,3] \times [0,1]\} \setminus \{[0.6,3] \times [0,0.2]\}$ contains a step of height $0.2$, at $x=0.6$ in a wind tunnel of length $3$. The height of the wind tunnel is $1$. The domain is initialised with Mach 3 freestream conditions: $p=1$, $\rho=\gamma$ and $u=3$. A bow shock is generated due to the step, which undergoes multiple reflections from the top and the bottom walls. The first reflection from the top wall is a Mach reflection. The left boundary is imposed with an inflow at freestream conditions, while the right boundary has supersonic outflow. All other boundaries are considered as walls. Although the end time is $t=4$ for this case, simulation results will be compared at $t=3$.
 
 For this case, the meshes for simulations using $N=1,2,3,5$ are generated to give a nominal grid of size $\Delta x = \Delta y \approx (N+1)/80$. Further, the mesh is stretched around the corner to give a cell size 4 times smaller than the nominal size. As a sample, the mesh used for $N=5$ simulation is shown in \cref{fig:forward_facing_step_mesh_N5}. In the $z$ direction, $\lcm \{(N+1) \mid N=1,2,3,5\}$ DoFs are used. \cref{tab:forward_facing_step_mesh_cpu} shows the final mesh size in terms of the number of DoFs for each of the 4 cases.
 
@@ -572,11 +572,11 @@ For this case, the meshes for simulations using $N=1,2,3,5$ are generated to giv
 \subsection{Double Mach reflection}
 \label[subsection]{subsec:dmr}
 
-This test case, again proposed by \citear{woodwardColella1984}, is concerned with the reflection of a Mach 10 shock hitting a ramp angled \SI{30}{\degree}. Both the incident and the reflected shocks undergo a Mach reflection producing a complex wave structure. Following \citear{kemm2016}, the problem is setup on a domain of size $[0,4] \times [0,2]$ with the incident shock initially inclined \SI{60}{\degree} to the wall, which is one part $[1/6,4]$ of the bottom boundary. The other part of the bottom boundary $[0,1/6]$ along with the left side is given post-shock inflow conditions. The top and the right boundaries are given exact boundary conditions to capture the motion of the shock. Pre-shock conditions are $p=1$, $\rho=\gamma$ and $u=0=v$ and the post-shock conditions are calculated using normal shock relations.
+This test case, again proposed by \citear{woodwardColella1984}, is concerned with the reflection of a Mach 10 shock hitting a ramp angled \SI{30}{\degree}. Both the incident and the reflected shocks undergo a Mach reflection producing a complex wave structure. Following \citear{kemm2016}, the problem is setup on a domain of size $[0,4] \times [0,2]$ with the incident shock initially inclined \SI{60}{\degree} to the wall, which is one part $[1/6,4]$ of the bottom boundary. The other part of the bottom boundary $[0,1/6]$ along with the left side is given post-shock inflow conditions. The top and the right boundaries are given exact boundary conditions to capture the motion of the shock. Pre-shock conditions are $p=1$, $\rho=\gamma$ and $u=0=v$, and the post-shock conditions are calculated using normal shock relations.
 
 The meshes used in this case are designed to have $\Delta x = \Delta y \approx (N+1)/120$ for $N=1,2,3,5$, along with $\lcm \{ (N+1) \mid N=1,2,3,5 \} = 12$ DoFs in the $z$ direction. \cref{tab:dmr_mesh_cpu} shows the total number of DoFs in the mesh for different values of $N$.
 
-\cref{fig:dmr_results} shows the results obtained with $N=1,2,3,5$ at end time $t=0.2$. It is immediately clear that all high order simulations capture the bending of slip line much better.
+\cref{fig:dmr_results} shows the results obtained with $N=1,2,3,5$ at end time $t=0.2$. It is immediately clear that all high order simulations capture the bending of the slip line emanating from the first triple point much better compared to $N=1$. They also capture the shock emanating from the secondary triple point better. While $N=5$ gives the sharpest resolution of the primary shock structures (namely incident shock, primary Mach stem and reflected shock along with its Mach stem), the other secondary structures are equally well resolved with $N=2,3,5$. Considering the CPU cost required by each of the schemes (shown in \cref{tab:dmr_mesh_cpu}) along with the visual results, one can conclude that $N=3$ is the best performer in this case.
 
 \begin{table}[htbp]
     \centering
