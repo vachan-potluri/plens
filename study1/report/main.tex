@@ -511,7 +511,7 @@ The behaviour of error in this case, shown in \cref{subfig:test1-5_error_vs_dof_
 
 This test case proposed by \citear{woodwardColella1984} is a commonly used 2d validation test case. The domain $\{[0,3] \times [0,1]\} \setminus \{[0.6,3] \times [0,0.2]\}$ contains a step of height $0.2$, at $x=0.6$ in a wind tunnel of length $3$. The height of the wind tunnel is $1$. The domain is initialised with Mach 3 freestream conditions: $p=1$, $\rho=\gamma$ and $u=3$. The left boundary is imposed with an inflow at freestream conditions, while the right boundary has supersonic outflow. All other boundaries are considered as walls. Although the end time is $t=4$ for this case, simulation results will be compared at $t=3$.
 
-For this case, the meshes for simulations using $N=1,2,3,5$ are generated to give a nominal grid of size $\Delta x = \Delta y = (N+1)/40$. Further, the mesh is stretched around the corner to give a cell size 4 times smaller than the nominal size. As a sample, the mesh used for $N=5$ simulation is shown in \cref{fig:forward_facing_step_mesh_N5}. In the $z$ direction, $\lcm \{(N+1) \mid N=1,2,3,5\}$ DoFs are used. \cref{tab:forward_facing_step_mesh_cpu} shows the final mesh size in terms of the number of DoFs for each of the 4 cases.
+For this case, the meshes for simulations using $N=1,2,3,5$ are generated to give a nominal grid of size $\Delta x = \Delta y \approx (N+1)/80$. Further, the mesh is stretched around the corner to give a cell size 4 times smaller than the nominal size. As a sample, the mesh used for $N=5$ simulation is shown in \cref{fig:forward_facing_step_mesh_N5}. In the $z$ direction, $\lcm \{(N+1) \mid N=1,2,3,5\}$ DoFs are used. \cref{tab:forward_facing_step_mesh_cpu} shows the final mesh size in terms of the number of DoFs for each of the 4 cases.
 
 \cref{fig:forward_facing_step_results} shows the simulation results at time $t=3$. All simulations show a Mach stem at the shock reflection on the bottom wall. This is a numerical artefact which is generated due to entropy production in the expansion wave around corner. It can be seen that the size of this stem reduces as $N$ is increased. Results with $N=2,3$ show carbuncle oscillations in the primary bow shock front. The result with $N=5$ shows some oscillations in the primary shock reflection on the top wall, which are not observed in other cases. All the shocks seem to get slightly more sharper as $N$ is increased. The contact wave generated due to the reflection of primary shock on the top wall is more sharply resolved with $N=2,5$. In conclusion, it can be said in this case that high order schemes introduce less entropy production around the corner expansion, although they display the carbuncle phenomenon. Considering the CPU time per time step{---}shown in \cref{tab:forward_facing_step_mesh_cpu}{---} along with the visual results, $N=2$ seems to perform marginally better here than other cases.
 
@@ -572,6 +572,28 @@ For this case, the meshes for simulations using $N=1,2,3,5$ are generated to giv
 \subsection{Double Mach reflection}
 \label[subsection]{subsec:dmr}
 
+This test case, again proposed by \citear{woodwardColella1984}, is concerned with the reflection of a Mach 10 shock hitting a ramp angled \SI{30}{\degree}. Both the incident and the reflected shocks undergo a Mach reflection producing a complex wave structure. Following \citear{kemm2016}, the problem is setup on a domain of size $[0,4] \times [0,2]$ with the incident shock initially inclined \SI{60}{\degree} to the wall, which is one part $[1/6,4]$ of the bottom boundary. The other part of the bottom boundary $[0,1/6]$ along with the left side is given post-shock inflow conditions. The top and the right boundaries are given exact boundary conditions to capture the motion of the shock. Pre-shock conditions are $p=1$, $\rho=\gamma$ and $u=0=v$ and the post-shock conditions are calculated using normal shock relations.
+
+The meshes used in this case are designed to have $\Delta x = \Delta y \approx (N+1)/120$ for $N=1,2,3,5$, along with $\lcm \{ (N+1) \mid N=1,2,3,5 \} = 12$ DoFs in the $z$ direction. \cref{tab:dmr_mesh_cpu} shows the total number of DoFs in the mesh for different values of $N$.
+
+\cref{fig:dmr_results} shows the results obtained with $N=1,2,3,5$ at end time $t=0.2$. It is immediately clear that all high order simulations capture the bending of slip line much better.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Mesh details and computational cost per time step for the double Mach reflection case.}
+    \label{tab:dmr_mesh_cpu}
+    \begin{tabular}{cccc}
+        \toprule
+        $N$ & Number of cells & Number of DoFs & CPU time per time step \\
+        \midrule
+        1 & 172800 & 1382400 & 131.3 \\
+        2 & 51520 & 1391040 & 97.3 \\
+        3 & 21600 & 1382400 & 92.93 \\
+        5 & 6480 & 1399680 & 124.1 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
 \begin{figure}[htbp]
 	\centering
 	\begin{subfigure}{0.5\linewidth}
@@ -593,13 +615,14 @@ For this case, the meshes for simulations using $N=1,2,3,5$ are generated to giv
 		\includegraphics[width=\linewidth]{figures/dmr/res_60_N5_chandrashekhar}
 		\caption{$N=5$.}
 		\label{subfig:dmr_result_N5}
-	\end{subfigure}
+	\end{subfigure}\\
 	\begin{subfigure}{0.5\linewidth}
 		\includegraphics[width=\linewidth]{figures/dmr/woodward_rho_contour}
 		\caption{Reference solution.}
 		\label{subfig:dmr_woodward_rho_contour}
 	\end{subfigure}
 	\caption{Results for double Mach reflection case. All figures show pressure surface plot with 30 density contours. The contour levels vary across the cases. The reference solution is by \citear{woodwardColella1984} using PPMDE method on a grid of size $\Delta x = \Delta y = 1/120$.}
+    \label{fig:dmr_results}
 \end{figure}
 
 \printbibliography
