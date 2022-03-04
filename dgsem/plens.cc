@@ -240,16 +240,16 @@ void PLENS::declare_parameters()
             "Chandrashekhar",
             Patterns::Selection(
                 "HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|Chandrashekhar|KG"
-                "|Rusanov-KG"
+                "|Rusanov-KG|IR"
             ),
             "Options: 'HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|"
-            "Chandrashekhar|KG|Rusanov-KG'"
+            "Chandrashekhar|KG|Rusanov-KG|IR'"
         );
         prm.declare_entry(
             "inviscid volume flux scheme",
             "Chandrashekhar",
-            Patterns::Selection("Chandrashekhar|KG"),
-            "Options: 'Chandrashekhar|KG'"
+            Patterns::Selection("Chandrashekhar|KG|IR"),
+            "Options: 'Chandrashekhar|KG|IR'"
         );
         prm.declare_entry(
             "diffusive surface flux scheme",
@@ -752,11 +752,14 @@ void PLENS::set_NS()
         else if(temp == "Modified SW") isfs = NavierStokes::inv_surf_flux_scheme::modified_sw;
         else if(temp == "Chandrashekhar") isfs = NavierStokes::inv_surf_flux_scheme::chandrashekhar;
         else if(temp == "KG") isfs = NavierStokes::inv_surf_flux_scheme::kennedy_gruber;
-        else isfs = NavierStokes::inv_surf_flux_scheme::rusanov_kennedy_gruber_blend;
+        else if(temp == "Rusanov-KG")
+            isfs = NavierStokes::inv_surf_flux_scheme::rusanov_kennedy_gruber_blend;
+        else isfs = NavierStokes::inv_surf_flux_scheme::ismail_roe;
 
         temp = prm.get("inviscid volume flux scheme");
         if(temp == "Chandrashekhar") ivfs = NavierStokes::inv_vol_flux_scheme::chandrashekhar;
-        else ivfs = NavierStokes::inv_vol_flux_scheme::kennedy_gruber;
+        else if(temp == "KG") ivfs = NavierStokes::inv_vol_flux_scheme::kennedy_gruber;
+        else ivfs = NavierStokes::inv_vol_flux_scheme::ismail_roe;
 
         temp = prm.get("diffusive surface flux scheme");
         if(temp == "BR1") dsfs = NavierStokes::dif_surf_flux_scheme::BR1;

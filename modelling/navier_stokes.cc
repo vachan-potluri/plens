@@ -174,9 +174,19 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->chandrashekhar_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::kennedy_gruber){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->kennedy_gruber_xflux(lcs, rcs, f);
+        };
+    }
+    else if(isfs == inv_surf_flux_scheme::rusanov_kennedy_gruber_blend){
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->rusanov_kennedy_gruber_blend_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->ismail_roe_xflux(lcs, rcs, f);
         };
     }
 }
@@ -195,11 +205,18 @@ void NavierStokes::set_inv_vol_flux_scheme(const inv_vol_flux_scheme ivfs)
             this->chandrashekhar_vol_flux(cs1, cs2, dir, f);
         };
     }
-    else{
+    else if(ivfs == inv_vol_flux_scheme::kennedy_gruber){
         get_inv_vol_flux = [=](
             const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
         ){
             this->kennedy_gruber_vol_flux(cs1, cs2, dir, f);
+        };
+    }
+    else{
+        get_inv_vol_flux = [=](
+            const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
+        ){
+            this->ismail_roe_vol_flux(cs1, cs2, dir, f);
         };
     }
 }
@@ -1195,6 +1212,76 @@ void NavierStokes::rusanov_kennedy_gruber_blend_xflux(
 
 
 /**
+ * Ismail & Roe's surface flux. See ismail_roe_vol_flux() and eqs. (3.30-31) of Gassner et al
+ * (2016).
+ */
+void NavierStokes::ismail_roe_xflux(
+    const State &lcs, const State &rcs, State &f
+) const
+{
+    const double gma_sqrt = sqrt(gma_); // square root of gamma
+    const double al = get_a(lcs), ar = get_a(rcs);
+    const double z1l = gma_sqrt/al, z1r = gma_sqrt/ar; // z1 of states 1 and 2
+    const double z5l = lcs[0]*al/gma_sqrt, z5r = rcs[0]*ar/gma_sqrt; // z5 of the states
+
+    const double z5_ln = log_avg(z5l, z5r);
+    const double rho_hat = 0.5*(z1l + z1r)*z5_ln;
+    const double p1_hat = (z5l+z5r)/(z1l+z1r),
+        p2_hat = 0.5*( (gma_+1)*z5_ln/log_avg(z1l, z1r) + (gma_-1)*p1_hat )/(gma_);
+    double h_hat = gma_*p2_hat/((gma_-1)*rho_hat); // initialised here, will be modified using velocities
+    dealii::Tensor<1,dim> vl, vr, vel_hat;
+    for(int d=0; d<dim; d++){
+        vl[d] = lcs[1+d]/lcs[0], vr[d] = rcs[1+d]/rcs[0];
+        vel_hat[d] = (z1l*vl[d] + z1r*vr[d])/(z1l + z1r);
+        h_hat += 0.5*(vel_hat[d]*vel_hat[d]);
+    }
+    f[0] = rho_hat*vel_hat[0];
+    for(int d=0; d<dim; d++) f[1+d] = rho_hat*vel_hat[0]*vel_hat[d];
+    f[1] += p1_hat;
+    f[4] = rho_hat*h_hat*vel_hat[0];
+
+    // stabilisation term
+    State cons_hat = {
+        rho_hat,
+        rho_hat*vel_hat[0],
+        rho_hat*vel_hat[1],
+        rho_hat*vel_hat[2],
+        // p2_hat/(gma_-1) + rho_hat*dealii::scalar_product(vel_hat, vel_hat)
+        rho_hat*h_hat - p2_hat
+    };
+    const double pl = get_p(lcs), pr = get_p(rcs);
+    const double sl = log(pl) - gma_*log(lcs[0]), sr = log(pr) - gma_*log(rcs[0]);
+    dealii::Tensor<1,dim+2> Vl, Vr; // entropy variables
+    Vl[0] = (gma_-sl)/(gma_-1) - 0.5*lcs[0]*dealii::scalar_product(vl,vl)/pl;
+    Vr[0] = (gma_-sr)/(gma_-1) - 0.5*rcs[0]*dealii::scalar_product(vr,vr)/pr;
+    Vl[4] = -lcs[0]/pl;
+    Vr[4] = -rcs[0]/pr;
+    for(int d=0; d<dim; d++){
+        Vl[1+d] = lcs[1+d]/pl;
+        Vr[1+d] = rcs[1+d]/pr;
+    }
+    dealii::Tensor<2,dim+2> H; // using p2_hat for p
+    // 1st col
+    for(int i=0; i<dim+2; i++) H[i][0] = cons_hat[i];
+    // 2-4 cols
+    for(int d=0; d<dim; d++){
+        State flux;
+        dealii::Tensor<1,dim> dir; // initialised to 0
+        dir[d] = 1.0;
+        get_inv_flux(cons_hat, dir, flux);
+        for(int i=0; i<dim+2; i++) H[i][1+d] = flux[i];
+    }
+    // last col
+    for(int i=0; i<4; i++) H[i][4] = H[4][i];
+    H[4][4] = rho_hat*h_hat*h_hat - gma_*gma_*p2_hat*p2_hat/(gma_-1);
+    dealii::Tensor<1,dim+2> f_stab = H*(Vr-Vl);
+
+    for(int i=0; i<dim+2; i++) f[i] -= f_stab[i];
+}
+
+
+
+/**
  * @brief Chandrashekhar inviscid volume flux.
  *
  * See eqs (3.16, 3.18-3.20) of Gassner, Winters & Kopriva (2016).
@@ -1271,6 +1358,49 @@ void NavierStokes::kennedy_gruber_vol_flux(
         f[1+d] = rho_avg*vel_n*vel_avg[d] + p_avg*dir[d];
     }
     f[4] = vel_n*(rho_avg*E_avg + p_avg);
+}
+
+
+
+/**
+ * Ismail & Roe's volume flux. See eqs. (3.14) - (3.17) of Gassner et al (2016).
+ *
+ * To spare some calculations, the following relations are used
+ * @f[
+ * z_1 = \sqrt{\rho/p} = \sqrt{\gamma}/a \\
+ * z_5 = \sqrt{p\rho} = \rho a/\sqrt{\gamma}
+ * @f]
+ *
+ * @pre @p dir has to be a unit vector
+ * @pre @p cs1 and @p cs2 must pass the test of NavierStokes::assert_positivity()
+ */
+void NavierStokes::ismail_roe_vol_flux(
+    const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
+) const
+{
+    const double gma_sqrt = sqrt(gma_); // square root of gamma
+    const double a1 = get_a(cs1), a2 = get_a(cs2);
+    const double z11 = gma_sqrt/a1, z12 = gma_sqrt/a2; // z1 of states 1 and 2
+    const double z51 = cs1[0]*a1/gma_sqrt, z52 = cs2[0]*a2/gma_sqrt; // z5 of the states
+
+    const double z5_ln = log_avg(z51, z52);
+    const double rho_hat = 0.5*(z11 + z12)*z5_ln;
+    const double p1_hat = (z51+z52)/(z11+z12),
+        p2_hat = 0.5*( (gma_+1)*z5_ln/log_avg(z11, z12) + (gma_-1)*p1_hat )/(gma_);
+    double h_hat = gma_*p2_hat/((gma_-1)*rho_hat); // initialised here, will be modified using velocities
+    dealii::Tensor<1,dim> vel_hat;
+    for(int d=0; d<dim; d++){
+        const double v1 = cs1[1+d]/cs1[0], v2 = cs2[1+d]/cs2[0];
+        vel_hat[d] = (z11*v1 + z11*v2)/(z11 + z12);
+        h_hat += 0.5*(vel_hat[d]*vel_hat[d]);
+    }
+
+    const double vel_n = dealii::scalar_product(vel_hat, dir);
+    f[0] = rho_hat*vel_n;
+    for(int d=0; d<dim; d++){
+        f[1+d] = rho_hat*vel_hat[d]*vel_n + p1_hat*dir[d];
+    }
+    f[4] = rho_hat*vel_n*h_hat;
 }
 
 

@@ -166,11 +166,13 @@ class NavierStokes
         modified_sw,
         chandrashekhar,
         kennedy_gruber,
-        rusanov_kennedy_gruber_blend
+        rusanov_kennedy_gruber_blend,
+        ismail_roe
     };
     enum class inv_vol_flux_scheme{
         chandrashekhar,
-        kennedy_gruber
+        kennedy_gruber,
+        ismail_roe
     };
     
     // Choices for diffusive surface and volume flux scheme
@@ -202,12 +204,16 @@ class NavierStokes
     void chandrashekhar_xflux(const State &lcs, const State &rcs, State &f) const;
     void kennedy_gruber_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_kennedy_gruber_blend_xflux(const State &lcs, const State &rcs, State &f) const;
+    void ismail_roe_xflux(const State &lcs, const State &rcs, State &f) const;
     
     // inv vol fluxes
     void chandrashekhar_vol_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
     ) const;
     void kennedy_gruber_vol_flux(
+        const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
+    ) const;
+    void ismail_roe_vol_flux(
         const State &cs1, const State &cs2, const dealii::Tensor<1,dim> &dir, State &f
     ) const;
     
