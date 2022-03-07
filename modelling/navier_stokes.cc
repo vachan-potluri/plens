@@ -1273,8 +1273,10 @@ void NavierStokes::ismail_roe_xflux(
     }
     // last col
     for(int i=0; i<4; i++) H[i][4] = H[4][i];
-    H[4][4] = rho_hat*h_hat*h_hat - gma_*gma_*p2_hat*p2_hat/(gma_-1);
-    dealii::Tensor<1,dim+2> f_stab = H*(Vr-Vl);
+    H[4][4] = rho_hat*h_hat*h_hat - gma_*p2_hat*p2_hat/(rho_hat*(gma_-1));
+
+    const double lambda_max = fabs(vel_hat[0]) + sqrt(gma_*p2_hat/rho_hat);
+    dealii::Tensor<1,dim+2> f_stab = 0.5*lambda_max*(H*(Vr-Vl));
 
     for(int i=0; i<dim+2; i++) f[i] -= f_stab[i];
 }
@@ -1391,7 +1393,7 @@ void NavierStokes::ismail_roe_vol_flux(
     dealii::Tensor<1,dim> vel_hat;
     for(int d=0; d<dim; d++){
         const double v1 = cs1[1+d]/cs1[0], v2 = cs2[1+d]/cs2[0];
-        vel_hat[d] = (z11*v1 + z11*v2)/(z11 + z12);
+        vel_hat[d] = (z11*v1 + z12*v2)/(z11 + z12);
         h_hat += 0.5*(vel_hat[d]*vel_hat[d]);
     }
 
