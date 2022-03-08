@@ -1094,9 +1094,9 @@ void NavierStokes::chandrashekhar_xflux(
     get_xK(vi, ai, Hi, K);
     get_xKinv(vi, ai, Hi, Kinv);
     // eigen values: blending KES and Rusanov eigenvalues with flux blender value
-    const double lambda_max_rus = fabs(vi[0]) + ai;
-    const double lambda2_blend =
-        flux_blender_value*lambda_max_rus + (1-flux_blender_value)*fabs(vi[0]);
+    const double u_abs = fabs(vi[0]),
+        lambda_max_rus = u_abs + ai,
+        lambda2_blend = flux_blender_value*lambda_max_rus + (1-flux_blender_value)*u_abs;
     std::array<double, dim+2> eig = {
         lambda_max_rus,
         lambda2_blend,
