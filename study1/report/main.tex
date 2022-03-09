@@ -305,9 +305,9 @@ In this work, the Chandrashekhar volumetric flux \cite{gassnerWintersKopriva2016
 where $\avg{x} \defeq (x_a + x_b)/2$, $x^\textln \defeq (x_a - x_b)/(\ln (x_a/x_b))$ and $\beta = \rho/2p$. A numerically stable procedure to calculate the logarithmic averages is given in the appendix of \cite{ismailRoe2009}. The numerical surface flux $\vect{\eulerref{F}}^*$, is obtained by adding a stabilisation (dissipation) term to the volume flux. In this work, the hybrid matrix based stabilisation \cite{chandrashekar2013} is used to obtain the surface flux,
 \begin{gather}
 	\vect{\eulerref{F}}^*(\vect{\eulerref{U}}_a, \vect{\eulerref{U}}_b) = \vect{\eulerref{F}}^\#_\textch(\vect{\eulerref{U}}_a, \vect{\eulerref{U}}_b) - \frac{1}{2} \vect{K} \abs{\vect{\Lambda}} \vect{K}^{-1} \left( \vect{\eulerref{U}}_b - \vect{\eulerref{U}}_a \right),\\
-	\abs{\vect{\Lambda}} = \alpha \abs{\vect{\Lambda}}^\text{Rusanov} + (1-\alpha) \abs{\vect{\Lambda}}^\text{Roe},\\
+	\abs{\vect{\Lambda}} = \alpha \abs{\vect{\Lambda}}^\text{Rusanov} + (1-\alpha) \abs{\vect{\Lambda}}^\text{KES},\\
 	\abs{\vect{\Lambda}}^\text{Rusanov} = (\abs{\tilde{u}_1} + \tilde{a}) \vect{I},\\
-	\abs{\vect{\Lambda}}^\text{Roe} = \diag \left( \abs{\tilde{u}_1 - \tilde{a}}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1 + \tilde{a}} \right)
+	\abs{\vect{\Lambda}}^\text{KES} = \diag \left( \abs{\tilde{u}_1} + \tilde{a}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1}, \abs{\tilde{u}_1} + \tilde{a} \right)
 	\label{eq:1d_chandrashekhar_surface_flux}
 \end{gather}
 where superscript $\sim$ is used to denote Roe-averaged quantities, $\vect{K}$ is the right eigenvector matrix of Roe-averaged state and $\vect{I}$ is the identity matrix of size 5.
@@ -323,9 +323,10 @@ Five Riemann 1d problems taken from \citear{toro2009} are considered for compari
 	\centering
 	\caption{Initial conditions for Riemann 1d problems. All values in SI units. The diaphragm location ($x_0$) is where the initial discontinuity is set.}
 	\label{tab:ic_riemann1d}
-	\begin{tabular}{c c c c c c c c c}
+	\begin{tabular}{S[table-format=1.0, table-text-alignment=left] S[table-format=1.5, table-text-alignment=left] S[table-format=1.5, table-text-alignment=left] S[table-format=4.3, table-text-alignment=left] S[table-format=2.3, table-text-alignment=left] S[table-format=2.5, table-text-alignment=left] S[table-format=2.5, table-text-alignment=left] S[table-format=1.3, table-text-alignment=left] S[table-format=1.1, table-text-alignment=left]}
 		\toprule
-		Test \# & $\rho_L$ & $\rho_R$ & $p_L$ & $p_R$ & $u_L$ & $u_R$ & End time & $x_0$ \\ \midrule
+		{Test \#} & {$\rho_L$} & {$\rho_R$} & {$p_L$} & {$p_R$} & {$u_L$} & {$u_R$} & {End time} & {$x_0$} \\
+		\midrule
 		1 & 1.0 & 0.125 & 1.0 & 0.1 & 0.75 & 0.0 & 0.2 & 0.3 \\
 		2 & 1.0 & 1.0 & 0.4 & 0.4 & -2.0 & 2.0 & 0.15 & 0.5 \\
 		3 & 1.0 & 1.0 & 1000.0 & 0.01 & 0.0 & 0.0 & 0.012 & 0.5 \\
@@ -339,9 +340,9 @@ Five Riemann 1d problems taken from \citear{toro2009} are considered for compari
 \centering
 \caption{Number of cells in $x$ direction for Riemann 1d problems.}
 \label{tab:nx_riemann1d}
-\begin{tabular}{lllll}
+\begin{tabular}{S[table-format=3.0, table-text-alignment=left] S[table-format=3.0, table-text-alignment=left] S[table-format=3.0, table-text-alignment=left] S[table-format=3.0, table-text-alignment=left] S[table-format=3.0, table-text-alignment=left]}
 	\toprule
-	Nominal DoF resolution & $N=1$ & $N=2$ & $N=3$ & $N=5$\\
+	{Nominal DoF resolution} & {$N=1$} & {$N=2$} & {$N=3$} & {$N=5$}\\
 	\midrule
 	200 & 100 & 66 & 50 & 34 \\
 	400 & 200 & 134 & 100 & 66 \\
@@ -519,9 +520,9 @@ For this case, the meshes for simulations using $N=1,2,3,5$ are generated to giv
 	\centering
 	\caption{Mesh details and computational cost per time step for forward step case.}
 	\label{tab:forward_facing_step_mesh_cpu}
-	\begin{tabular}{cccc}
+	\begin{tabular}{S[table-format=1.0, table-text-alignment=left] S[table-format=5.0, table-text-alignment=left] S[table-format=6.0, table-text-alignment=left] S[table-format=2.2, table-text-alignment=left]}
 		\toprule
-		$N$ & Number of cells & Number of DoFs & CPU time per time step \\
+		{$N$} & {Number of cells} & {Number of DoFs} & {CPU time per time step (sec)} \\
 		\midrule
 		1 & 24192 & 193536 & 16.24 \\
 		2 & 7624 & 205848 & 12.78 \\
@@ -582,9 +583,9 @@ The meshes used in this case are designed to have $\Delta x = \Delta y \approx (
     \centering
     \caption{Mesh details and computational cost per time step for the double Mach reflection case.}
     \label{tab:dmr_mesh_cpu}
-    \begin{tabular}{cccc}
+    \begin{tabular}{S[table-format=1.0, table-text-alignment=left] S[table-format=6.0, table-text-alignment=left] S[table-format=7.0, table-text-alignment=left] S[table-format=3.2, table-text-alignment=left]}
         \toprule
-        $N$ & Number of cells & Number of DoFs & CPU time per time step \\
+        {$N$} & {Number of cells} & {Number of DoFs} & {CPU time per time step (sec)} \\
         \midrule
         1 & 172800 & 1382400 & 131.3 \\
         2 & 51520 & 1391040 & 97.3 \\
