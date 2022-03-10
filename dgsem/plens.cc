@@ -428,36 +428,50 @@ void PLENS::declare_parameters()
             "'pxrho|p|rho'. 'pxrho' means the product of pressure and density."
         );
         prm.declare_entry(
+            "blender function",
+            "Hennemann",
+            Patterns::Anything(),
+            "The function to be used for calculating blender. If 'Hennemann' is chosen, then the "
+            "relevant parameters can be tweaked. If 'linear' is chosen, then the blender is "
+            "equated simply to the trouble/threshold value. Other than these two, a custom "
+            "function can be given as the input which will then be used to evaluate the blender. "
+            "The custom function must be in variables x and y representing trouble and threshold "
+            "respectively."
+        );
+        prm.declare_entry(
             "threshold factor",
             "0.5",
             Patterns::Double(1e-2),
-            "The pre-factor for threshold calculation. See WJ-24-May-2021."
+            "The pre-factor for threshold calculation. See WJ-24-May-2021. Relevant for "
+            "'Hennemann' blender function."
         );
         prm.declare_entry(
             "threshold exponent factor",
             "1.8",
             Patterns::Double(1e-2),
             "The pre-factor of exponent for threshold calculation. See WJ-24-May-2021. Range: "
-            "[1e-2, infty)."
+            "[1e-2, infty). Relevant for 'Hennemann' blender function."
         );
         prm.declare_entry(
             "sharpness factor",
             "9.21024",
             Patterns::Double(1e-2),
             "The sharpness factor for calculating blender value from trouble and threshold. See "
-            "WJ-24-May-2021. Range: [1e-2, infty)."
+            "WJ-24-May-2021. Range: [1e-2, infty). Relevant for 'Hennemann' blender function."
         );
         prm.declare_entry(
             "blender min value",
             "1e-3",
             Patterns::Double(1e-8,1),
-            "Minimum value of blender (alpha min). See WJ-24-May-2021. Range: [1e-8, 1]."
+            "Minimum value of blender (alpha min). See WJ-24-May-2021. Range: [1e-8, 1]. Relevant "
+            "for 'Hennemann' blender function."
         );
         prm.declare_entry(
             "blender max value",
             "0.5",
             Patterns::Double(0.5,1),
-            "Maximum value of blender (alpha max). See WJ-24-May-2021. Range: [0.5, 1]."
+            "Maximum value of blender (alpha max). See WJ-24-May-2021. Range: [0.5, 1]. Relevant "
+            "for 'Hennemann' blender function."
         );
         prm.declare_entry(
             "wall blender limit",

@@ -6,6 +6,7 @@
 #ifndef BLENDER_CALCULATOR_H
 #define BLENDER_CALCULATOR_H
 
+#include <deal.II/base/function_parser.h>
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
@@ -19,6 +20,8 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <map>
+#include <string>
 
 #ifdef DEBUG
 #include <deal.II/base/index_set.h>
@@ -62,6 +65,9 @@ using namespace dealii;
  * @f]
  * where the second term is the modification by Hennemann et al (2021). Note that the second term
  * makes sense only when @f$N>2@f$. Otherwise, it would give counter-intuitive results.
+ *
+ * @note On 10-Mar-2022, a functionality was added to use a custom function for calculating the
+ * blender. See WJ notes.
  */
 class BlenderCalculator
 {
@@ -88,27 +94,38 @@ class BlenderCalculator
     std::vector<usi> mode_indices_Nm2;
 
     /**
-     * The threshold (pre-)factor
+     * The blender function expression read from prm file. Can take values: 'Hennemann', 'linear' or
+     * a custom function to be parsed.
+     */
+    std::string blender_function_expr;
+
+    /**
+     * The threshold (pre-)factor. Relevant for all values of
+     * BlenderCalculator::blender_function_expr since this is used to calculate the threshold.
      */
     double threshold_factor;
 
     /**
-     * The threshold exponent's factor
+     * The threshold exponent's factor. Relevant for all values of
+     * BlenderCalculator::blender_function_expr since this is used to calculate the threshold.
      */
     double threshold_exp_factor;
 
     /**
-     * The sharpness factor
+     * The sharpness factor. Relevant if
+     * `BlenderCalculator::blender_function_expr == "Hennemann"`.
      */
     double sharpness_factor;
 
     /**
-     * Min value of alpha (blender)
+     * Min value of alpha (blender). Relevant if
+     * `BlenderCalculator::blender_function_expr == "Hennemann"`.
      */
     double alpha_min;
 
     /**
-     * Max value of alpha (blender)
+     * Max value of alpha (blender). Relevant if
+     * `BlenderCalculator::blender_function_expr == "Hennemann"`.
      */
     double alpha_max;
 

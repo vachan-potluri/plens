@@ -66,6 +66,7 @@ void BlenderCalculator::parse_parameters(ParameterHandler& prm)
 
     prm.enter_subsection("blender parameters");
     {
+        blender_function_expr = prm.get("blender function");
         threshold_factor = prm.get_double("threshold factor");
         threshold_exp_factor = prm.get_double("threshold exponent factor");
         sharpness_factor = prm.get_double("sharpness factor");
@@ -112,7 +113,7 @@ double BlenderCalculator::get_blender(
         }
     } // loop over modes
 
-    // calculate alpha
+    // calculate trouble and threshold
     const double trouble = get_trouble(modes);
     const double threshold = threshold_factor*std::pow(
         10,
@@ -120,11 +121,22 @@ double BlenderCalculator::get_blender(
             std::pow(cbm.degree+1,0.25)
         )
     );
-    const double alpha_tilde = 1/( 1 + exp(-sharpness_factor*(trouble/threshold-1)) );
-
-    if(alpha_tilde < alpha_min) return 0;
-    else if(alpha_tilde < alpha_max) return alpha_tilde;
-    else return alpha_max;
+    
+    if(blender_function_expr == "Hennemann"){
+        const double alpha_tilde = 1/( 1 + exp(-sharpness_factor*(trouble/threshold-1)) );
+        if(alpha_tilde < alpha_min) return 0;
+        else if(alpha_tilde < alpha_max) return alpha_tilde;
+        else return alpha_max;
+    }
+    else if(blender_function_expr == "linear"){
+        const double alpha_tilde = trouble/threshold;
+        return (alpha_tilde > 1 ? 1 : alpha_tilde);
+    }
+    else{
+        // blender_function_expr has the custom function expression
+        FunctionParser<2> fp(blender_function_expr);
+        return fp.value(Point<2>(trouble, threshold));
+    }
 
     // Ching et al (2019), JCP, detection algo
     // double trouble = 0;
