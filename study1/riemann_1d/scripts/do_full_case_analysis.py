@@ -7,6 +7,7 @@
 # 2. Error vs dof for different values of N
 # 3. Error vs cpu time per time step for different values of N and across dofs
 # 4. Visual comparison of results for all dofs and all values of N (outsourced)
+# 5. Error vs N for different values of dof (was suggested by KB, see WJ-04-Mar-2022)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -87,6 +88,36 @@ def plot_convergence_rate(ax, x, y, loc="up"):
 
 
 
+def format_error_axis(axis, major_loc, minor_loc):
+    # formats the error axis which is common for steps 2, 3 and 5
+    # ax.yaxis can be passed as the argument to this function with the major and minor tick
+    # separations provided as arguments to this function
+    axis.set_major_locator(MultipleLocator(major_loc))
+    axis.set_major_formatter(ScalarFormatter())
+    axis.set_minor_locator(MultipleLocator(minor_loc))
+    axis.set_minor_formatter(NullFormatter())
+
+
+
+def format_dof_axis(axis, major_loc=100, minor_loc=None):
+    # similar to `format_error_axis`, but for the dof axis
+    # minor ticks generally not required here, but are added if the parameter passed is not None
+    ax.xaxis.set_major_locator(MultipleLocator(major_loc))
+    ax.xaxis.set_major_formatter(ScalarFormatter())
+    if minor_loc is not None:
+        ax.xaxis.set_minor_locator(MultipleLocator(minor_loc))
+        ax.xaxis.set_minor_formatter(NullFormatter())
+
+
+def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
+    # similar to `format_error_axis`, but for the cpu time axis
+    axis.set_major_locator(MultipleLocator(major_loc))
+    axis.set_major_formatter(ScalarFormatter())
+    axis.set_minor_locator(MultipleLocator(minor_loc))
+    axis.set_minor_formatter(NullFormatter())
+
+
+
 print("Doing case analysis in {}".format(os.getcwd()))
 
 steps_to_do = [1,2,3]
@@ -111,8 +142,8 @@ actual_dof_values = pd.DataFrame(
 # varying data (requires user intervention)
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
-result_dir = "result_logarithm"
-case_name = "Test 5"
+result_dir = "result_24Mar2022"
+case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 
 
@@ -185,14 +216,8 @@ if 2 in steps_to_do:
     plot_convergence_rate(ax, actual_dof_values.loc[5, :], l2_errors.loc[5, :], "below")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.xaxis.set_major_locator(MultipleLocator(100))
-    ax.xaxis.set_major_formatter(ScalarFormatter())
-    # ax.xaxis.set_minor_locator(MultipleLocator(50))
-    # ax.xaxis.set_minor_formatter(NullFormatter())
-    ax.yaxis.set_major_locator(MultipleLocator(2e-2))
-    ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.yaxis.set_minor_locator(MultipleLocator(5e-3))
-    ax.yaxis.set_minor_formatter(NullFormatter())
+    format_dof_axis(ax.xaxis)
+    format_error_axis(ax.yaxis, 1e-2, 2.5e-3)
     ax.set_xlabel("Degrees of freedom")
     ax.set_ylabel(r"$L^2$ error")
     # ax.set_title("{}, {}".format(case_name, flux_display))
@@ -223,14 +248,8 @@ if 3 in steps_to_do:
     ax.set_ylabel(r"$L^2$ error")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.xaxis.set_major_formatter(ScalarFormatter())
-    ax.xaxis.set_minor_locator(MultipleLocator(0.25))
-    ax.xaxis.set_minor_formatter(NullFormatter())
-    ax.yaxis.set_major_locator(MultipleLocator(2e-2))
-    ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.yaxis.set_minor_locator(MultipleLocator(5e-3))
-    ax.yaxis.set_minor_formatter(NullFormatter())
+    format_cpu_axis(ax.xaxis)
+    format_error_axis(ax.yaxis, 1e-2, 2.5e-3)
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
