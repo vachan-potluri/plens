@@ -2085,7 +2085,7 @@ void PLENS::calc_cell_cons_grad(
             for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
 
             State flux; // flux between 'this' and 'other' states
-            Tensor<1,dim> temp_dir; // temporary, doesn't matter for BR1 flux calculation
+            // Tensor<1,dim> temp_dir; // temporary, doesn't matter for BR1 flux calculation
 
             for(usi m=0; m<=fe.degree; m++){
                 for(usi m_dir=0; m_dir<dim; m_dir++){
@@ -2351,9 +2351,6 @@ void PLENS::calc_aux_vars()
     // now set (factored) avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
-    ChangeOfBasisMatrix<dim> cbm(fe.degree);
-    std::array<State, dim> cons_grad_mode0, // 0-th legendre mode (or avg) of cons grad
-        cons_grad_fv; // cons grad calculated in FV sense
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
@@ -3068,8 +3065,6 @@ void PLENS::calc_cell_dif_residual_fv_gl(
  */
 void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_viscous_blending_status)
 {
-    ChangeOfBasisMatrix<3> cbm(fe.degree);
-
     TimerOutput::Scope timer_section(timer, "Calc RHS");
     assert_positivity();
     {
