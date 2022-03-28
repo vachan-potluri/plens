@@ -362,7 +362,7 @@ where $\norm{\bullet}_{L^2}$ represents the $L^2$ norm of the sampled vector and
 
 This is a relatively mild test with weak right-moving shock (at $x \approx 0.75$) and contact (at $x \approx 0.6$) waves, and an expansion wave with a left-moving head and a right-moving tail; thus producing a sonic point in the expansion wave. \cref{fig:test1-1_dof800_chandrashekhar} shows a visual comparison of the results obtained using $N=1,\ 2,\ 3$ and $5$ at the highest resolution (800 DoFs). All simulations capture the sonic point and the shock well, while the resolution of contact wave keeps getting better with increasing $N$.
 
-Behaviour of the error in simulations with increasing DoFs for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. It is immediately clear from \cref{subfig:test1-1_error_vs_dof_chandrashekhar} that even high order simulations fail to achieve any higher order of convergence in this discontinuous flow. \cref{subfig:test1-1_error_vs_dof_chandrashekhar,subfig:test1-1_error_vs_cputime_chandrashekhar} together immediately highlight that there is no major improvement in solution when $N=5$ is used over $N=3$, and it only costs more CPU time. The error levels for $N=3,5$ are much lower compared to $N=1$ case for a given DoF resolution. In fact, even with 200 DoFs, simulations using $N=3,5$ give slightly more accurate results (in terms of the error) than the 800 DoF simulation with $N=1$. \cref{subfig:test1-1_error_vs_cputime_chandrashekhar} also shows that with a very small increase in cost, $N=3$ offers more accurate solution over $N=2$. It maybe concluded that $N=3$ would be the optimal choice for this case, and there is no real benefit in using $N=5$ over $N=3$.
+Behaviour of the error in simulations with increasing DoFs for different values of $N$ is shown in \cref{fig:test1-1_error_plots_chandrashekhar}. \cref{subfig:test1-1_error_vs_N_chandrashekhar,subfig:test1-1_error_vs_cputime_chandrashekhar} together immediately highlight that there is no major improvement in solution when $N=5$ is used over $N=3$, and it only costs slightly more CPU time. The error levels for $N=3,5$ are much lower compared to $N=1$ case for a given DoF resolution. In fact, even with 400 DoFs, simulations using $N=3,5$ give more accurate results (in terms of the error) than the 800 DoF simulation with $N=1$. \cref{subfig:test1-1_error_vs_cputime_chandrashekhar} also shows that $N=3$ simulation requires the least cost to give an error only marginally higher than $N=5$ simulation. It may be concluded that $N=3$ is the optimal choice in this case.
 
 \begin{figure}[htbp]
 	\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/dof800_12_12_chandrashekhar.pdf}
@@ -373,9 +373,9 @@ Behaviour of the error in simulations with increasing DoFs for different values 
 \begin{figure}[htbp]
 	\centering
 	\begin{subfigure}{0.5\linewidth}
-		\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/error_vs_dof_chandrashekhar.pdf}
-		\caption{Error vs DoFs.}
-		\label{subfig:test1-1_error_vs_dof_chandrashekhar}
+		\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/error_vs_N_chandrashekhar.pdf}
+		\caption{Error vs $N$.}
+		\label{subfig:test1-1_error_vs_N_chandrashekhar}
 	\end{subfigure}%
 	\begin{subfigure}{0.5\linewidth}
 		\includegraphics[width=\linewidth]{figures/riemann_1d/test1-1/error_vs_cputime_chandrashekhar.pdf}
