@@ -103,13 +103,18 @@ double BlenderCalculator::get_blender(
     const usi n_dofs_per_cell = cell->get_fe().dofs_per_cell;
     std::vector<psize> dof_ids(n_dofs_per_cell);
     cell->get_dof_indices(dof_ids);
+    // the values of variable vector in this cell, pre-calculated for performance
+    std::vector<double> cell_variable_values(n_dofs_per_cell);
+    for(usi i=0; i<n_dofs_per_cell; i++){
+        cell_variable_values[i] = variable[dof_ids[i]];
+    }
 
     // get the modal coefficients (or modes)
     std::vector<double> modes(n_dofs_per_cell);
     for(usi row=0; row<n_dofs_per_cell; row++){
         modes[row] = 0;
         for(usi col=0; col<n_dofs_per_cell; col++){
-            modes[row] += cbm(row,col)*variable[dof_ids[col]];
+            modes[row] += cbm(row,col)*cell_variable_values[col];
         }
     } // loop over modes
 
