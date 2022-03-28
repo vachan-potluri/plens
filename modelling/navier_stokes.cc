@@ -421,8 +421,9 @@ void NavierStokes::get_inv_flux(
 ) const
 {
     dealii::Tensor<1,dim> vel; // velocity vector
+    const double rhoinv = 1.0/cons[0];
     for(int d=0; d<dim; d++){
-        vel[d] = cons[1+d]/cons[0];
+        vel[d] = cons[1+d]*rhoinv;
     }
     double p = get_p(cons);
     
@@ -608,8 +609,9 @@ void NavierStokes::get_dif_flux(
     f[0] = 0; // density flux
     f[4] = 0; // initialise energy flux
     double v; // temporary quantity
+    const double rhoinv = 1.0/cons[0];
     for(int d=0; d<dim; d++){
-        v = cons[1+d]/cons[0];
+        v = cons[1+d]*rhoinv;
         f[1+d] = mom_flux[d];
         f[4] += -av[6+d]*dir[d] + v*mom_flux[d];
     }
