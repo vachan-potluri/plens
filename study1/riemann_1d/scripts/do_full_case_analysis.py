@@ -120,7 +120,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1,2,3]
+steps_to_do = [5]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -142,9 +142,12 @@ actual_dof_values = pd.DataFrame(
 # varying data (requires user intervention)
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
-result_dir = "result_24Mar2022"
+result_dir = "result_28Mar2022"
 case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
+# major and minor locators for error axis, changes on test-by-test basis
+error_ax_major_loc = 1e-2
+error_ax_minor_loc = 2.5e-3
 
 
 
@@ -199,6 +202,7 @@ N_linestyles = pd.Series(["-", "--", "-.", ":"], index=N_values)
 N_markers = pd.Series(["o", "s", "P", "^"], index=N_values)
 N_markercolors = pd.Series(["blue", "green", "red", "magenta"], index=N_values)
 dof_linestyles = pd.Series(["-", "--", "-."], index=dofs)
+dof_linecolors = pd.Series(["r", "g", "b"], index=dofs)
 
 if 2 in steps_to_do:
     fig, ax = plt.subplots(1,1)
@@ -217,7 +221,7 @@ if 2 in steps_to_do:
     ax.set_xscale("log")
     ax.set_yscale("log")
     format_dof_axis(ax.xaxis)
-    format_error_axis(ax.yaxis, 1e-2, 2.5e-3)
+    format_error_axis(ax.yaxis, error_ax_major_loc, error_ax_minor_loc)
     ax.set_xlabel("Degrees of freedom")
     ax.set_ylabel(r"$L^2$ error")
     # ax.set_title("{}, {}".format(case_name, flux_display))
@@ -249,7 +253,7 @@ if 3 in steps_to_do:
     ax.set_xscale("log")
     ax.set_yscale("log")
     format_cpu_axis(ax.xaxis)
-    format_error_axis(ax.yaxis, 1e-2, 2.5e-3)
+    format_error_axis(ax.yaxis, error_ax_major_loc, error_ax_minor_loc)
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
@@ -278,3 +282,31 @@ if 4 in steps_to_do:
         "7",
         "6"
     ])
+
+
+
+# 5. Error vs N for different dof values
+if 5 in steps_to_do:
+    fig, ax = plt.subplots(1,1)
+    for dof in dofs:
+        ax.plot(
+            N_values,
+            l2_errors.loc[:, dof],
+            ls=dof_linestyles.loc[dof],
+            marker="o",
+            c=dof_linecolors.loc[dof],
+            # markerfacecolor=N_markercolors[N],
+            # markeredgecolor=N_markercolors[N],
+            label=r"{} dofs".format(dof)
+        )
+    ax.set_xlabel(r"$N$")
+    ax.set_ylabel(r"$L^2$ error")
+    ax.set_yscale("log")
+    format_error_axis(ax.yaxis, error_ax_major_loc, error_ax_minor_loc)
+    # ax.set_title("{}, {}".format(case_name, flux_display))
+    ax.legend(loc="best", handlelength=3)
+    ax.grid(which="major")
+    fig.set_size_inches(4, 4)
+    fig.tight_layout(rect=[0,0,1,1])
+    plt.show()
+    mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
