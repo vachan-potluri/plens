@@ -143,11 +143,11 @@ actual_dof_values = pd.DataFrame(
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
 result_dir = "result_28Mar2022"
-case_name = "Test 2"
+case_name = "Test 4"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
-error_ax_major_loc = 5e-2
-error_ax_minor_loc = 1e-2
+error_ax_major_loc = 2e-2
+error_ax_minor_loc = 5e-3
 
 
 
