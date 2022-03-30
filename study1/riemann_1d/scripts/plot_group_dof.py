@@ -180,8 +180,8 @@ for row in axes:
     for ax in row:
         print("Reading data from {}".format(data_files[i]))
         data = np.genfromtxt(data_files[i], delimiter=",")
-        ax.plot(data[:,0], data[:,1], "b-", label="Exact")
-        ax.plot(data[:,0], data[:,2], "r-", label="Simulation")
+        ax.plot(data[:,0], data[:,1], "b-", lw=1, label="Exact")
+        ax.plot(data[:,0], data[:,2], "r-", lw=1, label="Simulation")
         ax.set_title(subtitles[i])
         ax.grid()
         ax.legend(loc="best", handlelength=1)

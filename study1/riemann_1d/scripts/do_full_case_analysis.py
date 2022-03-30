@@ -120,7 +120,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1,2,3,5]
+steps_to_do = [1]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -143,11 +143,11 @@ actual_dof_values = pd.DataFrame(
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
 result_dir = "result_28Mar2022"
-case_name = "Test 4"
+case_name = "Test 5"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
-error_ax_major_loc = 2e-2
-error_ax_minor_loc = 5e-3
+error_ax_major_loc = 4e-2
+error_ax_minor_loc = 1e-2
 
 
 
