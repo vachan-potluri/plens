@@ -567,6 +567,33 @@ void PLENS::declare_parameters()
             "and if true, cell wise error vector will be added to data output and the error will "
             "be written to the file <base file name>.ss_error."
         );
+        prm.enter_subsection("convergence");
+        {
+            prm.declare_entry(
+                "calculate error",
+                "false",
+                Patterns::Bool(),
+                "Whether or not convergence error is to be calculated. The variable used for this "
+                "purpose will be taken from the setting 'variable' (in this subsection) and the "
+                "exact solution (which can be time dependent) will be parsed from the setting "
+                "'exact solution'."
+            );
+            prm.declare_entry(
+                "variable",
+                "density",
+                Patterns::Selection("density"),
+                "The variable to be used for convergence error calculation. The exact solution for "
+                "this variable will be taken from the entry for 'exact solution'. Options: "
+                "'density'."
+            );
+            prm.declare_entry(
+                "exact solution",
+                "1",
+                Patterns::Anything(),
+                "The exact solution of the 'variable' for convergence error calculation."
+            );
+        }
+        prm.leave_subsection();
     }
     prm.leave_subsection(); // data output
 
@@ -3401,6 +3428,69 @@ double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
 
 
 /**
+ * Calculates the convergence error if asked for by the simulation. This function parses the prm
+ * file (PLENS::prm) and hence expects that the assumes that the file is currently is at the top 
+ * most scope. This is also the reason why this function cannot be `const`.
+ */
+double PLENS::calc_convergence_error()
+{
+    std::string conv_variable;
+    prm.enter_subsection("data output");
+    {
+        prm.enter_subsection("convergence");
+        {
+            if(prm.get_bool("calculate error")){
+                std::string variables("x,y,z,t");
+                std::map<std::string, double> constants; // empty
+                conv_exact_function.initialize(
+                    variables,
+                    prm.get("exact solution"),
+                    constants,
+                    true
+                );
+                conv_variable = prm.get("variable");
+            }
+        }
+        prm.leave_subsection();
+    }
+    prm.leave_subsection();
+
+    conv_exact_function.set_time(cur_time);
+
+    // get cell-wise error
+    Vector<double> cell_error(triang.n_active_cells());
+    if(conv_variable == "density"){
+        VectorTools::integrate_difference(
+            *mapping_ptr,
+            dof_handler,
+            g_cvars[0],
+            conv_exact_function,
+            cell_error,
+            QGauss<dim>(fe.degree+1),
+            VectorTools::NormType::L2_norm
+        );
+    }
+    else{
+        AssertThrow(
+            false,
+            StandardExceptions::ExcMessage(
+                "Currently, only density variable is supported for convergence error calculation."
+            )
+        )
+    }
+
+    // get the global error and return
+    const double error = VectorTools::compute_global_error(
+        triang,
+        cell_error,
+        VectorTools::NormType::L2_norm
+    );
+    return error;
+}
+
+
+
+/**
  * Performs a serialisation using solution transfer. If I understand correctly, serialisation a
  * process that converts dealii vectors to writable format. The purpose for saving solution vectors
  * is apparent. The file saved by this function can be read again. Before reading again, the
@@ -3448,7 +3538,8 @@ void PLENS::do_solution_transfer(const std::string& filename)
  * the output counter and the current time so that one can know at what times did the data output
  * happen. Additionally, a file `<base file name>.ss_error` is written to output the steady state
  * error at the output instant if the error calculation is requested. This calculation of error is
- * done using calc_ss_error()
+ * done using calc_ss_error(). A similar file named `<base file name>.conv_error` is also written
+ * for convergence error if requested.
  *
  * @note Although the documentation says `DataOut::add_data_vector()` requires a ghosted vector, a
  * non-ghosted but compressed vector also seems to do the job.
@@ -3473,12 +3564,17 @@ void PLENS::write()
     timer.print_wall_time_statistics(mpi_comm);
     post_process();
     std::string op_dir, base_filename;
-    bool calculate_ss_error;
+    bool calculate_ss_error, calculate_convergence_error;
     prm.enter_subsection("data output");
     {
         op_dir = prm.get("directory");
         base_filename = prm.get("base file name");
         calculate_ss_error = prm.get_bool("calculate steady state error");
+        prm.enter_subsection("convergence");
+        {
+            calculate_convergence_error = prm.get_bool("calculate error");
+        }
+        prm.leave_subsection();
     }
     prm.leave_subsection();
 
@@ -3531,6 +3627,9 @@ void PLENS::write()
         // data_out.add_data_vector(cell_ss_error, "steady_state_error");
     }
 
+    double conv_error;
+    if(calculate_convergence_error) conv_error = calc_convergence_error();
+
     // active cell global index
     Vector<float> cell_index(triang.n_active_cells());
     for(auto &cell: dof_handler.active_cell_iterators()){
@@ -3578,7 +3677,7 @@ void PLENS::write()
     do_solution_transfer(archive_filename);
 
     // append current time and output counter in <base file name>.times
-    // also write steady state error if requested
+    // also write steady state error and convergence error if requested
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
         std::ofstream time_file(op_dir + "/" + base_filename + ".times", std::ios::app);
         AssertThrow(
@@ -3595,6 +3694,16 @@ void PLENS::write()
                 StandardExceptions::ExcMessage("Unable to open steady state error file.")
             );
             error_file << output_counter << " " << cur_time << " " << ss_error << "\n";
+            error_file.close();
+        }
+
+        if(calculate_convergence_error){
+            std::ofstream error_file(op_dir + "/" + base_filename + ".conv_error", std::ios::app);
+            AssertThrow(
+                error_file.good(),
+                StandardExceptions::ExcMessage("Unable to open convergence error file.")
+            );
+            error_file << output_counter << " " << cur_time << " " << conv_error << "\n";
             error_file.close();
         }
     }

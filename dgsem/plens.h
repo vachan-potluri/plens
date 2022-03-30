@@ -716,7 +716,7 @@ class PLENS
      * time (PLENS::cur_time). This will be properly initialised in PLENS::read_time_settings().
      * This function will be used in PLENS::calc_time_step() to set the Courant number.
      */
-     FunctionParser<dim> courant_function;
+    FunctionParser<dim> courant_function;
 
     /**
      * Courant number for the simulation at the current time. This is obtained by
@@ -789,6 +789,13 @@ class PLENS
      */
     std::array<LA::MPI::Vector, 9> gh_gcrk_avar_fv;
 
+    /**
+     * A function parser to calculate error in some variable. This will be treated as the exact
+     * solution. This is generally useful for doing convergence studies. The error calculation
+     * itself is done in . The error variable will be defined in the input file.
+     */
+    FunctionParser<dim> conv_exact_function;
+
 
 
     void form_neighbor_face_matchings(
@@ -841,6 +848,7 @@ class PLENS
     void multiply_time_step_to_rhs();
     void post_process();
     double calc_ss_error(Vector<double>& cell_ss_error) const;
+    double calc_convergence_error();
     void do_solution_transfer(const std::string& filename);
     void write();
     void update_rk4();
