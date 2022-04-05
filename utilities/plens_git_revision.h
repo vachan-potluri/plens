@@ -8,16 +8,16 @@
 /**
  * Name of the local git branch of the source directory.
  */
-#define PLENS_GIT_BRANCH "master"
+#define PLENS_GIT_BRANCH "subcell_interpolation"
 
 /**
  * Full sha1 revision of the current git HEAD.
  */
-#define PLENS_GIT_REVISION "9b04c76f45bf37c15c2f54f6da6f3b4336d88245"
+#define PLENS_GIT_REVISION "e7d47e677886213eb2116941af76c970169ec098"
 
 /**
  * Short sha1 revision of the current git HEAD.
  */
-#define PLENS_GIT_SHORTREV "9b04c76"
+#define PLENS_GIT_SHORTREV "e7d47e6"
 
 #endif
