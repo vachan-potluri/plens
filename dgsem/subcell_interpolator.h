@@ -12,6 +12,7 @@
 #include <deal.II/dofs/dof_handler.h>
 
 #include <modelling/minmod.h>
+#include <modelling/navier_stokes.h>
 #include <modelling/state.h>
 
 #include "cell_dof_info.h"
@@ -85,9 +86,15 @@ class SubcellInterpolator
     const SlopeLimiter& slope_lim;
 
     /**
-     * Conservative variable states. Will be set in reinit()
+     * Conservative variable states. Will be set in reinit(). These are public and can also be used
+     * outside the class.
      */
     std::vector<State> cell_states;
+
+    /**
+     * Pointer to NavierStokes object
+     */
+    const NavierStokes* ns_ptr;
 
     /**
      * Conservative variable slope. Access:
@@ -100,7 +107,8 @@ class SubcellInterpolator
         const usi d,
         const std::array<LA::MPI::Vector, 5>& vecs,
         const std::array<LA::MPI::Vector, 5>& gh_vecs,
-        const SlopeLimiter& s
+        const SlopeLimiter& s,
+        const NavierStokes* ns_p
     );
 
     void reinit(const DoFHandler<dim>::active_cell_iterator& cell);

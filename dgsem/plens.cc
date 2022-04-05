@@ -42,7 +42,8 @@ timer(pcout, TimerOutput::never, TimerOutput::wall_times)
         fe_degree,
         gcrk_cvars,
         gh_gcrk_cvars,
-        minmod_lim
+        minmod_lim,
+        ns_ptr.get()
     );
 
     AssertThrow(

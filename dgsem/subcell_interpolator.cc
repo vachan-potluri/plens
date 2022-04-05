@@ -14,7 +14,8 @@ SubcellInterpolator::SubcellInterpolator(
     const usi d,
     const std::array<LA::MPI::Vector, 5>& vecs,
     const std::array<LA::MPI::Vector, 5>& gh_vecs,
-    const SlopeLimiter& s
+    const SlopeLimiter& s,
+    const NavierStokes* ns_p
 ):
 degree(d),
 dofs_per_cell((d+1)*(d+1)*(d+1)),
@@ -25,6 +26,7 @@ subcell_face_loc_1d(d+2),
 gcrk_cvars(vecs),
 gh_gcrk_cvars(gh_vecs),
 slope_lim(s),
+ns_ptr(ns_p),
 cell_states(dofs_per_cell),
 cell_cvar_slopes(dofs_per_cell)
 {
