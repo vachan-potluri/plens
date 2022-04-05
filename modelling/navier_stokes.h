@@ -315,6 +315,14 @@ class NavierStokes
         const double H,
         dealii::Tensor<2,dim+2> &K
     ) const;
+
+    void get_Kinv(
+        const dealii::Tensor<1,dim> &vel,
+        const double a,
+        const double H,
+        const dealii::Tensor<1,dim>& dir,
+        dealii::Tensor<2,dim+2> &Kinv
+    ) const;
     
     /**
      * Gives @f$\gamma@f$ value held by this instance

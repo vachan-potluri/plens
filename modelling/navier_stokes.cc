@@ -821,6 +821,92 @@ void NavierStokes::get_xKinv(
 
 
 
+/**
+ * Inverse of get_K(). Depending on the dominant direction, (L-1), (L-2) or (L-3) forms from Rohde
+ * (2001) are used.
+ */
+void NavierStokes::get_Kinv(
+    const dealii::Tensor<1,dim> &vel,
+    const double a,
+    const double H,
+    const dealii::Tensor<1,dim>& dir,
+    dealii::Tensor<2,dim+2> &Kinv
+) const
+{
+    const double vel_n = dealii::scalar_product(vel, dir),
+        ek = dealii::scalar_product(vel, vel),
+        temp = 1/(a*a);
+    
+    // 1st row
+    Kinv[0][0] = ((gma_-1)*ek + a*vel_n)*0.5*temp;
+    for(int d=0; d<dim; d++) Kinv[0][1+d] = ((1-gma_)*vel[d] - a*dir[d])*0.5*temp;
+    Kinv[0][4] = (gma_-1)*0.5*temp;
+
+    // 2nd row
+    Kinv[1][0] = 1-(gma_-1)*ek*temp;
+    for(int d=0; d<dim; d++) Kinv[1][1+d] = (gma_-1)*vel[d]*temp;
+    Kinv[1][4] = (1-gma_)*temp;
+
+    // 3rd row
+    Kinv[2][0] = ((gma_-1)*ek - a*vel_n)*0.5*temp;
+    for(int d=0; d<dim; d++) Kinv[2][1+d] = ((1-gma_)*vel[d] + a*dir[d])*0.5*temp;
+    Kinv[2][4] = (gma_-1)*0.5*temp;
+
+    double dir_abs[2];
+    for(int d=0; d<dim; d++) dir_abs[d] = fabs(dir[d]);
+
+    if(dir_abs[0] > dir_abs[1] && dir_abs[0] > dir_abs[2]){
+        // (L-1) form
+        // 4th row
+        Kinv[3][0] = (vel[1] - vel_n*dir[1])/dir[0];
+        Kinv[3][1] = dir[1];
+        Kinv[3][2] = (dir[1]*dir[1]-1)/dir[0];
+        Kinv[3][3] = dir[1]*dir[2]/dir[0];
+        Kinv[3][4] = 0;
+
+        // 5th row
+        Kinv[4][0] = (vel_n*dir[2] - vel[2])/dir[0];
+        Kinv[4][1] = -dir[2];
+        Kinv[4][2] = -dir[1]*dir[2]/dir[0];
+        Kinv[4][3] = (1-dir[2]*dir[2])/dir[0];
+        Kinv[4][4] = 0;
+    }
+    else if(dir_abs[1] > dir_abs[0] && dir_abs[1] > dir_abs[2]){
+        // (L-2) form
+        // 4th row
+        Kinv[3][0] = (vel_n*dir[0]-vel[0])/dir[1];
+        Kinv[3][1] = (1-dir[0]*dir[0])/dir[1];
+        Kinv[3][2] = -dir[0];
+        Kinv[3][3] = -dir[0]*dir[2]/dir[1];
+        Kinv[3][4] = 0;
+
+        // 5th row
+        Kinv[4][0] = (vel[2] - vel_n*dir[2])/dir[1];
+        Kinv[4][1] = dir[0]*dir[2]/dir[1];
+        Kinv[4][2] = dir[2];
+        Kinv[4][3] = (dir[2]*dir[2]-1)/dir[1];
+        Kinv[4][4] = 0;
+    }
+    else{
+        // (L-3) form
+        // 4th row
+        Kinv[3][0] = (vel[0]-vel_n*dir[0])/dir[2];
+        Kinv[3][1] = (dir[0]*dir[0]-1)/dir[2];
+        Kinv[3][2] = dir[0]*dir[1]/dir[2];
+        Kinv[3][3] = dir[0];
+        Kinv[3][4] = 0;
+
+        // 5th row
+        Kinv[4][0] = (vel_n*dir[1]-vel[1])/dir[2];
+        Kinv[4][1] = -dir[0]*dir[1]/dir[2];
+        Kinv[4][2] = (1-dir[1]*dir[1])/dir[2];
+        Kinv[4][3] = -dir[1];
+        Kinv[4][4] = 0;
+    }
+}
+
+
+
 // # # # # # # # # # Private Functions # # # # # # # # # # # #
 
 
