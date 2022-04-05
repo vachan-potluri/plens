@@ -85,8 +85,14 @@ class SubcellInterpolator
     const SlopeLimiter& slope_lim;
 
     /**
+     * Conservative variable states. Will be set in reinit()
+     */
+    std::vector<State> cell_states;
+
+    /**
      * Conservative variable slope. Access:
-     * `slopes[dof][dir][cvar]`
+     * `slopes[dof][dir][cvar]`.
+     * Will be set in reinit()
      */
     std::vector<std::array<State, dim>> cell_cvar_slopes;
 

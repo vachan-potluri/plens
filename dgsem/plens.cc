@@ -38,6 +38,12 @@ timer(pcout, TimerOutput::never, TimerOutput::wall_times)
     declare_parameters();
     prm.parse_input("input.prm");
     blender_calc.parse_parameters(prm); // completes the construction of blender_calc
+    subcell_interp_ptr = std::make_unique<SubcellInterpolator>(
+        fe_degree,
+        gcrk_cvars,
+        gh_gcrk_cvars,
+        minmod_lim
+    );
 
     AssertThrow(
         mhod > 0,
@@ -2899,6 +2905,8 @@ void PLENS::calc_cell_lo_inv_residual(
     // set the flux blender value for NS object
     ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
 
+    subcell_interp_ptr->reinit(cell);
+
     // First the internal contributions
     for(usi dir=0; dir<dim; dir++){
         // complementary directions (required for internal contributions)
@@ -2919,10 +2927,11 @@ void PLENS::calc_cell_lo_inv_residual(
                     
                     // set the "left" and "right" states
                     State cons_left, cons_right, flux;
-                    for(cvar var: cvar_list){
-                        cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
-                        cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
-                    }
+                    // for(cvar var: cvar_list){
+                    //     cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
+                    //     cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
+                    // }
+                    subcell_interp_ptr->get_left_right_states(ti_right, dir, cons_left, cons_right);
 
                     // get normal between id-1 and id
                     Tensor<1,dim> normal_dir =

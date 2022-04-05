@@ -24,7 +24,9 @@ node_loc_1d(d+1),
 subcell_face_loc_1d(d+2),
 gcrk_cvars(vecs),
 gh_gcrk_cvars(gh_vecs),
-slope_lim(s)
+slope_lim(s),
+cell_states(dofs_per_cell),
+cell_cvar_slopes(dofs_per_cell)
 {
     QGaussLobatto<1> quad_lgl_1d(degree+1);
     for(usi i=0; i<=degree; i++){
@@ -51,7 +53,6 @@ void SubcellInterpolator::reinit(const DoFHandler<dim>::active_cell_iterator& ce
     std::vector<psize> dof_ids(dofs_per_cell);
     cell->get_dof_indices(dof_ids);
 
-    std::vector<State> cell_states(dofs_per_cell);
     for(cvar var: cvar_list){
         for(usi i=0; i<dofs_per_cell; i++){
             cell_states[i][var] = gcrk_cvars[var][dof_ids[i]];
@@ -119,4 +120,28 @@ void SubcellInterpolator::reinit(const DoFHandler<dim>::active_cell_iterator& ce
  *
  * @note This function doesn't perform any checks on @p ti. This has to correspond to an internal
  * face and not any subcell surface that coincides with the element boundary.
+ *
+ * @pre This function has to be called after reinit(). Else, unexpected results may occur.
  */
+void SubcellInterpolator::get_left_right_states(
+    const TableIndices<dim>& ti,
+    const usi dir,
+    State& cons_left,
+    State& cons_right
+)
+{
+    TableIndices<dim> ti_left(ti), ti_right(ti);
+    ti_left[dir] = ti[dir]-1;
+    const usi ldof_left = cdi.tensorial_to_local(ti_left);
+    const usi ldof_right = cdi.tensorial_to_local(ti_right);
+    for(cvar var: cvar_list){
+        cons_left[var] = cell_states[ldof_left][var] +
+            cell_cvar_slopes[ldof_left][dir][var]*(
+                subcell_face_loc_1d[ti[dir]] - node_loc_1d[ti[dir]-1]
+            );
+        cons_right[var] = cell_states[ldof_right][var] +
+            cell_cvar_slopes[ldof_right][dir][var]*(
+                subcell_face_loc_1d[ti[dir]] - node_loc_1d[ti[dir]]
+            );
+    }
+}
