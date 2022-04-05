@@ -35,7 +35,7 @@ cell_cvar_slopes(dofs_per_cell)
     }
 
     subcell_face_loc_1d[0] = 0;
-    subcell_face_loc_1d[degree+2] = 1;
+    subcell_face_loc_1d[degree+1] = 1;
     for(usi i=1; i<=degree; i++){
         subcell_face_loc_1d[i] = subcell_face_loc_1d[i-1] + w_1d[i-1];
     }
@@ -88,8 +88,9 @@ void SubcellInterpolator::reinit(const DoFHandler<dim>::active_cell_iterator& ce
                             (node_loc_1d[id] - node_loc_1d[id-1]);
                         const double slope_right = (cons_right[var] - cons_this[var])/
                             (node_loc_1d[id+1] - node_loc_1d[id]);
-                        const double slope_avg = 0.5*(slope_left + slope_right),
-                            slope_ratio = slope_left/slope_right;
+                        const double slope_avg = 0.5*(slope_left + slope_right);
+                        const int sign = (slope_right > 0 ? 1 : -1);
+                        const double slope_ratio = slope_left/(slope_right+sign*1e-8);
                         cell_cvar_slopes[ldof_this][dir][var] =
                             slope_lim.value(slope_ratio)*slope_avg;
                     }
