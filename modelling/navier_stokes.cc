@@ -712,7 +712,7 @@ void NavierStokes::get_K(
     for(int d=0; d<dim; d++) K[1+d][2] = vel[d] + a*dir[d];
     K[4][2] = H + vel_n*a;
 
-    double dir_abs[2];
+    double dir_abs[3];
     for(int d=0; d<dim; d++) dir_abs[d] = fabs(dir[d]);
 
     if(dir_abs[0] > dir_abs[1] && dir_abs[0] > dir_abs[2]){
@@ -852,7 +852,7 @@ void NavierStokes::get_Kinv(
     for(int d=0; d<dim; d++) Kinv[2][1+d] = ((1-gma_)*vel[d] + a*dir[d])*0.5*temp;
     Kinv[2][4] = (gma_-1)*0.5*temp;
 
-    double dir_abs[2];
+    double dir_abs[3];
     for(int d=0; d<dim; d++) dir_abs[d] = fabs(dir[d]);
 
     if(dir_abs[0] > dir_abs[1] && dir_abs[0] > dir_abs[2]){
