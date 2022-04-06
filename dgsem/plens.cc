@@ -37,14 +37,6 @@ timer(pcout, TimerOutput::never, TimerOutput::wall_times)
 {
     declare_parameters();
     prm.parse_input("input.prm");
-    blender_calc.parse_parameters(prm); // completes the construction of blender_calc
-    subcell_interp_ptr = std::make_unique<SubcellInterpolator>(
-        fe_degree,
-        gcrk_cvars,
-        gh_gcrk_cvars,
-        minmod_lim,
-        ns_ptr.get()
-    );
 
     AssertThrow(
         mhod > 0,
@@ -479,6 +471,14 @@ void PLENS::declare_parameters()
             Patterns::Double(0.5,1),
             "Maximum value of blender (alpha max). See WJ-24-May-2021. Range: [0.5, 1]. Relevant "
             "for 'Hennemann' blender function."
+        );
+        prm.declare_entry(
+            "subcell interpolation limiter",
+            "none",
+            Patterns::Selection("none|minmod"),
+            "Slope limiter to be used within subcells for low order residual calculation. If "
+            "'none' is chosen, then interpolation is not done. This is equivalent to 1st order "
+            "finite volume residual calculation."
         );
         prm.declare_entry(
             "wall blender limit",
@@ -1381,6 +1381,32 @@ void PLENS::set_BC()
     pcout << "Completed setting BCs\n";
     MPI_Barrier(mpi_comm);
 } // set_BC
+
+
+
+/**
+ * Sets all variables related to blending.
+ */
+void PLENS::set_blender()
+{
+    blender_calc.parse_parameters(prm); // completes the construction of blender_calc
+    prm.enter_subsection("blender parameters");
+    {
+        const std::string slope_limiter_type = prm.get("subcell interpolation limiter");
+        if(slope_limiter_type == "none")
+            slope_lim_ptr = std::make_unique<slope_limiters::None>();
+        else if(slope_limiter_type == "minmod")
+            slope_lim_ptr = std::make_unique<slope_limiters::Minmod>();
+    }
+    prm.leave_subsection();
+    subcell_interp_ptr = std::make_unique<SubcellInterpolator>(
+        fe.degree,
+        gcrk_cvars,
+        gh_gcrk_cvars,
+        *slope_lim_ptr,
+        ns_ptr.get()
+    );
+}
 
 
 

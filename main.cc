@@ -92,6 +92,7 @@ int main(int argc, char** argv){
     problem.set_sol_vecs();
     problem.set_IC();
     problem.set_BC();
+    problem.set_blender();
     problem.read_time_settings();
 
     problem.run();
