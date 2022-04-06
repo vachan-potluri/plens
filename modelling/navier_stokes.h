@@ -372,6 +372,24 @@ class NavierStokes
     }
 
     /**
+     * Returns velocity, a and H from the given conservative state. Useful for getting eigenvector
+     * matrices.
+     */
+    inline void cons_to_vel_a_H(
+        const State& cons,
+        dealii::Tensor<1,dim>& vel,
+        double& a,
+        double& H
+    ) const
+    {
+        const double rhoinv = 1/cons[0];
+        for(int d=0; d<dim; d++) vel[d] = cons[1+d]*rhoinv;
+        const double p = get_p(cons);
+        a = sqrt(gma_*p*rhoinv);
+        H = (cons[4]+p)*rhoinv;
+    }
+
+    /**
      * @brief Returns a boolean for whether or not the model is inviscid. The check is done by
      * comparing NavierStokes::mu0_ with 1e-16. Hopefully no gas will have a viscosity smaller
      * than that. The tolerance may be changed here in future if required.
