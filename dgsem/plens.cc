@@ -1402,7 +1402,7 @@ void PLENS::set_blender()
     subcell_interp_ptr = std::make_unique<SubcellInterpolator>(
         fe.degree,
         gcrk_cvars,
-        gh_gcrk_cvars,
+        gcrk_alpha,
         *slope_lim_ptr,
         ns_ptr.get()
     );

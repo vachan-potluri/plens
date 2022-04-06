@@ -14,8 +14,8 @@ namespace slope_limiters
 
 /**
  * @class Minmod
- * Minmod slope limiter. See Knight's book on Numerical Methods, section 8.4.1. In the context
- * of this reference, @f$\kappa=0@f$ is being used here.
+ * Minmod slope limiter. OpenFOAM's implementation is followed. See the documentation of
+ * SubcellInterpolator and BTP-2 report Appendix.
  */
 class Minmod: public SlopeLimiter
 {
@@ -25,7 +25,7 @@ class Minmod: public SlopeLimiter
     {
         if(slope_ratio < 0) return 0;
         else if(slope_ratio < 1) return slope_ratio;
-        else return 2/(1+slope_ratio);
+        else return 1;
     }
 };
 

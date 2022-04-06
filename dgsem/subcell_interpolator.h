@@ -33,7 +33,9 @@ using namespace slope_limiters;
  *
  * This class is intended for use in calculating the low order inviscid residual using a 2nd order
  * Finite Volume algorithm. It takes the solution vectors during construction and calculates
- * the limited slopes when reinit() is called.
+ * the linear slopes when reinit() is called. The getter get_left_right_states() then uses these
+ * linear slopes along with the limiter to return the left and right states. The approach taken
+ * is exactly how it is done in OpenFOAM. See BTP-2 report, Appendix.
  */
 class SubcellInterpolator
 {
@@ -76,14 +78,19 @@ class SubcellInterpolator
     const std::array<LA::MPI::Vector, 5>& gcrk_cvars;
 
     /**
-     * Const ref to ghosted conervative variable vectors
+     * Const ref to blender value
      */
-    const std::array<LA::MPI::Vector, 5>& gh_gcrk_cvars;
+    const LA::MPI::Vector& gcrk_alpha;
 
     /**
      * Const ref to slope limiter object
      */
     const SlopeLimiter& slope_lim;
+
+    /**
+     * Pointer to NavierStokes object
+     */
+    const NavierStokes* ns_ptr;
 
     /**
      * Conservative variable states. Will be set in reinit(). These are public and can also be used
@@ -92,21 +99,22 @@ class SubcellInterpolator
     std::vector<State> cell_states;
 
     /**
-     * Pointer to NavierStokes object
+     * Conservative variable linear (non-limited) slope. Access:
+     * `slopes[dof][dir][cvar]`.
+     * Will be set in reinit(). The word "linear" is used to denote linear interpolation, as opposed
+     * to limited linear interpolation.
      */
-    const NavierStokes* ns_ptr;
+    std::vector<std::array<State, dim>> cell_cvar_linslopes;
 
     /**
-     * Conservative variable slope. Access:
-     * `slopes[dof][dir][cvar]`.
-     * Will be set in reinit()
+     * Blender value in the current cell
      */
-    std::vector<std::array<State, dim>> cell_cvar_slopes;
+    double alpha;
 
     SubcellInterpolator(
         const usi d,
-        const std::array<LA::MPI::Vector, 5>& vecs,
-        const std::array<LA::MPI::Vector, 5>& gh_vecs,
+        const std::array<LA::MPI::Vector, 5>& cvar_vecs,
+        const LA::MPI::Vector& alpha_vec,
         const SlopeLimiter& s,
         const NavierStokes* ns_p
     );
@@ -116,8 +124,8 @@ class SubcellInterpolator
     void get_left_right_states(
         const TableIndices<dim>& ti,
         const usi dir,
-        State& cons_left,
-        State& cons_right
+        State& cl,
+        State& cr
     );
 };
 
