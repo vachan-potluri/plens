@@ -150,6 +150,7 @@ void SubcellInterpolator::get_left_right_states(
     const State& cons_left = cell_states[ldof_left];
     const State& linslopes_left = cell_cvar_linslopes[ldof_left][dir];
 
+    const double factor = std::pow(alpha, 10);
     for(cvar var: cvar_list){
         // gradient parameter
         const double r_left = 2*linslopes_left[var]*
@@ -158,8 +159,8 @@ void SubcellInterpolator::get_left_right_states(
         const double r_right = 2*linslopes_right[var]*
             (node_loc_1d[ti[dir]] - node_loc_1d[ti[dir]-1])/
             (cons_right[var] - cons_left[var]) - 1;
-        const double beta_left = alpha*slope_lim.value(r_left),
-            beta_right = alpha*slope_lim.value(r_right);
+        const double beta_left = factor*slope_lim.value(r_left),
+            beta_right = factor*slope_lim.value(r_right);
         const double w_left = beta_left*Lf + (1-beta_left), w_right = beta_right*Lf;
 
         cl[var] = w_left*cons_left[var] + (1-w_left)*cons_right[var];

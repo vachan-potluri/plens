@@ -19,8 +19,9 @@
 #include "dtype_aliases.h"
 #include "LA.h"
 
-#include <vector>
 #include <array>
+#include <cmath>
+#include <vector>
 
 using namespace dealii;
 using namespace slope_limiters;
