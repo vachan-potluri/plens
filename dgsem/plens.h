@@ -802,12 +802,12 @@ class PLENS
     /**
      * Pointer to slope limiter object, required for subcell interpolation
      */
-    std::unique_ptr<slope_limiters::SlopeLimiter> slope_lim_ptr;
+    // std::unique_ptr<slope_limiters::SlopeLimiter> slope_lim_ptr;
 
     /**
      * Pointer to subcell interpolator object
      */
-    std::unique_ptr<SubcellInterpolator> subcell_interp_ptr;
+    // std::unique_ptr<SubcellInterpolator> subcell_interp_ptr;
 
 
 

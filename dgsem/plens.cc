@@ -472,14 +472,14 @@ void PLENS::declare_parameters()
             "Maximum value of blender (alpha max). See WJ-24-May-2021. Range: [0.5, 1]. Relevant "
             "for 'Hennemann' blender function."
         );
-        prm.declare_entry(
-            "subcell interpolation limiter",
-            "none",
-            Patterns::Selection("none|minmod"),
-            "Slope limiter to be used within subcells for low order residual calculation. If "
-            "'none' is chosen, then interpolation is not done. This is equivalent to 1st order "
-            "finite volume residual calculation."
-        );
+        // prm.declare_entry(
+        //     "subcell interpolation limiter",
+        //     "none",
+        //     Patterns::Selection("none|minmod"),
+        //     "Slope limiter to be used within subcells for low order residual calculation. If "
+        //     "'none' is chosen, then interpolation is not done. This is equivalent to 1st order "
+        //     "finite volume residual calculation."
+        // );
         prm.declare_entry(
             "wall blender limit",
             "0.5",
@@ -1390,22 +1390,22 @@ void PLENS::set_BC()
 void PLENS::set_blender()
 {
     blender_calc.parse_parameters(prm); // completes the construction of blender_calc
-    prm.enter_subsection("blender parameters");
-    {
-        const std::string slope_limiter_type = prm.get("subcell interpolation limiter");
-        if(slope_limiter_type == "none")
-            slope_lim_ptr = std::make_unique<slope_limiters::None>();
-        else if(slope_limiter_type == "minmod")
-            slope_lim_ptr = std::make_unique<slope_limiters::Minmod>();
-    }
-    prm.leave_subsection();
-    subcell_interp_ptr = std::make_unique<SubcellInterpolator>(
-        fe.degree,
-        gcrk_cvars,
-        gcrk_alpha,
-        *slope_lim_ptr,
-        ns_ptr.get()
-    );
+    // prm.enter_subsection("blender parameters");
+    // {
+    //     const std::string slope_limiter_type = prm.get("subcell interpolation limiter");
+    //     if(slope_limiter_type == "none")
+    //         slope_lim_ptr = std::make_unique<slope_limiters::None>();
+    //     else if(slope_limiter_type == "minmod")
+    //         slope_lim_ptr = std::make_unique<slope_limiters::Minmod>();
+    // }
+    // prm.leave_subsection();
+    // subcell_interp_ptr = std::make_unique<SubcellInterpolator>(
+    //     fe.degree,
+    //     gcrk_cvars,
+    //     gcrk_alpha,
+    //     *slope_lim_ptr,
+    //     ns_ptr.get()
+    // );
 }
 
 
@@ -2932,7 +2932,7 @@ void PLENS::calc_cell_lo_inv_residual(
     // set the flux blender value for NS object
     ns_ptr->set_flux_blender_value(gcrk_alpha[cell->global_active_cell_index()]);
 
-    subcell_interp_ptr->reinit(cell);
+    // subcell_interp_ptr->reinit(cell);
 
     // First the internal contributions
     for(usi dir=0; dir<dim; dir++){
@@ -2954,11 +2954,11 @@ void PLENS::calc_cell_lo_inv_residual(
                     
                     // set the "left" and "right" states
                     State cons_left, cons_right, flux;
-                    // for(cvar var: cvar_list){
-                    //     cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
-                    //     cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
-                    // }
-                    subcell_interp_ptr->get_left_right_states(ti_right, dir, cons_left, cons_right);
+                    for(cvar var: cvar_list){
+                        cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
+                        cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
+                    }
+                    // subcell_interp_ptr->get_left_right_states(ti_right, dir, cons_left, cons_right);
 
                     // get normal between id-1 and id
                     Tensor<1,dim> normal_dir =
