@@ -675,6 +675,99 @@ void NavierStokes::get_xK(
 
 
 /**
+ * Gives the right eigenvector matrix in an arbitrary direction @p dir. Similar to get_xK(), but
+ * more generic. See Rohde (2001) for the formula.
+ *
+ * The 4th and 5th columns can get singular which may cause difficulty in inverting the matrix.
+ * Thus the form (R-1), (R-2) or (R-3) is used depending on the largest component of @p dir.
+ *
+ * @pre @p dir must be a unit vector. No checks on this are done.
+ *
+ * @note Rohde's column ordering is different and some columns also have a sign change. This
+ * function is in this sense not consistent with get_xK(). However, as long as this function is
+ * used with get_Kinv(), the final results don't matter.
+ */
+void NavierStokes::get_K(
+    const dealii::Tensor<1,dim> &vel,
+    const double a,
+    const double H,
+    const dealii::Tensor<1,dim>& dir,
+    dealii::Tensor<2,dim+2> &K
+) const
+{
+    const double vel_n = dealii::scalar_product(vel, dir);
+
+    // 1st col
+    K[0][0] = 1;
+    for(int d=0; d<dim; d++) K[1+d][0] = vel[d] - a*dir[d];
+    K[4][0] = H - vel_n*a;
+
+    // 2nd col
+    K[0][1] = 1;
+    for(int d=0; d<dim; d++) K[1+d][1] = vel[d];
+    K[4][1] = 0.5*dealii::scalar_product(vel, vel);
+
+    // 3rd col
+    K[0][2] = 1;
+    for(int d=0; d<dim; d++) K[1+d][2] = vel[d] + a*dir[d];
+    K[4][2] = H + vel_n*a;
+
+    double dir_abs[3];
+    for(int d=0; d<dim; d++) dir_abs[d] = fabs(dir[d]);
+
+    if(dir_abs[0] > dir_abs[1] && dir_abs[0] > dir_abs[2]){
+        // (R-1) form
+        // 4th col
+        K[0][3] = 0;
+        K[1][3] = dir[1];
+        K[2][3] = -dir[0];
+        K[3][3] = 0;
+        K[4][3] = vel[0]*dir[1] - vel[1]*dir[0];
+
+        // 5th col
+        K[0][4] = 0;
+        K[1][4] = -dir[2];
+        K[2][4] = 0;
+        K[3][4] = dir[0];
+        K[4][4] = vel[2]*dir[0] - vel[1]*dir[2];
+    }
+    else if(dir_abs[1] > dir_abs[0] && dir_abs[1] > dir_abs[2]){
+        // (R-2) form
+        // 4th col
+        K[0][3] = 0;
+        K[1][3] = dir[1];
+        K[2][3] = -dir[0];
+        K[3][3] = 0;
+        K[4][3] = vel[0]*dir[1] - vel[1]*dir[0];
+
+        // 5th col
+        K[0][4] = 0;
+        K[1][4] = 0;
+        K[2][4] = dir[2];
+        K[3][4] = -dir[1];
+        K[4][4] = vel[1]*dir[2] - vel[2]*dir[1];
+    }
+    else{
+        // (R-3) form
+        // 4th col
+        K[0][4] = 0;
+        K[1][4] = -dir[2];
+        K[2][4] = 0;
+        K[3][4] = dir[0];
+        K[4][4] = vel[2]*dir[0] - vel[1]*dir[2];
+
+        // 5th col
+        K[0][4] = 0;
+        K[1][4] = 0;
+        K[2][4] = dir[2];
+        K[3][4] = -dir[1];
+        K[4][4] = vel[1]*dir[2] - vel[2]*dir[1];
+    }
+}
+
+
+
+/**
  * Gives the inverse of x-directional right eigen vector matrix as @p Kinv. All other details and
  * requirements are exactly as for get_xK(). This function depends on NavierStokes::gma_ and thus
  * cannot be static.
@@ -723,6 +816,92 @@ void NavierStokes::get_xKinv(
         for(int j=0; j<dim+2; j++){
             Kinv[i][j] *= factor;
         }
+    }
+}
+
+
+
+/**
+ * Inverse of get_K(). Depending on the dominant direction, (L-1), (L-2) or (L-3) forms from Rohde
+ * (2001) are used.
+ */
+void NavierStokes::get_Kinv(
+    const dealii::Tensor<1,dim> &vel,
+    const double a,
+    const double H,
+    const dealii::Tensor<1,dim>& dir,
+    dealii::Tensor<2,dim+2> &Kinv
+) const
+{
+    const double vel_n = dealii::scalar_product(vel, dir),
+        ek = dealii::scalar_product(vel, vel),
+        temp = 1/(a*a);
+    
+    // 1st row
+    Kinv[0][0] = ((gma_-1)*ek + a*vel_n)*0.5*temp;
+    for(int d=0; d<dim; d++) Kinv[0][1+d] = ((1-gma_)*vel[d] - a*dir[d])*0.5*temp;
+    Kinv[0][4] = (gma_-1)*0.5*temp;
+
+    // 2nd row
+    Kinv[1][0] = 1-(gma_-1)*ek*temp;
+    for(int d=0; d<dim; d++) Kinv[1][1+d] = (gma_-1)*vel[d]*temp;
+    Kinv[1][4] = (1-gma_)*temp;
+
+    // 3rd row
+    Kinv[2][0] = ((gma_-1)*ek - a*vel_n)*0.5*temp;
+    for(int d=0; d<dim; d++) Kinv[2][1+d] = ((1-gma_)*vel[d] + a*dir[d])*0.5*temp;
+    Kinv[2][4] = (gma_-1)*0.5*temp;
+
+    double dir_abs[3];
+    for(int d=0; d<dim; d++) dir_abs[d] = fabs(dir[d]);
+
+    if(dir_abs[0] > dir_abs[1] && dir_abs[0] > dir_abs[2]){
+        // (L-1) form
+        // 4th row
+        Kinv[3][0] = (vel[1] - vel_n*dir[1])/dir[0];
+        Kinv[3][1] = dir[1];
+        Kinv[3][2] = (dir[1]*dir[1]-1)/dir[0];
+        Kinv[3][3] = dir[1]*dir[2]/dir[0];
+        Kinv[3][4] = 0;
+
+        // 5th row
+        Kinv[4][0] = (vel_n*dir[2] - vel[2])/dir[0];
+        Kinv[4][1] = -dir[2];
+        Kinv[4][2] = -dir[1]*dir[2]/dir[0];
+        Kinv[4][3] = (1-dir[2]*dir[2])/dir[0];
+        Kinv[4][4] = 0;
+    }
+    else if(dir_abs[1] > dir_abs[0] && dir_abs[1] > dir_abs[2]){
+        // (L-2) form
+        // 4th row
+        Kinv[3][0] = (vel_n*dir[0]-vel[0])/dir[1];
+        Kinv[3][1] = (1-dir[0]*dir[0])/dir[1];
+        Kinv[3][2] = -dir[0];
+        Kinv[3][3] = -dir[0]*dir[2]/dir[1];
+        Kinv[3][4] = 0;
+
+        // 5th row
+        Kinv[4][0] = (vel[2] - vel_n*dir[2])/dir[1];
+        Kinv[4][1] = dir[0]*dir[2]/dir[1];
+        Kinv[4][2] = dir[2];
+        Kinv[4][3] = (dir[2]*dir[2]-1)/dir[1];
+        Kinv[4][4] = 0;
+    }
+    else{
+        // (L-3) form
+        // 4th row
+        Kinv[3][0] = (vel[0]-vel_n*dir[0])/dir[2];
+        Kinv[3][1] = (dir[0]*dir[0]-1)/dir[2];
+        Kinv[3][2] = dir[0]*dir[1]/dir[2];
+        Kinv[3][3] = dir[0];
+        Kinv[3][4] = 0;
+
+        // 5th row
+        Kinv[4][0] = (vel_n*dir[1]-vel[1])/dir[2];
+        Kinv[4][1] = -dir[0]*dir[1]/dir[2];
+        Kinv[4][2] = (1-dir[1]*dir[1])/dir[2];
+        Kinv[4][3] = -dir[1];
+        Kinv[4][4] = 0;
     }
 }
 

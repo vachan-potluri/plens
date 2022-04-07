@@ -301,11 +301,27 @@ class NavierStokes
         dealii::Tensor<2,dim+2> &K
     ) const;
 
+    void get_K(
+        const dealii::Tensor<1,dim> &vel,
+        const double a,
+        const double H,
+        const dealii::Tensor<1,dim>& dir,
+        dealii::Tensor<2,dim+2> &K
+    ) const;
+
     void get_xKinv(
         const dealii::Tensor<1,dim> &vel,
         const double a,
         const double H,
         dealii::Tensor<2,dim+2> &K
+    ) const;
+
+    void get_Kinv(
+        const dealii::Tensor<1,dim> &vel,
+        const double a,
+        const double H,
+        const dealii::Tensor<1,dim>& dir,
+        dealii::Tensor<2,dim+2> &Kinv
     ) const;
     
     /**
@@ -353,6 +369,24 @@ class NavierStokes
             cons[1+d] = rho*vel[d];
             cons[4] += 0.5*rho*vel[d]*vel[d];
         }
+    }
+
+    /**
+     * Returns velocity, a and H from the given conservative state. Useful for getting eigenvector
+     * matrices.
+     */
+    inline void cons_to_vel_a_H(
+        const State& cons,
+        dealii::Tensor<1,dim>& vel,
+        double& a,
+        double& H
+    ) const
+    {
+        const double rhoinv = 1/cons[0];
+        for(int d=0; d<dim; d++) vel[d] = cons[1+d]*rhoinv;
+        const double p = get_p(cons);
+        a = sqrt(gma_*p*rhoinv);
+        H = (cons[4]+p)*rhoinv;
     }
 
     /**

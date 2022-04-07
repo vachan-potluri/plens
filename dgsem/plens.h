@@ -58,12 +58,15 @@
 #include "change_of_basis_matrix.h"
 #include "blender_calculator.h"
 #include "rk4_stage5_register3.h"
+#include "subcell_interpolator.h"
 #include <utilities/split_string.h>
 #include <manifolds/manifold_description.h>
 #include <manifolds/cylinder.h>
 #include <manifolds/nose_cylinder.h>
 #include <modelling/navier_stokes.h>
 #include <modelling/var_enums.h>
+#include <modelling/minmod.h>
+#include <modelling/none.h>
 #include <IBCs/IC.h>
 #include <IBCs/piecewise_function.h>
 #include <IBCs/from_archive.h>
@@ -796,6 +799,16 @@ class PLENS
      */
     FunctionParser<dim> conv_exact_function;
 
+    /**
+     * Pointer to slope limiter object, required for subcell interpolation
+     */
+    // std::unique_ptr<slope_limiters::SlopeLimiter> slope_lim_ptr;
+
+    /**
+     * Pointer to subcell interpolator object
+     */
+    // std::unique_ptr<SubcellInterpolator> subcell_interp_ptr;
+
 
 
     void form_neighbor_face_matchings(
@@ -865,6 +878,7 @@ class PLENS
     void set_sol_vecs();
     void set_IC();
     void set_BC();
+    void set_blender();
     void read_time_settings();
     void run();
 

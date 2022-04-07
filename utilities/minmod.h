@@ -3,8 +3,9 @@
  * Implements the minmod function
  */
 
-#ifndef MINMOD_H
-#define MINMOD_H
+// header guard including namespace because minmod is a class in slope_limiters namespace.
+#ifndef UTILITIES_MINMOD_H
+#define UTILITIES_MINMOD_H
 
 #include <initializer_list>
 #include <vector>
