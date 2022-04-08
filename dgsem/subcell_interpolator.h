@@ -37,6 +37,14 @@ using namespace slope_limiters;
  * the linear slopes when reinit() is called. The getter get_left_right_states() then uses these
  * linear slopes along with the limiter to return the left and right states. The approach taken
  * is exactly how it is done in OpenFOAM. See BTP-2 report, Appendix.
+ *
+ * @deprecated This class is no longer used. The reason is that such normal FV interpolation doesn't
+ * guarantee the entropy stability of the blended scheme and as a result, the algo was not stable
+ * for some strong cases where 1st order subcell FV update worked. And entropy stable TVD
+ * reconstruction is implemented in FLUXO (https://github.com/project-fluxo/fluxo), following the
+ * references
+ * 1. Ramirez, Hennemann & Hindenlang, 2021, JCP.
+ * 2. Fjordholm, Mishra & Tadmor, 2012, SIAM J. Num. Anal.
  */
 class SubcellInterpolator
 {

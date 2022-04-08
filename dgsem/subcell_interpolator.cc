@@ -8,7 +8,7 @@
 
 
 /**
- * Constructor. Calculates the 1d weights and nodal locations
+ * Constructor. Calculates the 1d weights, nodal and subcell face locations
  */
 SubcellInterpolator::SubcellInterpolator(
     const usi d,
