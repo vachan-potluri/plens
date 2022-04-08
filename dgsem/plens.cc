@@ -537,11 +537,10 @@ void PLENS::declare_parameters()
             "criterion is satisfied. Else, global stepping is used."
         );
         prm.declare_entry(
-            "local stepping threshold factor",
-            "1000",
+            "local stepping start time",
+            "100",
             Patterns::Double(0),
-            "If the steady state error is less than time step multiplied by this factor, then "
-            "local stepping is activated."
+            "If the simulation crosses this time, then local stepping is activated."
         );
     }
     prm.leave_subsection(); // time integration
@@ -1422,7 +1421,7 @@ void PLENS::read_time_settings()
         end_time = prm.get_double("end time");
         output_counter = prm.get_integer("starting output counter");
         requested_local_stepping = prm.get_bool("request local stepping");
-        local_stepping_threshold = prm.get_double("local stepping threshold factor");
+        local_stepping_start_time = prm.get_double("local stepping start time");
 
         // setting Courant number function
         std::string courant_expression = prm.get("Courant number");
@@ -3316,16 +3315,7 @@ void PLENS::calc_time_step()
     // if criteria for local time stepping are not met, set local time steps equal to global value
     Vector<double> cell_ss_error(triang.n_active_cells());
     double ss_error = calc_ss_error(cell_ss_error);
-    if(!requested_local_stepping || ss_error > local_stepping_threshold*time_step){
-        pcout << "Global time stepping\n";
-        for(const auto &cell: dof_handler.active_cell_iterators()){
-            if(!(cell->is_locally_owned())) continue;
-
-            loc_time_steps[cell->global_active_cell_index()] = time_step;
-        }
-        loc_time_steps.compress(VectorOperation::insert);
-    }
-    else{
+    if(requested_local_stepping && cur_time > local_stepping_start_time){
         pcout << "Local time stepping\n";
         // limit the time step
         gh_loc_time_steps = loc_time_steps;
@@ -3342,6 +3332,15 @@ void PLENS::calc_time_step()
                 }
             }
             loc_time_steps[cell->global_active_cell_index()] = modified_cell_dt;
+        }
+        loc_time_steps.compress(VectorOperation::insert);
+    }
+    else{
+        pcout << "Global time stepping\n";
+        for(const auto &cell: dof_handler.active_cell_iterators()){
+            if(!(cell->is_locally_owned())) continue;
+
+            loc_time_steps[cell->global_active_cell_index()] = time_step;
         }
         loc_time_steps.compress(VectorOperation::insert);
     }

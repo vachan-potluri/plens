@@ -749,10 +749,9 @@ class PLENS
     bool requested_local_stepping;
 
     /**
-     * The factor/threshold used to ascertain whether or not local stepping must be used. See @ref
-     * local_time_stepping.
+     * The simulation time after which local stepping is switched on if requested.
      */
-    double local_stepping_threshold;
+    double local_stepping_start_time;
 
     /**
      * A timer for wall time calculation in the simulation. Used in print statements
