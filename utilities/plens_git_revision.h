@@ -8,16 +8,16 @@
 /**
  * Name of the local git branch of the source directory.
  */
-#define PLENS_GIT_BRANCH "master"
+#define PLENS_GIT_BRANCH "entropy_var_grad"
 
 /**
  * Full sha1 revision of the current git HEAD.
  */
-#define PLENS_GIT_REVISION "16e384e7b5701f629a694d65567de0dc140d4c2b"
+#define PLENS_GIT_REVISION "53afbf567d370027b0da92936244252818e2becb"
 
 /**
  * Short sha1 revision of the current git HEAD.
  */
-#define PLENS_GIT_SHORTREV "16e384e"
+#define PLENS_GIT_SHORTREV "53afbf5"
 
 #endif

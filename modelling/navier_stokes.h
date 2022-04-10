@@ -389,6 +389,28 @@ class NavierStokes
         H = (cons[4]+p)*rhoinv;
     }
 
+
+
+    /**
+     * Calculates entropy variables from conservative variables. Available in many refs:
+     * Chandrashekhar (2013), Bohm et al (2020).
+     */
+    inline void cons_to_entropy(
+        const State& cons,
+        State& evars
+    ) const
+    {
+        const double p = get_p(cons);
+        const double s = log(p) - gma_*log(cons[0]);
+        const double beta = 0.5*cons[0]/p;
+        const double rhoinv = 1/cons[0];
+        dealii::Tensor<1,dim> vel;
+        for(int d=0; d<dim; d++) vel[d] = cons[1+d]*rhoinv;
+        evars[0] = (gma_-s)/(gma_-1) - beta*dealii::scalar_product(vel, vel);
+        for(int d=0; d<dim; d++) evars[1+d] = 2*beta*vel[d];
+        evars[4] = -2*beta;
+    }
+
     /**
      * @brief Returns a boolean for whether or not the model is inviscid. The check is done by
      * comparing NavierStokes::mu0_ with 1e-16. Hopefully no gas will have a viscosity smaller
