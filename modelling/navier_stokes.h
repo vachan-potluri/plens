@@ -400,7 +400,19 @@ class NavierStokes
         State& evars
     ) const
     {
+        AssertThrow(
+            cons[0] > 0,
+            dealii::StandardExceptions::ExcMessage(
+                "Negative/zero density in NavierStokes::cons_to_entropy()."
+            )
+        );
         const double p = get_p(cons);
+        AssertThrow(
+            p > 0,
+            dealii::StandardExceptions::ExcMessage(
+                "Negative/zero pressure in NavierStokes::cons_to_entropy()."
+            )
+        );
         const double s = log(p) - gma_*log(cons[0]);
         const double beta = 0.5*cons[0]/p;
         const double rhoinv = 1/cons[0];
