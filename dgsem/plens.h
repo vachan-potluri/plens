@@ -848,6 +848,16 @@ class PLENS
         const locly_ord_surf_flux_term_t<double>& s_surf_flux,
         std::vector<State>& residual
     ) const;
+    void calc_cell_ho_inv_residual(
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        const locly_ord_surf_flux_term_t<double>& s2_surf_flux,
+        std::vector<State>& residual
+    ) const;
+    void calc_cell_ho_dif_residual(
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        const locly_ord_surf_flux_term_t<double>& s3_surf_flux,
+        std::vector<State>& residual
+    ) const;
     void calc_cell_lo_inv_residual(
         const DoFHandler<dim>::active_cell_iterator& cell,
         const locly_ord_surf_flux_term_t<double>& s_surf_flux,

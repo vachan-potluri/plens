@@ -2327,7 +2327,7 @@ void PLENS::calc_cell_evar_grad(
             }
         } // loop over cell dofs
     } // loop over gradient directions
-}
+} // calc_cell_evar_grad
 
 
 
@@ -3017,6 +3017,136 @@ void PLENS::calc_cell_ho_residual(
         for(cvar var: cvar_list) residual[i][var] *= J_m_stage_sign_inv;
     }
 } // calc_cell_ho_residual
+
+
+
+/**
+ * A copy of calc_cell_ho_residual() specialised for inviscid flux residual calculation. See
+ * WJ notes around 10-Apr-2022.
+ */
+void PLENS::calc_cell_ho_inv_residual(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    const locly_ord_surf_flux_term_t<double>& s2_surf_flux,
+    std::vector<State>& residual
+) const
+{
+    AssertThrow(
+        residual.size() == fe.dofs_per_cell,
+        StandardExceptions::ExcMessage(
+            "Residual vector passed to calc_cell_ho_residual() must have the size of dofs per cell"
+        )
+    );
+    // -1 for stage 2 (inviscid residual) and +1 for stage 3 (diffusive residual)
+    const double stage_sign = -1;
+
+    // get cell cvar and avar data
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+    std::vector<State> cell_states(fe.dofs_per_cell);
+    for(cvar var: cvar_list){
+        for(psize i=0; i<fe.dofs_per_cell; i++){
+            cell_states[i][var] = gcrk_cvars[var][dof_ids[i]];
+        }
+    }
+
+    // initialise a pointer to metric terms for this cell
+    const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
+
+    // get surface flux data for this cell
+    std::array<
+        const cell_surf_term_t<double>*,
+        5
+    > cell_surf_flux;
+    for(cvar var: cvar_list){
+        cell_surf_flux[var] = &s2_surf_flux[var].at(cell->index());
+    }
+
+    // sign for surface contribution: std::pow(-1, lr_id)
+    // where lr_id = 0 for 'left' face and 1 for 'right' face
+    // avoids multiple use of std::pow
+    const std::array<double, 2> surface_contrib_sign = {1, -1}; // ordering: left, right
+
+    // reset values in residual to 0
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(cvar var: cvar_list) residual[i][var] = 0;
+    }
+
+    // set the residual
+    // first volumetric contrib
+    for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
+        State cons_this = cell_states[ldof_this];
+        TableIndices<dim> ti_this;
+        for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
+
+        State flux; // flux between 'this' and 'other' states
+        Tensor<1,dim> dir; // dir to be calculated based on avg of contravariant vectors
+        double norm; // norm of the avg contravariant vector
+
+        for(usi m=0; m<=fe.degree; m++){
+            for(usi m_dir=0; m_dir<dim; m_dir++){
+                TableIndices<dim> ti_other(ti_this);
+                ti_other[m_dir] = m;
+                usi ldof_other = cdi.tensorial_to_local(ti_other);
+                State cons_other = cell_states[ldof_other];
+                
+                dir = 0.5*(
+                    metrics_ptr->JxContra_vecs[ldof_this][m_dir] +
+                    metrics_ptr->JxContra_vecs[ldof_other][m_dir]
+                ); // not unit vector yet
+                norm = dir.norm();
+                dir /= norm; // unit vector now
+                ns_ptr->get_inv_vol_flux(cons_this, cons_other, dir, flux);
+
+                // do an addition here, negative sign will be incorporated when scaling with
+                // jacobian
+                const double D_val_m2_norm = 2*ref_D_1d(ti_this[m_dir],m)*norm;
+                for(cvar var: cvar_list){
+                    residual[ldof_this][var] += D_val_m2_norm*flux[var];
+                }
+            } // loop over m dir
+        } // loop over m
+    } // loop over cell dofs
+
+    // now surface contribution
+    for(usi surf_dir=0; surf_dir<dim; surf_dir++){
+        // loop over 'l'eft and 'r'ight faces
+        for(usi lr_id=0; lr_id<=1; lr_id++){
+            usi face_id = 2*surf_dir + lr_id; // the face id
+            for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                usi ldof = fdi.maps[face_id][face_dof_id];
+                Tensor<1,dim> dir =
+                    metrics_ptr->JxContra_vecs[ldof][surf_dir]; // not yet unit vector
+                double norm = dir.norm();
+                dir /= norm; // unit vector
+                State flux_in, flux_surf;
+                // surface flux
+                for(cvar var: cvar_list){
+                    // s_surf_flux assumes outward normal: true for right and false for left faces
+                    // thus a sign changes is required for left faces since the algorithm assumes
+                    // all face normals in positive cartesian directions (that's what the
+                    // contravariant vectors give)
+                    flux_surf[var] = -surface_contrib_sign[lr_id]* // -ve for left and +ve for right faces
+                        (*cell_surf_flux[var])[face_id][face_dof_id];
+                }
+                // inner flux
+                State cons = cell_states[ldof];
+                ns_ptr->get_inv_flux(cons, dir, flux_in);
+
+                for(cvar var: cvar_list){
+                    residual[ldof][var] += -surface_contrib_sign[lr_id]*
+                        (flux_surf[var]-flux_in[var])*norm/
+                        w_1d[lr_id*fe.degree];
+                }
+            } // loop over face dofs
+        } // loop over left/right faces
+    } // loop over directions
+
+    // multiply by sign and scale by jacobian
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        const double J_m_stage_sign_inv = 1/(stage_sign*metrics_ptr->detJ[i]);
+        for(cvar var: cvar_list) residual[i][var] *= J_m_stage_sign_inv;
+    }
+} // calc_cell_ho_inv_residual
 
 
 
