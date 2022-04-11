@@ -2403,9 +2403,34 @@ void PLENS::calc_aux_vars()
     gcrk_mu.compress(VectorOperation::insert);
     gcrk_k.compress(VectorOperation::insert);
 
-    // calculate stage 1 flux
-    locly_ord_surf_flux_term_t<double> s1_surf_flux;
+    // calculate stage 1 flux and entropy variables on the faces using the same
+    locly_ord_surf_flux_term_t<double> s1_surf_flux, evar_surf;
     calc_surf_flux(1, s1_surf_flux);
+    // set size
+    for(cvar var: cvar_list){
+        for(const auto &cell: dof_handler.active_cell_iterators()){
+            if(!cell->is_locally_owned()) continue;
+            for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
+                evar_surf[var][cell->index()][face_id].resize(fe_face.dofs_per_face, 0);
+            }
+        }
+    }
+    // calculate face entropy variables from stage 1 flux
+    State cons_temp, evar_temp;
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+        for(usi face_id=0; face_id<n_faces_per_cell; face_id++){
+            for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                for(cvar var: cvar_list){
+                    cons_temp[var] = s1_surf_flux[var][cell->index()][face_id][face_dof_id];
+                }
+                ns_ptr->cons_to_entropy(cons_temp, evar_temp);
+                for(usi i=0; i<5; i++){
+                    evar_surf[i][cell->index()][face_id][face_dof_id] = evar_temp[i];
+                }
+            }
+        }
+    }
 
     // now set (factored) avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
