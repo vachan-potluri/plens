@@ -2205,6 +2205,127 @@ void PLENS::calc_cell_cons_grad(
 
 
 /**
+ * Calculates entropy variable gradients in a cell. The approach is very similar to
+ * calc_cell_cons_grad(), except that standard DGSEM formula is used, instead of split form DGSEM.
+ * This function hence takes the surface values of entropy variables through @p evar_surf.
+ */
+void PLENS::calc_cell_evar_grad(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    const locly_ord_surf_flux_term_t<double>& evar_surf,
+    std::vector<std::array<State, 3>>& evar_grad
+) const
+{
+    AssertThrow(
+        evar_grad.size() == fe.dofs_per_cell,
+        StandardExceptions::ExcMessage(
+            "The vector provided to store entropy variable gradients must have the proper size."
+        )
+    );
+
+    // get cell entropy variable data
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+    std::vector<State> cell_evars(fe.dofs_per_cell);
+    {
+        // scope for cell_states; not required outside this
+        std::vector<State> cell_states(fe.dofs_per_cell);
+        // first get conservative variables
+        for(cvar var: cvar_list){
+            for(psize i=0; i<fe.dofs_per_cell; i++){
+                cell_states[i][var] = gcrk_cvars[var][dof_ids[i]];
+            }
+        }
+        // now convert to entropy variables
+        for(psize i=0; i<fe.dofs_per_cell; i++){
+            ns_ptr->cons_to_entropy(cell_states[i], cell_evars[i]);
+        }
+    }
+
+    // initialise a pointer to metric terms for this cell
+    const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
+
+    // get surface flux data for this cell
+    std::array<
+        const cell_surf_term_t<double>*,
+        5
+    > cell_surf_flux;
+    for(cvar var: cvar_list){
+        cell_surf_flux[var] = &evar_surf[var].at(cell->index());
+    }
+
+    // sign for surface contribution: std::pow(-1, lr_id)
+    // where lr_id = 0 for 'left' face and 1 for 'right' face
+    // avoids multiple use of std::pow
+    const std::array<double, 2> surface_contrib_sign = {1, -1}; // ordering: left, right
+
+    // initialise evar_grad to 0
+    for(usi dir=0; dir<dim; dir++){
+        for(usi i=0; i<fe.dofs_per_cell; i++){
+            for(cvar var: cvar_list) evar_grad[i][dir][var] = 0; // initialise to 0
+        }
+    }
+
+    for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+        // first calculate volumetric contribution
+        for(usi ldof_this=0; ldof_this<fe.dofs_per_cell; ldof_this++){
+            TableIndices<dim> ti_this;
+            for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
+            for(usi m=0; m<=fe.degree; m++){
+                for(usi m_dir=0; m_dir<dim; m_dir++){
+                    // strangely TableIndices doesn't have a copy ctor
+                    TableIndices<dim> ti_other(ti_this[0], ti_this[1], ti_this[2]);
+                    ti_other[m_dir] = m;
+                    usi ldof_other = cdi.tensorial_to_local(ti_other);
+                    State evar_other = cell_evars[ldof_other];
+                    const double JxContra_comp =
+                        metrics_ptr->JxContra_vecs[ldof_other][m_dir][grad_dir];
+                    // component (of average contravariant vector) in gradient direction
+                    
+                    const double D_val = ref_D_1d(ti_this[m_dir],m); // value of D_{i,j,k}m
+                    for(cvar var: cvar_list){
+                        evar_grad[ldof_this][grad_dir][var] +=
+                            D_val*evar_other[var]*JxContra_comp;
+                    }
+                } // loop over three directions for m
+            } // loop over m
+        } // loop over cell dofs
+
+        // now surface contribution for those dofs lying on face
+        for(usi surf_dir=0; surf_dir<dim; surf_dir++){
+            // loop over 'l'eft and 'r'ight faces
+            for(usi lr_id=0; lr_id<=1; lr_id++){
+                usi face_id = 2*surf_dir + lr_id; // the face id
+                for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                    usi ldof = fdi.maps[face_id][face_dof_id];
+                    State evar = cell_evars[ldof];
+                    State flux_in, flux_surf;
+                    for(cvar var: cvar_list){
+                        flux_in[var] = evar[var]*
+                            metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
+                        flux_surf[var] = (*cell_surf_flux[var])[face_id][face_dof_id]*
+                            metrics_ptr->JxContra_vecs[ldof][surf_dir][grad_dir];
+                        // a hack for incorporating contributions from both left and right faces
+                        evar_grad[ldof][grad_dir][var] -= surface_contrib_sign[lr_id]*
+                            (flux_surf[var]-flux_in[var])/w_1d[lr_id*fe.degree];
+                    }
+                } // loop over face dofs
+            } // loop over two surfaces with normal in 'surf_dir'
+        } // loop over 3 directions for surface contributions
+
+        // now divide by Jacobian determinant
+        double Jinv;
+        for(usi ldof=0; ldof<fe.dofs_per_cell; ldof++){
+            Jinv = 1.0/metrics_ptr->detJ[ldof];
+            for(cvar var: cvar_list){
+                evar_grad[ldof][grad_dir][var] *= Jinv;
+            }
+        } // loop over cell dofs
+    } // loop over gradient directions
+}
+
+
+
+/**
  * Calculates cell conservative gradients in a FV sense. Returns a single value of the gradient,
  * unlike calc_cell_cons_grad() which returns a dof-wise vector.
  *
