@@ -3602,16 +3602,14 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
 
         {
             TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate stages 2&3 ho residual");
-            calc_cell_ho_residual(
-                2,
+            calc_cell_ho_inv_residual(
                 cell,
                 s2_surf_flux,
                 ho_inv_residual
             ); // high order inviscid
 
             if(!ns_ptr->is_inviscid()){
-                calc_cell_ho_residual(
-                    3,
+                calc_cell_ho_dif_residual(
                     cell,
                     s3_surf_flux,
                     ho_dif_residual
