@@ -3288,7 +3288,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
 {
     TimerOutput::Scope timer_section(timer, "Calc RHS");
     assert_positivity();
-    {
+    if(!ns_ptr->is_inviscid()){
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate auxiliary variables");
         calc_aux_vars();
         // calc_cvar_avg();
@@ -3304,7 +3304,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
     {
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate stages 2&3 surface fluxes");
         calc_surf_flux(2, s2_surf_flux);
-        calc_surf_flux(3, s3_surf_flux);
+        if(!ns_ptr->is_inviscid()) calc_surf_flux(3, s3_surf_flux);
     }
 
     // initialise variables
@@ -3334,12 +3334,14 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 ho_inv_residual
             ); // high order inviscid
 
-            calc_cell_ho_residual(
-                3,
-                cell,
-                s3_surf_flux,
-                ho_dif_residual
-            ); // high order viscous
+            if(!ns_ptr->is_inviscid()){
+                calc_cell_ho_residual(
+                    3,
+                    cell,
+                    s3_surf_flux,
+                    ho_dif_residual
+                ); // high order viscous
+            }
         }
 
         {
@@ -3368,16 +3370,22 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list){
-                // gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
-                //     alpha*lo_inv_residual[i][var] +
-                //     (1-alpha)*ho_inv_residual[i][var];
-                gcrk_rhs[var][dof_ids[i]] =
-                    // (1-ho_dif_factor)*utilities::minmod(
-                    //     dif_residual_fv[var], ho_dif_residual[i][var]
-                    // ) +
-                    ho_dif_factor*ho_dif_residual[i][var] +
-                    alpha*lo_inv_residual[i][var] +
-                    (1-alpha)*ho_inv_residual[i][var];
+                if(!ns_ptr->is_inviscid()){
+                    // gcrk_rhs[var][dof_ids[i]] = ho_dif_residual[i][var] +
+                    // alpha*lo_inv_residual[i][var] +
+                    // (1-alpha)*ho_inv_residual[i][var];
+                    gcrk_rhs[var][dof_ids[i]] =
+                        // (1-ho_dif_factor)*utilities::minmod(
+                        //     dif_residual_fv[var], ho_dif_residual[i][var]
+                        // ) +
+                        ho_dif_factor*ho_dif_residual[i][var] +
+                        alpha*lo_inv_residual[i][var] +
+                        (1-alpha)*ho_inv_residual[i][var];
+                }
+                else{
+                    gcrk_rhs[var][dof_ids[i]] = alpha*lo_inv_residual[i][var] +
+                        (1-alpha)*ho_inv_residual[i][var];
+                }
             }
         } // loop over dofs
     } // loop over owned cells
