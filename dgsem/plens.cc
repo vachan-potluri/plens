@@ -2272,8 +2272,7 @@ void PLENS::calc_cell_evar_grad(
             for(usi dir=0; dir<dim; dir++) ti_this[dir] = cdi.local_to_tensorial[ldof_this][dir];
             for(usi m=0; m<=fe.degree; m++){
                 for(usi m_dir=0; m_dir<dim; m_dir++){
-                    // strangely TableIndices doesn't have a copy ctor
-                    TableIndices<dim> ti_other(ti_this[0], ti_this[1], ti_this[2]);
+                    TableIndices<dim> ti_other(ti_this);
                     ti_other[m_dir] = m;
                     usi ldof_other = cdi.tensorial_to_local(ti_other);
                     State evar_other = cell_evars[ldof_other];
@@ -2585,9 +2584,9 @@ void PLENS::calc_aux_vars()
                     //         vel[vel_dir] // u
                     // )/cons[0];
                     vel_grad[vel_dir][grad_dir] = (
-                        evar_temp[1+vel_dir]*evar_grad[i][grad_dir][5]/evar_temp[5] -
+                        evar_temp[1+vel_dir]*evar_grad[i][grad_dir][4]/evar_temp[4] -
                         evar_grad[i][grad_dir][1+vel_dir]
-                    )/evar_temp[5];
+                    )/evar_temp[4];
                 } // loop over gradient directions
             } // loop over velocity directions
 
@@ -2624,8 +2623,8 @@ void PLENS::calc_aux_vars()
                 //         cons[1+vel_dir]*vel_grad[vel_dir][grad_dir]
                 //     )/cons[0];
                 // }
-                T_grad[grad_dir] = evar_grad[i][grad_dir][5]/
-                    (evar_temp[5]*evar_temp[5]*ns_ptr->get_R());
+                T_grad[grad_dir] = evar_grad[i][grad_dir][4]/
+                    (evar_temp[4]*evar_temp[4]*ns_ptr->get_R());
             }
 
             // set (factored) heat flux components
