@@ -2088,6 +2088,13 @@ void PLENS::calc_surf_flux(
  * `cons_grad[cell-local dof id][dir][var]`
  *
  * @pre `cons_grad` must have the appropriate size. An assertion will be done.
+ *
+ * @note Later around 10-Apr-2022, in a new branch `entropy_var_grad`, some new functions were
+ * written to use entropy variable gradients for calculation of viscous residual. At that time it
+ * was noted that for calculating gradients, standard DGSEM can be used and split form DGSEM is only
+ * required for inviscid residual (see Bohm, Winters, Gassner (2020)). The new functions (viz.
+ * calc_cell_evar_grad()) were implemented with this change. However, this function was left
+ * unchanged.
  */
 void PLENS::calc_cell_cons_grad(
     const DoFHandler<dim>::active_cell_iterator& cell,
