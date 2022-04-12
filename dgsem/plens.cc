@@ -542,6 +542,27 @@ void PLENS::declare_parameters()
             Patterns::Double(0),
             "If the simulation crosses this time, then local stepping is activated."
         );
+        prm.declare_entry(
+            "limit local time step",
+            "false",
+            Patterns::Bool(),
+            "If set to true, the local time step value is limited to a factor of its neighbor's "
+            "values and another factor of the global time step."
+        );
+        prm.declare_entry(
+            "local step neighbor factor",
+            "1.05",
+            Patterns::Double(1),
+            "The factor of the neighbors value to which the local step will be limited. Relevant "
+            "if 'limit local time step' is true."
+        );
+        prm.declare_entry(
+            "local step global factor",
+            "1000",
+            Patterns::Double(1),
+            "The factor of the global time step value to which the local step will be limited. "
+            "Relevant if 'limit local time step' is true."
+        );
     }
     prm.leave_subsection(); // time integration
 
@@ -3711,6 +3732,16 @@ void PLENS::calc_time_step()
     }
     pcout << "Courant number: " << Co << "\n";
 
+    bool limit_local_step;
+    double neighbor_limit_factor, global_limit_factor;
+    prm.enter_subsection("time integration");
+    {
+        limit_local_step = prm.get_bool("limit local time step");
+        neighbor_limit_factor = prm.get_double("local step neighbor factor");
+        global_limit_factor = prm.get_double("local step global factor");
+    }
+    prm.leave_subsection();
+
     double this_proc_step = 1e6; // stable time step for this process
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
@@ -3764,13 +3795,16 @@ void PLENS::calc_time_step()
             if(!(cell->is_locally_owned())) continue;
 
             double cell_dt = loc_time_steps[cell->global_active_cell_index()];
-            double modified_cell_dt;
-            for(usi f=0; f<n_faces_per_cell; f++){
-                if(!cell->face(f)->at_boundary()){
-                    const auto neighbor = cell->neighbor(f);
-                    double nei_dt = gh_loc_time_steps[neighbor->global_active_cell_index()];
-                    modified_cell_dt = std::min(cell_dt, 1.05*nei_dt);
+            double modified_cell_dt(cell_dt);
+            if(limit_local_step){
+                for(usi f=0; f<n_faces_per_cell; f++){
+                    if(!cell->face(f)->at_boundary()){
+                        const auto neighbor = cell->neighbor(f);
+                        double nei_dt = gh_loc_time_steps[neighbor->global_active_cell_index()];
+                        modified_cell_dt = std::min(cell_dt, neighbor_limit_factor*nei_dt);
+                    }
                 }
+                modified_cell_dt = std::min(modified_cell_dt, global_limit_factor*time_step);
             }
             loc_time_steps[cell->global_active_cell_index()] = modified_cell_dt;
         }
