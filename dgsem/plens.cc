@@ -1457,13 +1457,14 @@ void PLENS::run()
     }
     prm.leave_subsection();
     filename = op_dir + "/simulation_parameters.prm";
-    pcout << "Writing read parameters to " << filename << "\n";
+    pcout << "Writing simulation parameters to " << filename << "\n";
     prm.print_parameters(filename, ParameterHandler::KeepDeclarationOrder);
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0){
         std::ofstream file(filename, std::ios::app);
         file << "\n# FE degree " << fe.degree
             << "\n# Mapping degree " << mapping_ptr->get_degree()
-            << "\n# Processors " << Utilities::MPI::n_mpi_processes(mpi_comm) << "\n";
+            << "\n# Processors " << Utilities::MPI::n_mpi_processes(mpi_comm)
+            << "\n# DoFs per variable " << dof_handler.n_dofs() << "\n";
         file.close();
     }
 
