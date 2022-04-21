@@ -1,11 +1,13 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams["text.usetex"] = True
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["mathtext.fontset"] = "dejavuserif"
-plt.rcParams["font.size"] = 10
-# plt.rcParams["figure.figsize"] = 7,6
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Palatino"],
+    "font.size": 12,
+    "axes.formatter.limits": [-2,2]
+})
 
 p_inf = 30.3845
 rho_inf = 0.000845
@@ -54,11 +56,11 @@ txy = np.concatenate([txy_cylinder, txy_flare])
 txy_mask = np.isfinite(txy)
 
 fig, ax = plt.subplots(1,1)
-ax.plot(harvey_cp[:,0], harvey_cp[:,1], "bo", markersize=4, label="Harvey et al (2001)\nexperiment")
-ax.plot(candler_cp[:,0], candler_cp[:,1], "gx", markersize=4, label="Gnoffo (2001)\nsimulation")
+ax.plot(harvey_cp[:,0], harvey_cp[:,1], "bo", label="Harvey et al (2001)\nexperiment")
+ax.plot(candler_cp[:,0], candler_cp[:,1], "g^", label="Gnoffo (2001)\nsimulation")
 ax.plot(x[cp_mask], cp[cp_mask], "r-", label="PLENS")
 ax.set_xlabel(r"$x/L$")
-ax.set_ylabel(r"$\displaystyle\frac{p-p_\infty}{\frac{1}{2}\rho_\infty u_\infty^2}$", rotation=0, labelpad=20)
+ax.set_ylabel(r"$\displaystyle\frac{p-p_\infty}{\frac{1}{2}\rho_\infty u_\infty^2}$", rotation=0, labelpad=25)
 ax.grid()
 ax.legend(loc="best")
 fig.tight_layout()
@@ -70,8 +72,8 @@ plt.show()
 
 del fig, ax
 fig, ax = plt.subplots(1,1)
-ax.plot(harvey_St[:,0], harvey_St[:,1], "bo", markersize=4, label="Harvey et al (2001)\nexperiment")
-ax.plot(candler_St[:,0], candler_St[:,1], "gx", markersize=4, label="Gnoffo (2001)\nsimulation")
+ax.plot(harvey_St[:,0], harvey_St[:,1], "bo", label="Harvey et al (2001)\nexperiment")
+ax.plot(candler_St[:,0], candler_St[:,1], "g^", label="Gnoffo (2001)\nsimulation")
 ax.plot(x[St_mask], St[St_mask], "r-", label="PLENS")
 ax.set_xlabel(r"$x/L$")
 ax.set_ylabel(r"$\displaystyle\frac{2q^{\prime\prime}_w}{\rho_\infty u_\infty^3}$", rotation=0, labelpad=20)
