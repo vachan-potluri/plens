@@ -12,13 +12,21 @@ plt.rcParams.update({
 })
 
 data = np.genfromtxt("output.ss_error")
+counter = data[:,0]
 time = data[:,1]
 ss_error = data[:,2]
 mask = (ss_error != 1) # indicates simulation start and/or restart
-fig, ax = plt.subplots(1,1)
+fig, axes = plt.subplots(2,1)
+ax = axes[0]
 ax.plot(time[mask], ss_error[mask], "b-")
 ax.set_yscale("log")
 ax.set_xlabel(r"$t$ [sec]")
+ax.set_ylabel("Residual")
+ax.grid()
+ax = axes[1]
+ax.plot(counter[mask], ss_error[mask], "b-")
+ax.set_yscale("log")
+ax.set_xlabel("Output counter")
 ax.set_ylabel("Residual")
 ax.grid()
 fig.tight_layout()
