@@ -1,11 +1,13 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams["text.usetex"] = True
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["mathtext.fontset"] = "dejavuserif"
-plt.rcParams["font.size"] = 10
-# plt.rcParams["figure.figsize"] = 7,6
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Palatino"],
+    "font.size": 12,
+    "axes.formatter.limits": [-2,2]
+})
 
 ## Some important notes
 # cp is p/rho u^2
@@ -44,6 +46,7 @@ ramp_data = np.genfromtxt(
 
 holden_cp = np.genfromtxt("../data/holden_cp.csv", delimiter=",")
 hung_cp = np.genfromtxt("../data/hung_cp.csv", delimiter=",")
+rudy_cp_2d = np.genfromtxt("../data/rudy_cp_2d_201.csv", delimiter=",") # log10(50 cp), x/L
 holden_ch = np.genfromtxt("../data/holden_ch.csv", delimiter=",")
 hung_ch = np.genfromtxt("../data/hung_ch.csv", delimiter=",")
 # holden_cf = np.genfromtxt("../data/holden_cf.csv", delimiter=",")
@@ -52,6 +55,7 @@ hung_ch = np.genfromtxt("../data/hung_ch.csv", delimiter=",")
 x_plate = plate_data["Points0"]/L
 x_ramp = ramp_data["Points0"]/L
 s_wall = np.concatenate([x_plate, 1+(x_ramp-1)/np.cos(wedge_angle)])
+x_wall = np.concatenate([x_plate, x_ramp])
 
 cp_plate = 2*(plate_data["p"])/(rho_inf*u_inf**2)
 cp_ramp = 2*(ramp_data["p"])/(rho_inf*u_inf**2)
@@ -76,8 +80,9 @@ ch_mask = np.isfinite(ch)
 # cf_mask = np.isfinite(cf)
 
 fig, ax = plt.subplots(1,1)
-ax.plot(holden_cp[:,0], 2*holden_cp[:,1], "bo", markersize=4, label="Holden \& Moselle\n(1970, experiment)")
-ax.plot(hung_cp[:,0], 2*hung_cp[:,1], "gx", markersize=4, label="Hung \& MacCormack\n(1976, simulation)")
+ax.plot(holden_cp[:,0], 2*holden_cp[:,1], "bo", label="Holden \& Moselle\n(1970, experiment)")
+ax.plot(hung_cp[:,0], 2*hung_cp[:,1], "g^", label="Hung \& MacCormack\n(1976, simulation)")
+ax.plot(rudy_cp_2d[:,0], 10**(rudy_cp_2d[:,1])/50, "ms")
 ax.plot(s_wall[cp_mask], cp[cp_mask], "r-", label="PLENS")
 ax.set_xlabel(r"$s_{\textrm{wall}}/L$")
 ax.set_ylabel(r"$\displaystyle\frac{p}{\frac{1}{2}\rho_\infty u_\infty^2}$", rotation=0, labelpad=20)
