@@ -24,9 +24,9 @@ counter = args.counter
 surface_data = np.genfromtxt(
     "{}surface_data_{}.csv".format(res_dir, counter), delimiter=",", names=True
 )
-kitamura_p_data = np.genfromtxt("../data/kitamura_p_ausmpw.csv", delimiter=",")
-kitamura_q_ausmpw_data = np.genfromtxt("../data/kitamura_q_ausmpw.csv", delimiter=",")
-kitamura_q_ausm_data = np.genfromtxt("../data/kitamura_q_ausm.csv", delimiter=",")
+kitamura_p_data = np.genfromtxt("../data/kitamura_p_ausmpw_coarse.csv", delimiter=",")
+kitamura_q_ausmpw_data = np.genfromtxt("../data/kitamura_q_ausmpw_coarse.csv", delimiter=",")
+kitamura_q_roe_data = np.genfromtxt("../data/kitamura_q_roe_efix_coarse.csv", delimiter=",")
 
 r = 0.02
 p_inf = 370.7
@@ -53,7 +53,7 @@ del fig, ax
 fig, ax = plt.subplots(1,1)
 ax.plot(theta*180/np.pi, q/q_fr, "r-", label="PLENS")
 ax.plot(kitamura_q_ausmpw_data[:,0], kitamura_q_ausmpw_data[:,1], "b--", label="Kitamura et al (2010)\nsimulation (AUSMPW+)")
-ax.plot(kitamura_q_ausm_data[:,0], kitamura_q_ausm_data[:,1], "g-.", label="Kitamura et al (2010)\nsimulation (AUSM+)")
+ax.plot(kitamura_q_roe_data[:,0], kitamura_q_roe_data[:,1], "g-.", label="Kitamura et al (2010)\nsimulation (Roe E-fix)")
 ax.legend()
 ax.grid()
 ax.set_xlabel(r"$\theta$ [degrees]")
