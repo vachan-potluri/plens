@@ -25,7 +25,8 @@ surface_data = np.genfromtxt(
     "{}surface_data_{}.csv".format(res_dir, counter), delimiter=",", names=True
 )
 kitamura_p_data = np.genfromtxt("../data/kitamura_p_ausmpw.csv", delimiter=",")
-kitamura_q_data = np.genfromtxt("../data/kitamura_q_ausmpw.csv", delimiter=",")
+kitamura_q_ausmpw_data = np.genfromtxt("../data/kitamura_q_ausmpw.csv", delimiter=",")
+kitamura_q_ausm_data = np.genfromtxt("../data/kitamura_q_ausm.csv", delimiter=",")
 
 r = 0.02
 p_inf = 370.7
@@ -36,8 +37,8 @@ theta = np.arcsin(surface_data["Points1"]/r)
 q = surface_data["qx"]*np.cos(theta) - surface_data["qy"]*np.sin(theta)
 
 fig, ax = plt.subplots(1,1)
-ax.plot(kitamura_p_data[:,0], kitamura_p_data[:,1], "bo", label="Kitamura et al\n(2010) simulation")
 ax.plot(theta*180/np.pi, p/p0, "r-", label="PLENS")
+ax.plot(kitamura_p_data[:,0], kitamura_p_data[:,1], "b--", label="Kitamura et al\n(2010) simulation")
 ax.legend()
 ax.grid()
 ax.set_xlabel(r"$\theta$ [degrees]")
@@ -50,8 +51,9 @@ for fmt in ["png", "pdf"]:
 del fig, ax
 
 fig, ax = plt.subplots(1,1)
-ax.plot(kitamura_q_data[:,0], kitamura_q_data[:,1], "bo", label="Kitamura et al\n(2010) simulation")
 ax.plot(theta*180/np.pi, q/q_fr, "r-", label="PLENS")
+ax.plot(kitamura_q_ausmpw_data[:,0], kitamura_q_ausmpw_data[:,1], "b--", label="Kitamura et al (2010)\nsimulation (AUSMPW+)")
+ax.plot(kitamura_q_ausm_data[:,0], kitamura_q_ausm_data[:,1], "g-.", label="Kitamura et al (2010)\nsimulation (AUSM+)")
 ax.legend()
 ax.grid()
 ax.set_xlabel(r"$\theta$ [degrees]")
