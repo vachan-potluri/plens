@@ -14,6 +14,12 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("res_dir", help="Result directory (absolute or relative).")
 parser.add_argument("counter", help="Output counter.", type=int)
+parser.add_argument(
+    "-a",
+    "--alpha",
+    help="Plot alpha in heat transfer figure",
+    action="store_true"
+)
 args = parser.parse_args()
 
 res_dir = args.res_dir
@@ -34,6 +40,7 @@ p0 = p_inf*84.9 # this ratio is given in Kitamura (2010)
 q_fr = 17.5e4 # given in Kitamura et al (2010): Fay & Riddells value
 p = surface_data["p"]
 theta = np.arcsin(surface_data["Points1"]/r)
+alpha = surface_data["alpha"]
 q = surface_data["qx"]*np.cos(theta) - surface_data["qy"]*np.sin(theta)
 
 fig, ax = plt.subplots(1,1)
@@ -54,6 +61,7 @@ fig, ax = plt.subplots(1,1)
 ax.plot(theta*180/np.pi, q/q_fr, "r-", label="PLENS")
 ax.plot(kitamura_q_ausmpw_data[:,0], kitamura_q_ausmpw_data[:,1], "b--", label="Kitamura et al (2010)\nsimulation (AUSMPW+)")
 ax.plot(kitamura_q_roe_data[:,0], kitamura_q_roe_data[:,1], "g-.", label="Kitamura et al (2010)\nsimulation (Roe E-fix)")
+if args.alpha: ax.plot(theta*180/np.pi, alpha, c="magenta", ls=":", label=r"$\alpha$")
 ax.legend()
 ax.grid()
 ax.set_xlabel(r"$\theta$ [degrees]")
