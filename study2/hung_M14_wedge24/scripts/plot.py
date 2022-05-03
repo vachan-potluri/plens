@@ -47,8 +47,8 @@ ramp_data = np.genfromtxt(
 holden_cp = np.genfromtxt("../data/holden_cp.csv", delimiter=",")
 hung_cp = np.genfromtxt("../data/hung_cp.csv", delimiter=",")
 rudy_cp_2d = np.genfromtxt("../data/rudy_cp_2d_201.csv", delimiter=",") # log10(50 cp), x/L
-holden_ch = np.genfromtxt("../data/holden_ch.csv", delimiter=",")
-hung_ch = np.genfromtxt("../data/hung_ch.csv", delimiter=",")
+# holden_ch = np.genfromtxt("../data/holden_ch.csv", delimiter=",")
+# hung_ch = np.genfromtxt("../data/hung_ch.csv", delimiter=",")
 # holden_cf = np.genfromtxt("../data/holden_cf.csv", delimiter=",")
 # hung_cf = np.genfromtxt("../data/hung_cf.csv", delimiter=",")
 
@@ -62,13 +62,23 @@ cp_ramp = 2*(ramp_data["p"])/(rho_inf*u_inf**2)
 cp = np.concatenate([cp_plate, cp_ramp])
 cp_mask = np.isfinite(cp)
 
-ch_plate = -plate_data["qy"]/(rho_inf*u_inf*(0.5*u_inf**2 + cp_air*(T_inf-T_w)))
-ch_ramp = -(
-    ramp_data["qy"]/np.cos(wedge_angle) -
-    ramp_data["qx"]*np.sin(wedge_angle)
-)/(rho_inf*u_inf*(0.5*u_inf**2 + cp_air*(T_inf-T_w)))
-ch = np.concatenate([ch_plate, ch_ramp])
-ch_mask = np.isfinite(ch)
+# Holden's data and Hung's data both use wall distance, transforming it to x-coordinate
+x_holden = holden_cp[:,0]
+for i in range(x_holden.size):
+    if x_holden[i] > 1:
+        x_holden[i] = 1 + (x_holden[i]-1)*np.cos(wedge_angle)
+x_hung = hung_cp[:,0]
+for i in range(x_holden.size):
+    if x_hung[i] > 1:
+        x_hung[i] = 1 + (x_hung[i]-1)*np.cos(wedge_angle)
+
+# ch_plate = -plate_data["qy"]/(rho_inf*u_inf*(0.5*u_inf**2 + cp_air*(T_inf-T_w)))
+# ch_ramp = -(
+#     ramp_data["qy"]/np.cos(wedge_angle) -
+#     ramp_data["qx"]*np.sin(wedge_angle)
+# )/(rho_inf*u_inf*(0.5*u_inf**2 + cp_air*(T_inf-T_w)))
+# ch = np.concatenate([ch_plate, ch_ramp])
+# ch_mask = np.isfinite(ch)
 
 # cf_plate = 2*plate_data["txy"]/(rho_inf*u_inf**2)
 # cf_ramp = 2*(
@@ -82,11 +92,13 @@ ch_mask = np.isfinite(ch)
 fig, ax = plt.subplots(1,1)
 # ax.plot(holden_cp[:,0], 2*holden_cp[:,1], "bo", label="Holden \& Moselle\n(1970, experiment)")
 # ax.plot(hung_cp[:,0], 2*hung_cp[:,1], "g^", label="Hung \& MacCormack\n(1976, simulation)")
-ax.plot(rudy_cp_2d[:,0], 10**(rudy_cp_2d[:,1])/50, "ms", label="Rudy et al\n(1991) simulation")
+ax.plot(x_holden, 2*holden_cp[:,1], "bo", label="Holden \& Moselle\n(1970, experiment)")
+ax.plot(x_hung, 2*hung_cp[:,1], "g^", label="Hung \& MacCormack\n(1976, simulation)")
+ax.plot(rudy_cp_2d[:,0], 10**(rudy_cp_2d[:,1])/50, "ms", label="Rudy et al (1991)\nsimulation")
 ax.plot(x_wall[cp_mask], cp[cp_mask], "r-", label="PLENS")
 # ax.set_xlabel(r"$s_{\textrm{wall}}/L$")
 ax.set_xlabel(r"$x/L$")
-ax.set_ylabel(r"$\displaystyle\frac{p}{\frac{1}{2}\rho_\infty u_\infty^2}$", rotation=0, labelpad=20)
+ax.set_ylabel(r"$\displaystyle\frac{2p}{\rho_\infty u_\infty^2}$", rotation=0, labelpad=20)
 ax.set_yscale("log")
 ax.grid(which="both")
 ax.legend(loc="best")
@@ -97,27 +109,27 @@ for fmt in ["png", "pdf"]:
     print("Written file {}".format(full_figname))
 plt.show()
 
-fig, ax = plt.subplots(1,1)
-ax.plot(holden_ch[:,0], holden_ch[:,1], "bo", markersize=4, label="Holden \& Moselle\n(1970, experiment)")
-ax.plot(hung_ch[:,0], hung_ch[:,1], "gx", markersize=4, label="Hung \& MacCormack\n(1976, simulation)")
-ax.plot(s_wall[ch_mask], ch[ch_mask], "r-", label="PLENS")
-ax.set_xlabel(r"$s_{\textrm{wall}}/L$")
-ax.set_ylabel(
-    # r"$\displaystyle\frac{-q^{\prime\prime}_y \sec \theta_i}"
-    # r"{\rho_\infty u_\infty \left( h_\infty - h_w + \frac{u_\infty^2}{2} \right)}$",
-    # rotation=0,
-    # labelpad=20
-    r"$c_H$"
-)
-ax.set_yscale("log")
-ax.grid(which="both")
-ax.legend(loc="best")
-fig.tight_layout()
-for fmt in ["png", "pdf"]:
-    full_figname = "{}ch_comparison_{}.{}".format(res_dir, counter, fmt)
-    fig.savefig(full_figname, format=fmt)
-    print("Written file {}".format(full_figname))
-plt.show()
+# fig, ax = plt.subplots(1,1)
+# ax.plot(holden_ch[:,0], holden_ch[:,1], "bo", markersize=4, label="Holden \& Moselle\n(1970, experiment)")
+# ax.plot(hung_ch[:,0], hung_ch[:,1], "gx", markersize=4, label="Hung \& MacCormack\n(1976, simulation)")
+# ax.plot(s_wall[ch_mask], ch[ch_mask], "r-", label="PLENS")
+# ax.set_xlabel(r"$s_{\textrm{wall}}/L$")
+# ax.set_ylabel(
+#     # r"$\displaystyle\frac{-q^{\prime\prime}_y \sec \theta_i}"
+#     # r"{\rho_\infty u_\infty \left( h_\infty - h_w + \frac{u_\infty^2}{2} \right)}$",
+#     # rotation=0,
+#     # labelpad=20
+#     r"$c_H$"
+# )
+# ax.set_yscale("log")
+# ax.grid(which="both")
+# ax.legend(loc="best")
+# fig.tight_layout()
+# for fmt in ["png", "pdf"]:
+#     full_figname = "{}ch_comparison_{}.{}".format(res_dir, counter, fmt)
+#     fig.savefig(full_figname, format=fmt)
+#     print("Written file {}".format(full_figname))
+# plt.show()
 
 # fig, ax = plt.subplots(1,1)
 # ax.plot(holden_cf[:,0], holden_cf[:,1], "bo", markersize=4, label="Holden \& Moselle\n(1970, experiment)")
