@@ -3913,7 +3913,16 @@ double PLENS::calc_ss_error(Vector<double>& cell_ss_error) const
 
     // now for numerator, compute a temporary dof vector for the difference
     LA::MPI::Vector rhoE_diff(locally_owned_dofs, mpi_comm);
-    for(psize i: locally_owned_dofs) rhoE_diff[i] = g_cvars[4][i] - rhoE_old[i];
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    for(const auto &cell: dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        cell->get_dof_indices(dof_ids);
+        for(psize i: dof_ids){
+            rhoE_diff[i] = (g_cvars[4][i] - rhoE_old[i])/
+                loc_time_steps[cell->global_active_cell_index()];
+        }
+    }
     rhoE_diff.compress(VectorOperation::insert);
 
     VectorTools::integrate_difference(
