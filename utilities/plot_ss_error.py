@@ -15,7 +15,13 @@ data = np.genfromtxt("output.ss_error")
 counter = data[:,0]
 time = data[:,1]
 ss_error = data[:,2]
-mask = (ss_error != 1) # indicates simulation start and/or restart
+mask = np.ones(ss_error.size, dtype=bool) # indicates simulation start and/or restart
+for i in range(mask.size):
+    if i == 0: mask[i] = False # first value will always be masked, since it is a start of simulation
+    if i != mask.size-1:
+        if counter[i] == counter[i+1]:
+            # indicates restart, mask the restarted values
+            mask[i+1] = False
 fig, axes = plt.subplots(2,1)
 ax = axes[0]
 ax.plot(time[mask], ss_error[mask], "b-")
@@ -30,6 +36,7 @@ ax.set_xlabel("Output counter")
 ax.set_ylabel("Residual")
 ax.grid()
 fig.tight_layout()
+fig.set_size_inches(6,9)
 plt.show()
 for fmt in ["png", "pdf"]:
     figname = "ss_error_plot.{}".format(fmt)
