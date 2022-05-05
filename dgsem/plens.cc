@@ -3801,7 +3801,7 @@ void PLENS::calc_time_step()
                     if(!cell->face(f)->at_boundary()){
                         const auto neighbor = cell->neighbor(f);
                         double nei_dt = gh_loc_time_steps[neighbor->global_active_cell_index()];
-                        modified_cell_dt = std::min(cell_dt, neighbor_limit_factor*nei_dt);
+                        modified_cell_dt = std::min(modified_cell_dt, neighbor_limit_factor*nei_dt);
                     }
                 }
                 modified_cell_dt = std::min(modified_cell_dt, global_limit_factor*time_step);
