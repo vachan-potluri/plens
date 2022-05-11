@@ -29,6 +29,12 @@ IF(PROFILE)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 ENDIF(PROFILE)
 
+# Switch to RANS SA turbulent solver
+OPTION(RANS_SA "Use RANS Spalart-Allmaras turbulence modelling" OFF)
+IF(RANS_SA)
+    ADD_DEFINITIONS(-DRANS_SA)
+ENDIF(RANS_SA)
+
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") # required for 9.3.0
 
 ADD_SUBDIRECTORY(utilities)
