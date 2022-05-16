@@ -58,6 +58,10 @@ MetricTerms<dim>::MetricTerms(const FEValues<dim>& fev, const FullMatrix<double>
  * @f$Q_{ij} = w_i D_{ij} = w_i \frac{\partial l_j}{\partial \xi}(\xi_i)@f$
  * where @f$w@f$ and @f$l@f$ are the weights and shape functions corresponding to 1D LGL
  * quadrature.
+ *
+ * @note The current implementation is mathematically correct only for straight meshes. For curved
+ * meshes, an interpolant of the coordinate transformation has to be used rather than the function
+ * itself. See WJ-16-Mar-2022.
  */
 template <int dim>
 void MetricTerms<dim>::reinit(const FEValues<dim>& fev, const FullMatrix<double>& Q)
