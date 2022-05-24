@@ -3940,7 +3940,8 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
     // initialise variables
     std::vector<State> ho_inv_residual(fe.dofs_per_cell),
         ho_dif_residual(fe.dofs_per_cell),
-        lo_inv_residual(fe.dofs_per_cell);
+        lo_inv_residual(fe.dofs_per_cell),
+        lo_dif_residual(fe.dofs_per_cell);
     std::vector<psize> dof_ids(fe.dofs_per_cell);
     bool do_viscous_res_blending(false);
     prm.enter_subsection("blender parameters");
@@ -3973,12 +3974,20 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
         }
 
         {
-            TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate lo inviscid residual");
+            TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate lo residuals");
             calc_cell_lo_inv_residual(
                 cell,
                 s2_surf_flux,
                 lo_inv_residual
-            );
+            ); // low order inviscid
+
+            if(!ns_ptr->is_inviscid()){
+                calc_cell_lo_dif_residual(
+                    cell,
+                    s3_surf_flux,
+                    lo_dif_residual
+                ); // low order viscous
+            }
         }
 
         // State dif_residual_fv;
@@ -3995,6 +4004,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
             ) :
             1.0 // simulation time greater than cutoff time (do_viscous_res_blending will be false)
         );
+        // ho_dif_factor is like (1-alpha_d) where alpha_d is the blender for viscous residual
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list){
@@ -4006,6 +4016,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                         // (1-ho_dif_factor)*utilities::minmod(
                         //     dif_residual_fv[var], ho_dif_residual[i][var]
                         // ) +
+                        (1-ho_dif_factor)*lo_dif_residual[i][var] +
                         ho_dif_factor*ho_dif_residual[i][var] +
                         alpha*lo_inv_residual[i][var] +
                         (1-alpha)*ho_inv_residual[i][var];
