@@ -1023,6 +1023,8 @@ void PLENS::set_sol_vecs()
     for(avar var: avar_list){
         gcrk_avars[var].reinit(locally_owned_dofs, mpi_comm);
         gh_gcrk_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
+        gcrk_lo_avars[var].reinit(locally_owned_dofs, mpi_comm);
+        gh_gcrk_lo_avars[var].reinit(locally_owned_dofs, locally_relevant_dofs, mpi_comm);
     }
 
     for(usi d=0; d<dim; d++){
@@ -1660,10 +1662,15 @@ void PLENS::calc_metric_terms()
  *      and neighbor's alpha values is used as the flux blender value.
  *
  * @note This function resizes `surf_flux_term`.
+ *
+ * @note On 24-May-2022, the parameter @p stage3_lo was added. If `false` (default),
+ * PLENS::gcrk_avars are used for populating surface flux. If `true`, PLENS::gcrk_lo_avars are used
+ * instead.
  */
 void PLENS::calc_surf_flux(
     const usi stage,
-    locly_ord_surf_flux_term_t<double> &surf_flux_term
+    locly_ord_surf_flux_term_t<double> &surf_flux_term,
+    const bool stage3_lo
 ) const
 {
     AssertThrow(
@@ -1737,7 +1744,12 @@ void PLENS::calc_surf_flux(
                     Avars av, av_gh;
                     psize global_dof_id = dof_ids[fdi.maps[face_id].at(face_dof)];
                     for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][global_dof_id];
-                    for(avar var: avar_list) av[var] = gcrk_avars[var][global_dof_id];
+                    if(!stage3_lo){
+                        for(avar var: avar_list) av[var] = gcrk_avars[var][global_dof_id];
+                    }
+                    else{
+                        for(avar var: avar_list) av[var] = gcrk_lo_avars[var][global_dof_id];
+                    }
 
                     // first get ghost state
                     CAvars cav(&cons, &av), cav_gh(&cons_gh, &av_gh);
@@ -1781,9 +1793,17 @@ void PLENS::calc_surf_flux(
                         cons[var] = gcrk_cvars[var][gdof_id];
                         cons_nei[var] = gh_gcrk_cvars[var][gdof_id_nei];
                     }
-                    for(avar var: avar_list){
-                        av[var] = gcrk_avars[var][gdof_id];
-                        av_nei[var] = gh_gcrk_avars[var][gdof_id_nei];
+                    if(!stage3_lo){
+                        for(avar var: avar_list){
+                            av[var] = gcrk_avars[var][gdof_id];
+                            av_nei[var] = gh_gcrk_avars[var][gdof_id_nei];
+                        }
+                    }
+                    else{
+                        for(avar var: avar_list){
+                            av[var] = gcrk_lo_avars[var][gdof_id];
+                            av_nei[var] = gh_gcrk_lo_avars[var][gdof_id_nei];
+                        }
                     }
 
                     // get the flux
@@ -1833,9 +1853,17 @@ void PLENS::calc_surf_flux(
                         cons[var] = gcrk_cvars[var][gdof_id];
                         cons_nei[var] = gcrk_cvars[var][gdof_id_nei];
                     }
-                    for(avar var: avar_list){
-                        av[var] = gcrk_avars[var][gdof_id];
-                        av_nei[var] = gcrk_avars[var][gdof_id_nei];
+                    if(!stage3_lo){
+                        for(avar var: avar_list){
+                            av[var] = gcrk_avars[var][gdof_id];
+                            av_nei[var] = gcrk_avars[var][gdof_id_nei];
+                        }
+                    }
+                    else{
+                        for(avar var: avar_list){
+                            av[var] = gcrk_lo_avars[var][gdof_id];
+                            av_nei[var] = gcrk_lo_avars[var][gdof_id_nei];
+                        }
                     }
 
                     // get the flux
@@ -3930,11 +3958,14 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
     }
     
     // calculate stages 2 & 3 flux
-    locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux;
+    locly_ord_surf_flux_term_t<double> s2_surf_flux, s3_surf_flux, s3_lo_surf_flux;
     {
         TimerOutput::Scope timer_section(timer, "Calc RHS: Calculate stages 2&3 surface fluxes");
         calc_surf_flux(2, s2_surf_flux);
-        if(!ns_ptr->is_inviscid()) calc_surf_flux(3, s3_surf_flux);
+        if(!ns_ptr->is_inviscid()){
+            calc_surf_flux(3, s3_surf_flux);
+            calc_surf_flux(3, s3_lo_surf_flux, true);
+        }
     }
 
     // initialise variables
@@ -3984,7 +4015,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
             if(!ns_ptr->is_inviscid()){
                 calc_cell_lo_dif_residual(
                     cell,
-                    s3_surf_flux,
+                    s3_lo_surf_flux,
                     lo_dif_residual
                 ); // low order viscous
             }

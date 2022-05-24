@@ -828,7 +828,8 @@ class PLENS
     void calc_metric_terms();
     void calc_surf_flux(
         const usi stage,
-        locly_ord_surf_flux_term_t<double> &surf_flux_term
+        locly_ord_surf_flux_term_t<double> &surf_flux_term,
+        const bool stage3_lo = false
     ) const;
     // void calc_surf_flux(
     //     const usi stage,
