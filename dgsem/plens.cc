@@ -3782,6 +3782,124 @@ void PLENS::calc_cell_dif_residual_fv_gl(
 
 
 /**
+ * Calculates the diffusive residual using low-order auxiliary variables PLENS::gcrk_lo_avars, which
+ * were in turn calculated using low-order entropy variable gradients (through the function
+ * calc_cell_lo_evar_grad()). See WJ-24-May-2022. This function is similar to
+ * calc_cell_lo_inv_residual().
+ */
+void PLENS::calc_cell_lo_dif_residual(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    const locly_ord_surf_flux_term_t<double>& s3_surf_flux,
+    std::vector<State>& residual
+) const
+{
+    // reset values in residual to 0
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(cvar var: cvar_list) residual[i][var] = 0;
+    }
+
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+
+    // First the internal contributions
+    for(usi dir=0; dir<dim; dir++){
+        // complementary directions (required for internal contributions)
+        usi dir1 = (dir+1)%dim;
+        usi dir2 = (dir+2)%dim;
+        for(usi id1=0; id1<=fe.degree; id1++){
+            for(usi id2=0; id2<=fe.degree; id2++){
+                for(usi id=1; id<=fe.degree; id++){
+                    TableIndices<dim> ti_left, ti_right;
+                    ti_left[dir] = id-1;
+                    ti_left[dir1] = id1;
+                    ti_left[dir2] = id2;
+                    ti_right[dir] = ti_left[dir]+1; // equals "id"
+                    ti_right[dir1] = ti_left[dir1];
+                    ti_right[dir2] = ti_left[dir2];
+                    usi ldof_left = cdi.tensorial_to_local(ti_left),
+                        ldof_right = cdi.tensorial_to_local(ti_right);
+                    
+                    // set the "left" and "right" states
+                    State cons_left, cons_right, flux;
+                    Avars av_left, av_right;
+                    CAvars cav_left(&cons_left, &av_left), cav_right(&cons_right, &av_right);
+                    for(cvar var: cvar_list){
+                        cons_left[var] = gcrk_cvars[var][dof_ids[ldof_left]];
+                        cons_right[var] = gcrk_cvars[var][dof_ids[ldof_right]];
+                    }
+                    for(avar var: avar_list){
+                        av_left[var] = gcrk_lo_avars[var][dof_ids[ldof_left]];
+                        av_right[var] = gcrk_lo_avars[var][dof_ids[ldof_right]];
+                    }
+
+                    // get normal between id-1 and id
+                    Tensor<1,dim> normal_dir =
+                        metrics.at(cell->index()).subcell_normals[dir](ti_right); // not unit vector yet
+                    double normal_norm = normal_dir.norm();
+                    normal_dir /= normal_norm; // unit vector now
+
+                    // get the flux
+                    ns_ptr->get_dif_surf_flux(cav_left, cav_right, normal_dir, flux);
+
+                    // add the contribution to residual (eq. B.47 of Hennemann et al (2021))
+                    // the negative sign for the surface divergence term will be assigned later,
+                    // when dividing by jacobian
+                    // sign opposite to that of calc_cell_lo_inv_residual()
+                    for(cvar var: cvar_list){
+                        residual[ldof_left][var] -= flux[var]*normal_norm/w_1d[id-1];
+                        residual[ldof_right][var] += flux[var]*normal_norm/w_1d[id];
+                    }
+                } // loop over internal ids in dir
+            } // loop over ids in complementary dir 2
+        } // loop over ids in complementary dir 1 (internal contributions loop)
+    } // loop over directions
+
+    // Now surface contributions
+    for(usi dir=0; dir<dim; dir++){
+        for(usi lr_id=0; lr_id<=1; lr_id++){
+            usi face_id = 2*dir + lr_id;
+
+            // sign of contribution (for subcell flux divergence)
+            // positive for "left" faces (corresponding to (L,0) flux)
+            // negative for "right" faces (corresponding to (N,R) flux)
+            // sign opposite to that in calc_cell_lo_inv_residual()
+            float contrib_sign = std::pow(-1, lr_id);
+
+            // flux sign: to align the flux provided by s3_surf_flux in the contravariant dir
+            // s3_surf_flux provides flux on cell faces assuming outward normals
+            // for "left" faces, contravariant vector points inwards ==> sign change required
+            // for "right" faces, no sign change required
+            float flux_sign = -std::pow(-1, lr_id);
+
+            for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                usi ldof = fdi.maps[face_id].at(face_dof_id);
+
+                // norm of contravariant vector
+                // at end points, subcell normals equal contravariant vectors
+                double normal_norm = metrics.at(cell->index()).JxContra_vecs[ldof][dir].norm();
+
+                State flux; // flux wrt contravariant vector direction
+                for(cvar var: cvar_list){
+                    flux[var] = flux_sign*
+                        s3_surf_flux[var].at(cell->index())[face_id][face_dof_id];
+                    residual[ldof][var] += contrib_sign*flux[var]*normal_norm/
+                        w_1d[lr_id*fe.degree];
+                }
+            } // loop over face dofs
+        } // loop over "left" and "right" cell surfaces in dir
+    } // loop over directions
+
+    // Scale by negative jacobian (-ve because divergence of flux has -ve sign on RHS)
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(cvar var: cvar_list){
+            residual[i][var] /= -metrics.at(cell->index()).detJ[i];
+        }
+    }
+} // calc_cell_lo_dif_residual()
+
+
+
+/**
  * Calculates the rhs for all dofs and populates PLENS::gcrk_rhs. This function takes ownership of
  * the entire update residual calculation process. In other words, this function calculates the
  * residual using gcrk_cvars right from asserting positivity to calculating low order inviscid

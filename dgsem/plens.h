@@ -884,6 +884,11 @@ class PLENS
         const DoFHandler<dim>::active_cell_iterator& cell,
         State& residual
     ) const;
+    void calc_cell_lo_dif_residual(
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        const locly_ord_surf_flux_term_t<double>& s3_surf_flux,
+        std::vector<State>& residual
+    ) const;
     void calc_rhs(
         const bool print_wall_blender_limit = false,
         const bool print_viscous_blending_status = false
