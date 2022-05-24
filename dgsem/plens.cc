@@ -2438,6 +2438,153 @@ void PLENS::calc_cell_cons_grad_fv_gl(
 
 
 /**
+ * Calculates low-order entropy variable gradients. This is similar to calculating low-order
+ * inviscid residual (calc_cell_lo_inv_residual()). The DGSEM equivalent FV flux is calculated using
+ * left and right surface values. Since gradient is required in all the directions, this function
+ * is like a hybrid of calc_cell_lo_inv_residual() and calc_cell_evar_grad(). See WJ-24-May-2022.
+ */
+void PLENS::calc_cell_lo_evar_grad(
+    const DoFHandler<dim>::active_cell_iterator& cell,
+    const locly_ord_surf_flux_term_t<double>& evar_surf,
+    std::vector<std::array<State, 3>>& evar_grad
+) const
+{
+    // get cell entropy variable data
+    std::vector<psize> dof_ids(fe.dofs_per_cell);
+    cell->get_dof_indices(dof_ids);
+    std::vector<State> cell_evars(fe.dofs_per_cell);
+    {
+        // scope for cell_states; not required outside this
+        std::vector<State> cell_states(fe.dofs_per_cell);
+        // first get conservative variables
+        for(cvar var: cvar_list){
+            for(psize i=0; i<fe.dofs_per_cell; i++){
+                cell_states[i][var] = gcrk_cvars[var][dof_ids[i]];
+            }
+        }
+        // now convert to entropy variables
+        for(psize i=0; i<fe.dofs_per_cell; i++){
+            ns_ptr->cons_to_entropy(cell_states[i], cell_evars[i]);
+        }
+    }
+
+    // initialise a pointer to metric terms for this cell
+    const MetricTerms<dim>* const metrics_ptr = &metrics.at(cell->index());
+
+    // get surface evar data for this cell
+    std::array<
+        const cell_surf_term_t<double>*,
+        5
+    > cell_surf_evar;
+    for(cvar var: cvar_list){
+        cell_surf_evar[var] = &evar_surf[var].at(cell->index());
+    }
+
+    // sign for surface contribution: std::pow(-1, lr_id)
+    // where lr_id = 0 for 'left' face and 1 for 'right' face
+    // avoids multiple use of std::pow
+    const std::array<double, 2> surface_contrib_sign = {1, -1}; // ordering: left, right
+
+    // initialise evar_grad to 0
+    for(usi dir=0; dir<dim; dir++){
+        for(usi i=0; i<fe.dofs_per_cell; i++){
+            for(cvar var: cvar_list) evar_grad[i][dir][var] = 0; // initialise to 0
+        }
+    }
+
+    // First the internal contributions
+    for(usi dir=0; dir<dim; dir++){
+        // complementary directions (required for internal contributions)
+        usi dir1 = (dir+1)%dim;
+        usi dir2 = (dir+2)%dim;
+        for(usi id1=0; id1<=fe.degree; id1++){
+            for(usi id2=0; id2<=fe.degree; id2++){
+                for(usi id=1; id<=fe.degree; id++){
+                    TableIndices<dim> ti_left, ti_right;
+                    ti_left[dir] = id-1;
+                    ti_left[dir1] = id1;
+                    ti_left[dir2] = id2;
+                    ti_right[dir] = ti_left[dir]+1; // equals "id"
+                    ti_right[dir1] = ti_left[dir1];
+                    ti_right[dir2] = ti_left[dir2];
+                    usi ldof_left = cdi.tensorial_to_local(ti_left),
+                        ldof_right = cdi.tensorial_to_local(ti_right);
+                    
+                    // set the "left" and "right" states
+                    State evar_left = cell_evars[dof_ids[ldof_left]],
+                        evar_right = cell_evars[dof_ids[ldof_right]],
+                        evar_avg;
+                    for(cvar var: cvar_list){
+                        evar_avg[var] = 0.5*(evar_left[var] + evar_right[var]);
+                    }
+
+                    // get normal between id-1 and id
+                    Tensor<1,dim> subcell_normal = metrics_ptr->subcell_normals[dir](ti_right);
+
+                    // add the contribution to residual (eq. B.47 of Hennemann et al (2021))
+                    // the negative sign for the surface divergence term will be assigned later,
+                    // when dividing by jacobian
+                    // sign opposite to what is used in calc_cell_lo_inv_residual()
+                    for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+                        for(cvar var: cvar_list){
+                            evar_grad[ldof_left][grad_dir][var] -=
+                                evar_avg[var]*subcell_normal[grad_dir]/w_1d[id-1];
+                            evar_grad[ldof_right][grad_dir][var] +=
+                                evar_avg[var]*subcell_normal[grad_dir]/w_1d[id];
+                        } // loop over entropy variables
+                    } // loop over gradient directions
+                } // loop over internal ids in dir
+            } // loop over ids in complementary dir 2
+        } // loop over ids in complementary dir 1 (internal contributions loop)
+    }
+
+    // Now surface contributions
+    for(usi dir=0; dir<dim; dir++){
+        for(usi lr_id=0; lr_id<=1; lr_id++){
+            usi face_id = 2*dir + lr_id;
+
+            // sign of contribution (for subcell flux divergence)
+            // opposite to that in calc_cell_lo_inv_residual()
+            // positive for "left" faces (corresponding to (L,0) flux)
+            // negative for "right" faces (corresponding to (N,R) flux)
+            float contrib_sign = std::pow(-1, lr_id);
+
+            for(usi face_dof_id=0; face_dof_id<fe_face.dofs_per_face; face_dof_id++){
+                usi ldof = fdi.maps[face_id].at(face_dof_id);
+
+                // contravariant vector
+                // at end points, subcell normals equal contravariant vectors
+                Tensor<1,dim> subcell_normal = metrics_ptr->JxContra_vecs[ldof][dir];
+
+                State cur_evar_surf; // evar at current dof on current surface
+                for(cvar var: cvar_list){
+                    cur_evar_surf[var] = (*cell_surf_evar[var])[face_id][face_dof_id];
+                }
+
+                for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+                    for(cvar var: cvar_list){
+                        evar_grad[ldof][grad_dir][var] +=
+                            contrib_sign*cur_evar_surf[var]*subcell_normal[grad_dir]/
+                            w_1d[lr_id*fe.degree];
+                    }
+                }
+            } // loop over face dofs
+        } // loop over "left" and "right" cell surfaces in dir
+    } // loop over directions
+
+    // Scale by negative jacobian (-ve because divergence of flux has -ve sign on RHS)
+    for(usi i=0; i<fe.dofs_per_cell; i++){
+        for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+            for(cvar var: cvar_list){
+                evar_grad[i][grad_dir][var] /= -metrics.at(cell->index()).detJ[i];
+            }
+        }
+    }
+} // calc_cell_lo_evar_grad()
+
+
+
+/**
  * Calculates conservative variable averages in every cell (stored in PLENS::gcrk_cvar_avg). Also
  * sets the ghosted vectors PLENS::gh_gcrk_cvar_avg.
  *

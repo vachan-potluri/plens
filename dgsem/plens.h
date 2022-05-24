@@ -837,6 +837,11 @@ class PLENS
         const DoFHandler<dim>::active_cell_iterator& cell,
         std::array<State, 3>& cons_grad
     ) const;
+    void calc_cell_lo_evar_grad(
+        const DoFHandler<dim>::active_cell_iterator& cell,
+        const locly_ord_surf_flux_term_t<double>& evar_surf,
+        std::vector<std::array<State, 3>>& evar_grad
+    ) const;
     void calc_cvar_avg();
     void assert_positivity() const;
     void calc_aux_vars();
