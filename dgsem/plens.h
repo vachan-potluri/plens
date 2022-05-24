@@ -808,6 +808,17 @@ class PLENS
      */
     // std::unique_ptr<SubcellInterpolator> subcell_interp_ptr;
 
+    /**
+     * Like PLENS::gcrk_avars, but using low order entropy variable gradient calculated through
+     * calc_cell_lo_evar_grad()
+     */
+    std::array<LA::MPI::Vector, 9> gcrk_lo_avars;
+
+    /**
+     * Ghosted version of PLENS::gcrk_lo_avars
+     */
+    std::array<LA::MPI::Vector, 9> gh_gcrk_lo_avars;
+
 
 
     void form_neighbor_face_matchings(
@@ -846,6 +857,7 @@ class PLENS
     void assert_positivity() const;
     void calc_aux_vars();
     void calc_aux_vars_fv();
+    void calc_lo_aux_vars();
     void calc_blender(const bool print_wall_blender_limit = false);
     void calc_cell_ho_residual(
         const usi stage,

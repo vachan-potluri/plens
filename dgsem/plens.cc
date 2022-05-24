@@ -2816,6 +2816,74 @@ void PLENS::calc_aux_vars()
     for(usi i=0; i<6; i++) gcrk_avars[i].scale(gcrk_mu);
     for(usi i=6; i<9; i++) gcrk_avars[i].scale(gcrk_k);
     for(avar var: avar_list) gh_gcrk_avars[var] = gcrk_avars[var];
+
+    // repeat the process for low-order entropy variable gradient and store in gcrk_lo_avars
+    // see WJ-24-May-2022
+    for(const auto& cell: dof_handler.active_cell_iterators()){
+        if(!(cell->is_locally_owned())) continue;
+
+        // calculate low order entropy variable gradients
+        calc_cell_lo_evar_grad(cell, evar_surf, evar_grad);
+
+        cell->get_dof_indices(dof_ids);
+
+        for(usi i=0; i<fe.dofs_per_cell; i++){
+
+            // cons_temp declared above
+            for(cvar var: cvar_list) cons_temp[var] = gcrk_cvars[var][dof_ids[i]];
+            ns_ptr->cons_to_entropy(cons_temp, evar_temp);
+
+            // calculate velocity gradient
+            std::array<std::array<double, dim>, dim> vel_grad; // access: vel_grad[vel_dir][grad_dir]
+            for(usi vel_dir=0; vel_dir<dim; vel_dir++){
+                for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+                    vel_grad[vel_dir][grad_dir] = (
+                        evar_temp[1+vel_dir]*evar_grad[i][grad_dir][4]/evar_temp[4] -
+                        evar_grad[i][grad_dir][1+vel_dir]
+                    )/evar_temp[4];
+                } // loop over gradient directions
+            } // loop over velocity directions
+
+            // set (factored) stress components
+            // the loop is set such that it follows the ordering given in var_enums.h
+            usi stress_id = 0;
+            double vel_grad_trace = 0;
+            for(usi d=0; d<dim; d++) vel_grad_trace += vel_grad[d][d];
+            for(usi row=0; row<dim; row++){
+                for(usi col=row; col<dim; col++){
+                    if(col == row){
+                        // somehow operator -= doesn't work together with operator=
+                        // hence this split is required
+                        gcrk_lo_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
+                            vel_grad[col][row] - 2.0/3*vel_grad_trace;
+                    }
+                    else{
+                        gcrk_lo_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
+                            vel_grad[col][row];
+                    }
+                    stress_id++;
+                }
+            }
+
+            // calculate temperature gradient
+            std::array<double, dim> T_grad;
+            for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+                T_grad[grad_dir] = evar_grad[i][grad_dir][4]/
+                    (evar_temp[4]*evar_temp[4]*ns_ptr->get_R());
+            }
+
+            // set (factored) heat flux components
+            // the negative sign is added here so that the vectors can be scaled with gcrk_k
+            // (instead of -gcrk_k)
+            for(usi d=0; d<dim; d++) gcrk_lo_avars[6+d][dof_ids[i]] = -T_grad[d];
+        } // loop over cell dofs
+    } // loop over owned cells
+
+    // now compress and scale with mu and k, then set the ghosted vectors
+    for(avar var: avar_list) gcrk_lo_avars[var].compress(VectorOperation::insert);
+    for(usi i=0; i<6; i++) gcrk_lo_avars[i].scale(gcrk_mu);
+    for(usi i=6; i<9; i++) gcrk_lo_avars[i].scale(gcrk_k);
+    for(avar var: avar_list) gh_gcrk_lo_avars[var] = gcrk_lo_avars[var];
 } // calc_aux_vars
 
 
