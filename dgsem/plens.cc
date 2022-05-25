@@ -2539,8 +2539,8 @@ void PLENS::calc_cell_lo_evar_grad(
                         ldof_right = cdi.tensorial_to_local(ti_right);
                     
                     // set the "left" and "right" states
-                    State evar_left = cell_evars[dof_ids[ldof_left]],
-                        evar_right = cell_evars[dof_ids[ldof_right]],
+                    State evar_left = cell_evars[ldof_left],
+                        evar_right = cell_evars[ldof_right],
                         evar_avg;
                     for(cvar var: cvar_list){
                         evar_avg[var] = 0.5*(evar_left[var] + evar_right[var]);
