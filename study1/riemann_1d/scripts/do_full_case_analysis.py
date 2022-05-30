@@ -28,7 +28,7 @@ from scipy.stats import linregress
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
-plt.rcParams["font.size"] = 10 # ineffective
+plt.rcParams["font.size"] = 12 # ineffective
 plt.rcParams["axes.formatter.limits"] = [-2,2]
 plt.rcParams["axes.formatter.use_mathtext"] = True
 
@@ -120,7 +120,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1]
+steps_to_do = [1,3]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -143,11 +143,11 @@ actual_dof_values = pd.DataFrame(
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
 result_dir = "result_28Mar2022"
-case_name = "Test 5"
+case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
-error_ax_major_loc = 4e-2
-error_ax_minor_loc = 1e-2
+error_ax_major_loc = 1e-2
+error_ax_minor_loc = 0.2e-2
 
 
 
@@ -169,7 +169,7 @@ if 1 in steps_to_do:
             "dof{}_12_12_{}".format(dof, flux),
             "--size",
             "7",
-            "6"
+            "5"
         ])
 
 
@@ -257,7 +257,7 @@ if 3 in steps_to_do:
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
-    fig.set_size_inches(4, 4)
+    fig.set_size_inches(5,4)
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
     mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))

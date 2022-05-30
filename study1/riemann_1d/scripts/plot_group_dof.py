@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import argparse
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
-plt.rcParams["font.size"] = 10
+plt.rcParams["font.size"] = 14
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
 plt.rcParams["axes.formatter.limits"] = [-2,2]
 plt.rcParams["axes.formatter.use_mathtext"] = True
@@ -180,7 +180,7 @@ for row in axes:
     for ax in row:
         print("Reading data from {}".format(data_files[i]))
         data = np.genfromtxt(data_files[i], delimiter=",")
-        ax.plot(data[:,0], data[:,1], "b-", lw=1, label="Exact")
+        ax.plot(data[:,0], data[:,1], "b--", lw=1, label="Exact")
         ax.plot(data[:,0], data[:,2], "r-", lw=1, label="Simulation")
         ax.set_title(subtitles[i])
         ax.grid()
