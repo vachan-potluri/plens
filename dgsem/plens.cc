@@ -1069,6 +1069,7 @@ void PLENS::set_sol_vecs()
             mpi_comm
         );
     }
+    gcrk_alpha_d.reinit(cell_partitioner->locally_owned_range(), mpi_comm);
 
     pcout << "Completed\n";
 
@@ -2782,6 +2783,7 @@ void PLENS::calc_aux_vars_fv()
 void PLENS::calc_blender(const bool print_wall_blender_limit)
 {
     // first update gcrk_blender_var and read wall blender limit
+    double vis_blending_cutoff_time;
     prm.enter_subsection("blender parameters");
     {
         const std::string var_name = prm.get("variable");
@@ -2808,6 +2810,8 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
         wall_blender_limit_function.initialize(
             variables, wall_blender_limit_expression, constants, true
         );
+
+        vis_blending_cutoff_time = prm.get_double("viscous blending cutoff time");
     }
     prm.leave_subsection();
 
@@ -2855,6 +2859,20 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
     }
     gcrk_alpha.compress(VectorOperation::insert);
     gh_gcrk_alpha = gcrk_alpha; // for data output in write()
+
+    // set alpha_d
+    for(const auto& cell:dof_handler.active_cell_iterators()){
+        if(!cell->is_locally_owned()) continue;
+
+        if(cur_time <= vis_blending_cutoff_time){
+            gcrk_alpha_d[cell->global_active_cell_index()] = std::min(
+                1.0,
+                gcrk_alpha[cell->global_active_cell_index()]/blender_calc.get_blender_max_value()
+            );
+        }
+        else gcrk_alpha_d[cell->global_active_cell_index()] = 0;
+    }
+    gcrk_alpha_d.compress(VectorOperation::insert);
 } // calc_blender
 
 
@@ -3653,15 +3671,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
-        const double ho_dif_factor = (
-            do_viscous_res_blending ?
-            std::max(
-                0.0,
-                // double(!cell->at_boundary()), // less than 1 only for boundary cells
-                (1-alpha/blender_calc.get_blender_max_value())
-            ) :
-            1.0 // simulation time greater than cutoff time (do_viscous_res_blending will be false)
-        );
+        const double alpha_d = gcrk_alpha_d[cell->global_active_cell_index()];
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
             for(cvar var: cvar_list){
@@ -3673,7 +3683,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                         // (1-ho_dif_factor)*utilities::minmod(
                         //     dif_residual_fv[var], ho_dif_residual[i][var]
                         // ) +
-                        ho_dif_factor*ho_dif_residual[i][var] +
+                        (1-alpha_d)*ho_dif_residual[i][var] +
                         alpha*lo_inv_residual[i][var] +
                         (1-alpha)*ho_inv_residual[i][var];
                 }
@@ -4124,12 +4134,14 @@ void PLENS::write()
     // https://groups.google.com/g/dealii/c/_lmP3VCLBsw
     // also see WJ-10-Jul-2021 and
     // https://groups.google.com/g/dealii/c/hF4AfBqnTdk
-    Vector<float> alpha(triang.n_active_cells());
+    Vector<float> alpha(triang.n_active_cells()), alpha_d(triang.n_active_cells());
     for(auto &cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
         alpha[cell->active_cell_index()] = gh_gcrk_alpha[cell->global_active_cell_index()];
+        alpha_d[cell->active_cell_index()] = gcrk_alpha_d[cell->global_active_cell_index()];
     }
     data_out.add_data_vector(alpha, "alpha");
+    data_out.add_data_vector(alpha_d, "alpha_d");
 
     // local time step
     Vector<float> loc_dt(triang.n_active_cells());

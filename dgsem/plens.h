@@ -808,6 +808,12 @@ class PLENS
      */
     // std::unique_ptr<SubcellInterpolator> subcell_interp_ptr;
 
+    /**
+     * The blender value for diffusive residual scaling. See WJ notes around 08-Jun-2022.
+     * $1-\alpha_d$ will be the scaling of the diffusive residual.
+     */
+    LA::MPI::Vector gcrk_alpha_d;
+
 
 
     void form_neighbor_face_matchings(
