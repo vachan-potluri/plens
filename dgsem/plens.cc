@@ -486,11 +486,24 @@ void PLENS::declare_parameters()
             Patterns::Anything(),
             "A limit on the blender value at the wall. Can be a function of simulation time (t)."
         );
+        // prm.declare_entry(
+        //     "viscous blending cutoff time",
+        //     "1e-2",
+        //     Patterns::Double(0),
+        //     "The simulation time after which viscous blending is not done anymore."
+        // );
         prm.declare_entry(
-            "viscous blending cutoff time",
-            "1e-2",
-            Patterns::Double(0),
-            "The simulation time after which viscous blending is not done anymore."
+            "viscous blending region",
+            "1",
+            Patterns::Anything(),
+            "A mathematical expression (in terms of x, y, z and t) which is evaluated at cell "
+            "centers and current time to determine if viscous blending is to be applied to that "
+            "particular cell, at that particular simulation time. Blending is applied if the "
+            "expression evaluates to a positive quantity. Typically, this expression will be "
+            "tailored such that cells within certain distance from wall, and for a certain time. "
+            "Example: '(t < 1e-3 ? abs(y-10e-3) : -1)' sets the viscous blending 'on' for times "
+            "less than 1 ms and for cell centers lying within 10 mm on either side of the x-axis "
+            "line."
         );
     }
     prm.leave_subsection(); // blender parameters
@@ -2803,20 +2816,21 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
                 gcrk_blender_var[i] = ns_ptr->get_p(cons)*cons[0];
             }
         }
-
-        std::string wall_blender_limit_expression = prm.get("wall blender limit");
         std::string variables("x,y,z,t"); // x,y,z are just dummy, not used during evaluation
         std::map<std::string, double> constants; // empty
         wall_blender_limit_function.initialize(
-            variables, wall_blender_limit_expression, constants, true
+            variables, prm.get("wall blender limit"), constants, true
         );
 
-        vis_blending_cutoff_time = prm.get_double("viscous blending cutoff time");
+        vis_blending_region.initialize(
+            variables, prm.get("viscous blending region"), constants, true
+        );
     }
     prm.leave_subsection();
 
     // evaluate the wall blender limit
     wall_blender_limit_function.set_time(cur_time);
+    vis_blending_region.set_time(cur_time);
     const double wall_blender_limit = wall_blender_limit_function.value(Point<dim>());
     if(print_wall_blender_limit) pcout << "Wall blender limit: " << wall_blender_limit << "\n";
 
@@ -2864,7 +2878,7 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
     for(const auto& cell:dof_handler.active_cell_iterators()){
         if(!cell->is_locally_owned()) continue;
 
-        if(cur_time <= vis_blending_cutoff_time){
+        if(vis_blending_region.value(cell->center()) > 0){
             gcrk_alpha_d[cell->global_active_cell_index()] = std::min(
                 1.0,
                 gcrk_alpha[cell->global_active_cell_index()]/blender_calc.get_blender_max_value()
@@ -3599,7 +3613,7 @@ void PLENS::calc_cell_dif_residual_fv_gl(
  *   - Calculate the final residual (using blender value)
  *   - Set the residual in gcrk_rhs
  */
-void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_viscous_blending_status)
+void PLENS::calc_rhs(const bool print_wall_blender_limit)
 {
     TimerOutput::Scope timer_section(timer, "Calc RHS");
     assert_positivity();
@@ -3627,15 +3641,6 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
         ho_dif_residual(fe.dofs_per_cell),
         lo_inv_residual(fe.dofs_per_cell);
     std::vector<psize> dof_ids(fe.dofs_per_cell);
-    bool do_viscous_res_blending(false);
-    prm.enter_subsection("blender parameters");
-    {
-        const double vis_blending_cutoff_time = prm.get_double("viscous blending cutoff time");
-        do_viscous_res_blending = cur_time <= vis_blending_cutoff_time;
-    }
-    prm.leave_subsection();
-    if(print_viscous_blending_status)
-        pcout << "Viscous residual blending status: " << do_viscous_res_blending << "\n";
 
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
@@ -4254,7 +4259,7 @@ void PLENS::write()
 void PLENS::update_rk4()
 {
     // stage 1
-    calc_rhs(true, true);
+    calc_rhs(true);
     // time step must be calculated after calling calc_rhs(), otherwise gcrk_mu would be unset and
     // positivity would be unasserted
     calc_time_step();
@@ -4340,7 +4345,7 @@ void PLENS::update_rk4()
 void PLENS::update_rk3()
 {
     // stage 1
-    calc_rhs(true, true);
+    calc_rhs(true);
     // time step must be calculated after calling calc_rhs(), otherwise gcrk_mu would be unset and
     // positivity would be unasserted
     calc_time_step();

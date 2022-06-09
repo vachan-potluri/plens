@@ -814,6 +814,13 @@ class PLENS
      */
     LA::MPI::Vector gcrk_alpha_d;
 
+    /**
+     * A function of space and time which, if evaluates to a +ve quantity for a cell center and for
+     * the current time, determines if $\alpha_d=\alpha/\alpha_\text{max}$ is to be used. If it
+     * evaluates to a negative value, then $\alpha_d=0$ is used.
+     */
+    FunctionParser<dim> vis_blending_region;
+
 
 
     void form_neighbor_face_matchings(
@@ -874,8 +881,7 @@ class PLENS
         State& residual
     ) const;
     void calc_rhs(
-        const bool print_wall_blender_limit = false,
-        const bool print_viscous_blending_status = false
+        const bool print_wall_blender_limit = false
     );
     void calc_time_step();
     void multiply_time_step_to_rhs();
