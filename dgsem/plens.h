@@ -819,6 +819,10 @@ class PLENS
      */
     std::array<LA::MPI::Vector, 9> gh_gcrk_lo_avars;
 
+    cvar res_var;
+    LA::MPI::Vector gcrk_lo_inv_res, gcrk_ho_inv_res, gcrk_lo_dif_res, gcrk_ho_dif_res;
+    LA::MPI::Vector gcrk_alphad;
+
 
 
     void form_neighbor_face_matchings(

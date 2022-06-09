@@ -33,7 +33,8 @@ ref_Q_1d(fe_degree+1),
 cdi(fe_degree),
 blender_calc(fe_degree, gcrk_blender_var),
 clk(mpi_comm),
-timer(pcout, TimerOutput::never, TimerOutput::wall_times)
+timer(pcout, TimerOutput::never, TimerOutput::wall_times),
+res_var(cvar::rhoE)
 {
     declare_parameters();
     prm.parse_input("input.prm");
@@ -1071,6 +1072,16 @@ void PLENS::set_sol_vecs()
             mpi_comm
         );
     }
+
+    gcrk_lo_inv_res.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_ho_inv_res.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_lo_dif_res.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_ho_dif_res.reinit(locally_owned_dofs, mpi_comm);
+    gcrk_alphad.reinit(
+        cell_partitioner->locally_owned_range(),
+        cell_partitioner->ghost_indices(),
+        mpi_comm
+    );
 
     pcout << "Completed\n";
 
@@ -2847,71 +2858,71 @@ void PLENS::calc_aux_vars()
 
     // repeat the process for low-order entropy variable gradient and store in gcrk_lo_avars
     // see WJ-24-May-2022
-    for(const auto& cell: dof_handler.active_cell_iterators()){
-        if(!(cell->is_locally_owned())) continue;
+    // for(const auto& cell: dof_handler.active_cell_iterators()){
+    //     if(!(cell->is_locally_owned())) continue;
 
-        // calculate low order entropy variable gradients
-        calc_cell_lo_evar_grad(cell, evar_surf, evar_grad);
+    //     // calculate low order entropy variable gradients
+    //     calc_cell_lo_evar_grad(cell, evar_surf, evar_grad);
 
-        cell->get_dof_indices(dof_ids);
+    //     cell->get_dof_indices(dof_ids);
 
-        for(usi i=0; i<fe.dofs_per_cell; i++){
+    //     for(usi i=0; i<fe.dofs_per_cell; i++){
 
-            // cons_temp declared above
-            for(cvar var: cvar_list) cons_temp[var] = gcrk_cvars[var][dof_ids[i]];
-            ns_ptr->cons_to_entropy(cons_temp, evar_temp);
+    //         // cons_temp declared above
+    //         for(cvar var: cvar_list) cons_temp[var] = gcrk_cvars[var][dof_ids[i]];
+    //         ns_ptr->cons_to_entropy(cons_temp, evar_temp);
 
-            // calculate velocity gradient
-            std::array<std::array<double, dim>, dim> vel_grad; // access: vel_grad[vel_dir][grad_dir]
-            for(usi vel_dir=0; vel_dir<dim; vel_dir++){
-                for(usi grad_dir=0; grad_dir<dim; grad_dir++){
-                    vel_grad[vel_dir][grad_dir] = (
-                        evar_temp[1+vel_dir]*evar_grad[i][grad_dir][4]/evar_temp[4] -
-                        evar_grad[i][grad_dir][1+vel_dir]
-                    )/evar_temp[4];
-                } // loop over gradient directions
-            } // loop over velocity directions
+    //         // calculate velocity gradient
+    //         std::array<std::array<double, dim>, dim> vel_grad; // access: vel_grad[vel_dir][grad_dir]
+    //         for(usi vel_dir=0; vel_dir<dim; vel_dir++){
+    //             for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+    //                 vel_grad[vel_dir][grad_dir] = (
+    //                     evar_temp[1+vel_dir]*evar_grad[i][grad_dir][4]/evar_temp[4] -
+    //                     evar_grad[i][grad_dir][1+vel_dir]
+    //                 )/evar_temp[4];
+    //             } // loop over gradient directions
+    //         } // loop over velocity directions
 
-            // set (factored) stress components
-            // the loop is set such that it follows the ordering given in var_enums.h
-            usi stress_id = 0;
-            double vel_grad_trace = 0;
-            for(usi d=0; d<dim; d++) vel_grad_trace += vel_grad[d][d];
-            for(usi row=0; row<dim; row++){
-                for(usi col=row; col<dim; col++){
-                    if(col == row){
-                        // somehow operator -= doesn't work together with operator=
-                        // hence this split is required
-                        gcrk_lo_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
-                            vel_grad[col][row] - 2.0/3*vel_grad_trace;
-                    }
-                    else{
-                        gcrk_lo_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
-                            vel_grad[col][row];
-                    }
-                    stress_id++;
-                }
-            }
+    //         // set (factored) stress components
+    //         // the loop is set such that it follows the ordering given in var_enums.h
+    //         usi stress_id = 0;
+    //         double vel_grad_trace = 0;
+    //         for(usi d=0; d<dim; d++) vel_grad_trace += vel_grad[d][d];
+    //         for(usi row=0; row<dim; row++){
+    //             for(usi col=row; col<dim; col++){
+    //                 if(col == row){
+    //                     // somehow operator -= doesn't work together with operator=
+    //                     // hence this split is required
+    //                     gcrk_lo_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
+    //                         vel_grad[col][row] - 2.0/3*vel_grad_trace;
+    //                 }
+    //                 else{
+    //                     gcrk_lo_avars[stress_id][dof_ids[i]] = vel_grad[row][col] +
+    //                         vel_grad[col][row];
+    //                 }
+    //                 stress_id++;
+    //             }
+    //         }
 
-            // calculate temperature gradient
-            std::array<double, dim> T_grad;
-            for(usi grad_dir=0; grad_dir<dim; grad_dir++){
-                T_grad[grad_dir] = evar_grad[i][grad_dir][4]/
-                    (evar_temp[4]*evar_temp[4]*ns_ptr->get_R());
-            }
+    //         // calculate temperature gradient
+    //         std::array<double, dim> T_grad;
+    //         for(usi grad_dir=0; grad_dir<dim; grad_dir++){
+    //             T_grad[grad_dir] = evar_grad[i][grad_dir][4]/
+    //                 (evar_temp[4]*evar_temp[4]*ns_ptr->get_R());
+    //         }
 
-            // set (factored) heat flux components
-            // the negative sign is added here so that the vectors can be scaled with gcrk_k
-            // (instead of -gcrk_k)
-            for(usi d=0; d<dim; d++) gcrk_lo_avars[6+d][dof_ids[i]] = -T_grad[d];
-        } // loop over cell dofs
-    } // loop over owned cells
+    //         // set (factored) heat flux components
+    //         // the negative sign is added here so that the vectors can be scaled with gcrk_k
+    //         // (instead of -gcrk_k)
+    //         for(usi d=0; d<dim; d++) gcrk_lo_avars[6+d][dof_ids[i]] = -T_grad[d];
+    //     } // loop over cell dofs
+    // } // loop over owned cells
 
-    // now compress and scale with mu and k, then set the ghosted vectors
-    for(avar var: avar_list) gcrk_lo_avars[var].compress(VectorOperation::insert);
-    for(usi i=0; i<6; i++) gcrk_lo_avars[i].scale(gcrk_mu);
-    for(usi i=6; i<9; i++) gcrk_lo_avars[i].scale(gcrk_k);
-    for(avar var: avar_list) gh_gcrk_lo_avars[var] = gcrk_lo_avars[var];
+    // // now compress and scale with mu and k, then set the ghosted vectors
+    // for(avar var: avar_list) gcrk_lo_avars[var].compress(VectorOperation::insert);
+    // for(usi i=0; i<6; i++) gcrk_lo_avars[i].scale(gcrk_mu);
+    // for(usi i=6; i<9; i++) gcrk_lo_avars[i].scale(gcrk_k);
+    // for(avar var: avar_list) gh_gcrk_lo_avars[var] = gcrk_lo_avars[var];
 } // calc_aux_vars
 
 
@@ -3964,7 +3975,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
         calc_surf_flux(2, s2_surf_flux);
         if(!ns_ptr->is_inviscid()){
             calc_surf_flux(3, s3_surf_flux);
-            calc_surf_flux(3, s3_lo_surf_flux, true);
+            // calc_surf_flux(3, s3_lo_surf_flux, true);
         }
     }
 
@@ -4012,13 +4023,13 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                 lo_inv_residual
             ); // low order inviscid
 
-            if(!ns_ptr->is_inviscid()){
-                calc_cell_lo_dif_residual(
-                    cell,
-                    s3_lo_surf_flux,
-                    lo_dif_residual
-                ); // low order viscous
-            }
+            // if(!ns_ptr->is_inviscid()){
+            //     calc_cell_lo_dif_residual(
+            //         cell,
+            //         s3_lo_surf_flux,
+            //         lo_dif_residual
+            //     ); // low order viscous
+            // }
         }
 
         // State dif_residual_fv;
@@ -4026,15 +4037,38 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
 
         cell->get_dof_indices(dof_ids);
         const double alpha = gcrk_alpha[cell->global_active_cell_index()];
-        const double ho_dif_factor = (
-            do_viscous_res_blending ?
-            std::max(
-                0.0,
-                // double(!cell->at_boundary()), // less than 1 only for boundary cells
-                (1-alpha/blender_calc.get_blender_max_value())
-            ) :
-            1.0 // simulation time greater than cutoff time (do_viscous_res_blending will be false)
-        );
+        // const double ho_dif_factor = (
+        //     do_viscous_res_blending ?
+        //     std::max(
+        //         0.0,
+        //         // double(!cell->at_boundary()), // less than 1 only for boundary cells
+        //         (1-alpha/blender_calc.get_blender_max_value())
+        //     ) :
+        //     1.0 // simulation time greater than cutoff time (do_viscous_res_blending will be false)
+        // );
+
+        // do viscous residual blending only if cells lie within certain distance from wall
+        double ho_dif_factor;
+        {
+            // scope for temporary variables
+            const double L = 0.1017; // cylinder length
+            const double r = 0.0325; // cylinder radius
+            const Point<dim> cc = cell->center();
+            // this is a 2d wall distance, reasonable since the revolution angle is small
+            const double wall_dist = std::min(
+                fabs(cc[1] - r), // distance from cylinder
+                fabs((cc[0]-L)/sqrt(3) - (cc[1]-r))/(4.0/3) // distance from flare
+            );
+            if(do_viscous_res_blending){
+                if(wall_dist < 600e-6){
+                    ho_dif_factor = std::max(0.0, 1-alpha/blender_calc.get_blender_max_value());
+                }
+                else ho_dif_factor = 1;
+            }
+            else ho_dif_factor = 1;
+        }
+        gcrk_alphad[cell->global_active_cell_index()] = 1-ho_dif_factor;
+        
         // ho_dif_factor is like (1-alpha_d) where alpha_d is the blender for viscous residual
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
@@ -4047,7 +4081,7 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                         // (1-ho_dif_factor)*utilities::minmod(
                         //     dif_residual_fv[var], ho_dif_residual[i][var]
                         // ) +
-                        (1-ho_dif_factor)*lo_dif_residual[i][var] +
+                        // (1-ho_dif_factor)*lo_dif_residual[i][var] +
                         ho_dif_factor*ho_dif_residual[i][var] +
                         alpha*lo_inv_residual[i][var] +
                         (1-alpha)*ho_inv_residual[i][var];
@@ -4057,10 +4091,19 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit, const bool print_visco
                         (1-alpha)*ho_inv_residual[i][var];
                 }
             }
+            gcrk_lo_inv_res[dof_ids[i]] = lo_inv_residual[i][res_var];
+            gcrk_ho_inv_res[dof_ids[i]] = ho_inv_residual[i][res_var];
+            gcrk_lo_dif_res[dof_ids[i]] = lo_dif_residual[i][res_var];
+            gcrk_ho_dif_res[dof_ids[i]] = ho_dif_residual[i][res_var];
         } // loop over dofs
     } // loop over owned cells
 
     for(cvar var: cvar_list) gcrk_rhs[var].compress(VectorOperation::insert);
+    gcrk_lo_inv_res.compress(VectorOperation::insert);
+    gcrk_ho_inv_res.compress(VectorOperation::insert);
+    gcrk_lo_dif_res.compress(VectorOperation::insert);
+    gcrk_ho_dif_res.compress(VectorOperation::insert);
+    gcrk_alphad.compress(VectorOperation::insert);
 } // calc_rhs()
 
 
@@ -4480,6 +4523,12 @@ void PLENS::write()
     data_out.attach_dof_handler(dof_handler);
     // for(cvar var: cvar_list) data_out.add_data_vector(gh_gcrk_cvars[var], cvar_names[var]);
     for(avar var: avar_list) data_out.add_data_vector(gh_gcrk_avars[var], avar_names[var]);
+    for(avar var: avar_list)
+        data_out.add_data_vector(gh_gcrk_lo_avars[var], avar_names[var] + "_lo");
+    data_out.add_data_vector(gcrk_lo_inv_res, cvar_names[res_var] + "_lo_inv");
+    data_out.add_data_vector(gcrk_ho_inv_res, cvar_names[res_var] + "_ho_inv");
+    data_out.add_data_vector(gcrk_lo_dif_res, cvar_names[res_var] + "_lo_dif");
+    data_out.add_data_vector(gcrk_ho_dif_res, cvar_names[res_var] + "_ho_dif");
 
     // data_out.add_data_vector(gcrk_mu, "mu");
     // data_out.add_data_vector(gcrk_k, "k");
@@ -4500,11 +4549,14 @@ void PLENS::write()
     // also see WJ-10-Jul-2021 and
     // https://groups.google.com/g/dealii/c/hF4AfBqnTdk
     Vector<float> alpha(triang.n_active_cells());
+    Vector<float> alphad(triang.n_active_cells());
     for(auto &cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
         alpha[cell->active_cell_index()] = gh_gcrk_alpha[cell->global_active_cell_index()];
+        alphad[cell->active_cell_index()] = gcrk_alphad[cell->global_active_cell_index()];
     }
     data_out.add_data_vector(alpha, "alpha");
+    data_out.add_data_vector(alphad, "alpha_d");
 
     // local time step
     Vector<float> loc_dt(triang.n_active_cells());
