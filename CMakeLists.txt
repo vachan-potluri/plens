@@ -35,6 +35,16 @@ IF(RANS_SA)
     ADD_DEFINITIONS(-DRANS_SA)
 ENDIF(RANS_SA)
 
+# Use conservative variable gradients for stress and heat flux calculation
+OPTION(
+    CVAR_GRAD
+    "Use conservative variable gradients for shear stress and heat flux calculation"
+    OFF
+)
+IF(CVAR_GRAD)
+    ADD_DEFINITIONS(-DCVAR_GRAD)
+ENDIF(CVAR_GRAD)
+
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") # required for 9.3.0
 
 ADD_SUBDIRECTORY(utilities)

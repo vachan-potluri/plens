@@ -2566,9 +2566,10 @@ void PLENS::calc_aux_vars()
     gcrk_mu.compress(VectorOperation::insert);
     gcrk_k.compress(VectorOperation::insert);
 
-    // calculate stage 1 flux and entropy variables on the faces using the same
     locly_ord_surf_flux_term_t<double> s1_surf_flux, evar_surf;
     calc_surf_flux(1, s1_surf_flux);
+#ifndef CVAR_GRAD
+    // calculate stage 1 flux and entropy variables on the faces using the same
     // set size
     for(cvar var: cvar_list){
         for(const auto &cell: dof_handler.active_cell_iterators()){
@@ -2594,42 +2595,55 @@ void PLENS::calc_aux_vars()
             }
         }
     }
+#endif
 
     // now set (factored) avars, cell-by-cell
     std::vector<psize> dof_ids(fe.dofs_per_cell);
+#ifdef CVAR_GRAD
+    std::vector<std::array<State, dim>> cons_grad(fe.dofs_per_cell);
+#else
     std::vector<std::array<State, dim>> evar_grad(fe.dofs_per_cell);
+#endif
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
+#ifdef CVAR_GRAD
         // calculate conservative gradients
-        // calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
+        calc_cell_cons_grad(cell, s1_surf_flux, cons_grad);
+#else
         // calculate entropy variable gradients
         calc_cell_evar_grad(cell, evar_surf, evar_grad);
+#endif
 
         cell->get_dof_indices(dof_ids);
 
         for(usi i=0; i<fe.dofs_per_cell; i++){
+#ifdef CVAR_GRAD
             // cons declared above
-            // for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[i]];
-            // std::array<double, dim> vel{cons[1]/cons[0], cons[2]/cons[0], cons[3]/cons[0]};
-
+            for(cvar var: cvar_list) cons[var] = gcrk_cvars[var][dof_ids[i]];
+            std::array<double, dim> vel{cons[1]/cons[0], cons[2]/cons[0], cons[3]/cons[0]};
+#else
             // cons_temp declared above
             for(cvar var: cvar_list) cons_temp[var] = gcrk_cvars[var][dof_ids[i]];
             ns_ptr->cons_to_entropy(cons_temp, evar_temp);
+#endif
 
             // calculate velocity gradient
             std::array<std::array<double, dim>, dim> vel_grad; // access: vel_grad[vel_dir][grad_dir]
             for(usi vel_dir=0; vel_dir<dim; vel_dir++){
                 for(usi grad_dir=0; grad_dir<dim; grad_dir++){
-                    // vel_grad[vel_dir][grad_dir] = (
-                    //     cons_grad[i][grad_dir][1+vel_dir] - // grad (rho u)
-                    //     cons_grad[i][grad_dir][0]* // grad rho
-                    //         vel[vel_dir] // u
-                    // )/cons[0];
+#ifdef CVAR_GRAD
+                    vel_grad[vel_dir][grad_dir] = (
+                        cons_grad[i][grad_dir][1+vel_dir] - // grad (rho u)
+                        cons_grad[i][grad_dir][0]* // grad rho
+                            vel[vel_dir] // u
+                    )/cons[0];
+#else
                     vel_grad[vel_dir][grad_dir] = (
                         evar_temp[1+vel_dir]*evar_grad[i][grad_dir][4]/evar_temp[4] -
                         evar_grad[i][grad_dir][1+vel_dir]
                     )/evar_temp[4];
+#endif
                 } // loop over gradient directions
             } // loop over velocity directions
 
@@ -2655,26 +2669,35 @@ void PLENS::calc_aux_vars()
             }
 
             // calculate temperature gradient
-            // std::array<double, dim> e_grad;
-            // e = ns_ptr->get_e(cons); // e declared above
+#ifdef CVAR_GRAD
+            std::array<double, dim> e_grad;
+            e = ns_ptr->get_e(cons); // e declared above
+#else
             std::array<double, dim> T_grad;
+#endif
             for(usi grad_dir=0; grad_dir<dim; grad_dir++){
-                // e_grad[grad_dir] = (cons_grad[i][grad_dir][4] - cons_grad[i][grad_dir][0]*e)/cons[0];
-                // for(usi vel_dir=0; vel_dir<dim; vel_dir++){
-                //     e_grad[grad_dir] -= (
-                //         0.5*cons_grad[i][grad_dir][0]*vel[vel_dir]*vel[vel_dir] +
-                //         cons[1+vel_dir]*vel_grad[vel_dir][grad_dir]
-                //     )/cons[0];
-                // }
+#ifdef CVAR_GRAD
+                e_grad[grad_dir] = (cons_grad[i][grad_dir][4] - cons_grad[i][grad_dir][0]*e)/cons[0];
+                for(usi vel_dir=0; vel_dir<dim; vel_dir++){
+                    e_grad[grad_dir] -= (
+                        0.5*cons_grad[i][grad_dir][0]*vel[vel_dir]*vel[vel_dir] +
+                        cons[1+vel_dir]*vel_grad[vel_dir][grad_dir]
+                    )/cons[0];
+                }
+#else
                 T_grad[grad_dir] = evar_grad[i][grad_dir][4]/
                     (evar_temp[4]*evar_temp[4]*ns_ptr->get_R());
+#endif
             }
 
             // set (factored) heat flux components
             // the negative sign is added here so that the vectors can be scaled with gcrk_k
             // (instead of -gcrk_k)
-            // for(usi d=0; d<dim; d++) gcrk_avars[6+d][dof_ids[i]] = -e_grad[d]/cv;
+#ifdef CVAR_GRAD
+            for(usi d=0; d<dim; d++) gcrk_avars[6+d][dof_ids[i]] = -e_grad[d]/cv;
+#else
             for(usi d=0; d<dim; d++) gcrk_avars[6+d][dof_ids[i]] = -T_grad[d];
+#endif
         } // loop over cell dofs
     } // loop over owned cells
 

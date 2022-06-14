@@ -72,6 +72,14 @@ int main(int argc, char** argv){
             << "\tBranch: " << PLENS_GIT_BRANCH << "\n"
             << "\tGit hash (short): " << PLENS_GIT_SHORTREV << "\n"
             << "\tGit hash (full): " << PLENS_GIT_REVISION << "\n\n";
+        
+        std::cout << "\n---\nUsing ";
+#ifdef CVAR_GRAD
+        std::cout << "conservative variable ";
+#else
+        std::cout << "entropy variable ";
+#endif
+        std::cout << "gradients for calculating shear stress and heat flux.\n---\n\n\n";
     }
     const usi n_args = argc-1;
     AssertThrow(
