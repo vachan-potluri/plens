@@ -25,16 +25,16 @@ parser.add_argument(
 parser.add_argument(
     "-f",
     "--flux_scheme",
-    help="Flux scheme. Default: 'HLLC'.",
-    default="HLLC",
+    help="Flux scheme. Default: 'Chandrashekhar'.",
+    default="Chandrashekhar",
     action="store"
 )
 parser.add_argument(
     "-k",
     "--rk_order",
-    help="RK integration order. Default: 3.",
+    help="RK integration order. Default: 4.",
     type=int,
-    default=3,
+    default=4,
     action="store"
 )
 parser.add_argument(
@@ -57,8 +57,8 @@ parser.add_argument(
     "-r",
     "--res_dir",
     help="Name of the result directory (relative to the location given in the 'dest' argument). "
-        + "Default: 'result'",
-    default="result",
+        + "Default: 'result_16Jun2022'",
+    default="result_16Jun2022",
     action="store"
 )
 args = parser.parse_args()
