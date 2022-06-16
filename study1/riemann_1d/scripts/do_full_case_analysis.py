@@ -8,6 +8,7 @@
 # 3. Error vs cpu time per time step for different values of N and across dofs
 # 4. Visual comparison of results for all dofs and all values of N (outsourced)
 # 5. Error vs N for different values of dof (was suggested by KB, see WJ-04-Mar-2022)
+# 6. CPU time/DoF/time step vs N (for SIS2022, see WJ-16-Jun2022)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -23,6 +24,7 @@ import subprocess
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.ticker import ScalarFormatter, NullFormatter, MultipleLocator
 from scipy.stats import linregress
 plt.rcParams["text.usetex"] = True
@@ -120,7 +122,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1]
+steps_to_do = [3,6]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -143,11 +145,11 @@ actual_dof_values = pd.DataFrame(
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
 result_dir = "result_28Mar2022"
-case_name = "Test 5"
+case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
-error_ax_major_loc = 4e-2
-error_ax_minor_loc = 1e-2
+error_ax_major_loc = 2e-2
+error_ax_minor_loc = error_ax_major_loc/4
 
 
 
@@ -248,7 +250,7 @@ if 3 in steps_to_do:
             # markeredgecolor=N_markercolors[N],
             label=r"$N={}$".format(N)
         )
-    ax.set_xlabel("CPU time per time step [sec]")
+    ax.set_xlabel("CPU time/time step [sec]")
     ax.set_ylabel(r"$L^2$ error")
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -257,7 +259,7 @@ if 3 in steps_to_do:
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
-    fig.set_size_inches(4, 4)
+    fig.set_size_inches(5, 3.5)
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
     mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))
@@ -310,3 +312,41 @@ if 5 in steps_to_do:
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
     mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
+
+
+
+
+# 6. CPU time/DoF/time step vs N
+if 6 in steps_to_do:
+    fig, ax = plt.subplots(1,1)
+    # plot
+    for N in N_values:
+        for dof in dofs:
+            ax.scatter(
+                N,
+                ctpt.loc[N, dof]/dof,
+                marker="o",
+                edgecolor=dof_linecolors.loc[dof],
+                facecolor="none"
+            )
+    # for legend
+    legend_elements = []
+    for dof in dofs:
+        legend_elements.append(
+            Line2D(
+                [0], [0],
+                ls="",
+                marker="o",
+                markeredgecolor=dof_linecolors.loc[dof],
+                markerfacecolor="none",
+                label="{} DoFs".format(dof)
+            )
+        )
+    ax.set_xlabel(r"$N$")
+    ax.set_ylabel("CPU time/time step/dof [sec]")
+    ax.grid()
+    ax.legend(handles=legend_elements)
+    fig.set_size_inches(5, 3.5)
+    fig.tight_layout(rect=[0,0,1,1])
+    plt.show()
+    mysavefig(fig, "../plots", "cputime_per_timestep_vs_N_{}".format(flux))
