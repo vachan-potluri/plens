@@ -122,7 +122,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [6]
+steps_to_do = [5]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -140,6 +140,13 @@ actual_dof_values = pd.DataFrame(
     index=N_values,
     columns=dofs
 )
+
+N_linestyles = pd.Series(["-", "--", "-.", ":"], index=N_values)
+N_markers = pd.Series(["o", "s", "P", "^"], index=N_values)
+N_markercolors = pd.Series(["blue", "green", "red", "magenta"], index=N_values)
+dof_linestyles = pd.Series(["-", "--", "-."], index=dofs)
+dof_linecolors = pd.Series(["r", "g", "b"], index=dofs)
+dof_markers = pd.Series(["o", "s", "^"], index=dofs)
 
 # varying data (requires user intervention)
 flux = "chandrashekhar"
@@ -199,12 +206,6 @@ for N in N_values:
         l2_errors.loc[N, dof] = df.loc["l2 error", 1]
         wtpt.loc[N, dof] = df.loc["wall time per time step", 1]
         ctpt.loc[N, dof] = df.loc["cpu time per time step", 1]
-
-N_linestyles = pd.Series(["-", "--", "-.", ":"], index=N_values)
-N_markers = pd.Series(["o", "s", "P", "^"], index=N_values)
-N_markercolors = pd.Series(["blue", "green", "red", "magenta"], index=N_values)
-dof_linestyles = pd.Series(["-", "--", "-."], index=dofs)
-dof_linecolors = pd.Series(["r", "g", "b"], index=dofs)
 
 if 2 in steps_to_do:
     fig, ax = plt.subplots(1,1)
@@ -295,11 +296,11 @@ if 5 in steps_to_do:
             N_values,
             l2_errors.loc[:, dof],
             ls=dof_linestyles.loc[dof],
-            marker="o",
+            marker=dof_markers.loc[dof],
             c=dof_linecolors.loc[dof],
             # markerfacecolor=N_markercolors[N],
             # markeredgecolor=N_markercolors[N],
-            label=r"{} dofs".format(dof)
+            label=r"{} DoFs".format(dof)
         )
     ax.set_xlabel(r"$N$")
     ax.set_ylabel(r"$L^2$ error")
@@ -308,7 +309,8 @@ if 5 in steps_to_do:
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
-    fig.set_size_inches(4, 4)
+    ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
+    fig.set_size_inches(5, 3.5)
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
     mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
@@ -325,7 +327,7 @@ if 6 in steps_to_do:
             ax.scatter(
                 N,
                 ctpt.loc[N, dof]/dof,
-                marker="o",
+                marker=dof_markers.loc[dof],
                 edgecolor=dof_linecolors.loc[dof],
                 facecolor="none"
             )
@@ -336,7 +338,7 @@ if 6 in steps_to_do:
             Line2D(
                 [0], [0],
                 ls="",
-                marker="o",
+                marker=dof_markers.loc[dof],
                 markeredgecolor=dof_linecolors.loc[dof],
                 markerfacecolor="none",
                 label="{} DoFs".format(dof)
