@@ -134,10 +134,13 @@ subsection BCs
 		set type = uniform inflow
         set prescribed p = 10.33333
         set prescribed velocity = 2.629369 0 0
-        set prescribed T = 0.009344639 
+        set prescribed T = 0.009344639
 	end
 	subsection bid2
-	    set type = free
+	    set type = uniform inflow
+        set prescribed p = 1
+        set prescribed velocity = 0 0 0
+        set prescribed T = 0.003582734
 	end
 	subsection bid3
 		set type = symmetry
