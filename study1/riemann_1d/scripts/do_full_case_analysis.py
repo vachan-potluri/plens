@@ -122,7 +122,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [5]
+steps_to_do = [1]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -177,8 +177,8 @@ if 1 in steps_to_do:
             "../plots",
             "dof{}_12_12_{}".format(dof, flux),
             "--size",
-            "7",
-            "6"
+            "5",
+            "3.5"
         ])
 
 
@@ -310,8 +310,8 @@ if 5 in steps_to_do:
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(5, 3.5)
-    fig.tight_layout(rect=[0,0,1,1])
+    fig.set_size_inches(5, 3)
+    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
 
@@ -349,7 +349,7 @@ if 6 in steps_to_do:
     ax.grid()
     ax.legend(handles=legend_elements)
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(5, 3.5)
-    fig.tight_layout(rect=[0,0,1,1])
+    fig.set_size_inches(5, 3)
+    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "cputime_per_timestep_vs_N_{}".format(flux))

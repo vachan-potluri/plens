@@ -59,7 +59,7 @@ parser.add_argument(
     "--size",
     help="The size of the plot window (in inches) to be used.",
     nargs=2,
-    type=int,
+    type=float,
     default=[7,7],
     action="store"
 )
@@ -180,15 +180,15 @@ for row in axes:
     for ax in row:
         print("Reading data from {}".format(data_files[i]))
         data = np.genfromtxt(data_files[i], delimiter=",")
-        ax.plot(data[:,0], data[:,1], "b-", lw=1, label="Exact")
+        ax.plot(data[:,0], data[:,1], "b--", lw=1, label="Exact")
         ax.plot(data[:,0], data[:,2], "r-", lw=1, label="Simulation")
         ax.set_title(subtitles[i])
         ax.grid()
-        ax.legend(loc="best", handlelength=1)
+        if i==0: ax.legend(loc="best", handlelength=1)
         i += 1
 if figtitle != "": fig.suptitle(figtitle)
 fig.set_size_inches(args.size[0], args.size[1])
-fig.tight_layout(rect=[0,0,1,1])
+fig.tight_layout(rect=[0,0,1,1], pad=0.25)
 # def on_resize(event):
 #     fig.tight_layout(rect=[0,0,1,1])
 #     fig.canvas.draw()

@@ -12,7 +12,7 @@ plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
     # "font.serif": ["Palatino"],
-    "font.size": 12,
+    "font.size": 14,
     # "axes.formatter.limits": [-2,2]
 })
 
@@ -66,7 +66,7 @@ sim_sample_mask = np.arange(0, 6400, 4) # gives 1600 sampling points
 
 # Zoomed ranges on x-axis: the x limits of the figure will be changed to obtain individual zoomed
 # plots for the results
-x_zooms = [ [0.3, 2.5], [-3,-1] ]
+x_zooms = [ [0.3, 2.5], [-4,0] ]
 
 for dof in [200,400,800]:
     fig, axes = plt.subplots(2,2)
@@ -90,10 +90,10 @@ for dof in [200,400,800]:
                 sim_data["rho"][sim_sample_mask],
                 "ro-",
                 ms=1,
-                lw=1,
+                lw=0.5,
                 label="Simulation")
             ax.grid()
-            ax.legend(handlelength=1)
+            if N==1: ax.legend(handlelength=1)
             ax.set_title(r"$N={}$".format(N))
             N_id += 1
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
@@ -109,6 +109,7 @@ for dof in [200,400,800]:
             for ax in row:
                 ax.set_xlim(x_lim)
                 autoscale_y(ax)
+        # fig.set_size_inches(7.5, 3)
         fig.tight_layout() # don't pass any arguments for second time
         # plt.show() # doesn't show second time
         for fmt in ["png", "pdf"]:
