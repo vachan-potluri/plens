@@ -76,69 +76,83 @@ x_range_inset = [0.3, 2.5]
 # mask for plotting reference solution in inset
 inset_mask_ref = np.logical_and(x_ref >= x_range_inset[0], x_ref <= x_range_inset[1])
 
-for dof in [200]:
-    fig, axes = plt.subplots(2,2)
+for dof in [200,400,800]:
+    fig, axes = plt.subplots(1,4)
     N_id = 0
-    for row in axes:
-        for ax in row:
-            N = N_values[N_id]
-            sim_file = "dof{0}_{1}_{1}_N{2}_{3}/{4}/{5}".format(
-                dof, N+1, N, case_suffix, res_dir, sim_data_filename
-            )
-            print("Reading {}".format(sim_file))
-            sim_data = np.genfromtxt(sim_file, delimiter=",", names=True)
-            x_sim = sim_data["Points0"][sim_sample_mask]
-            rho_sim = sim_data["rho"][sim_sample_mask]
-            ref_line, = ax.plot(
-                x_ref,
-                rho_ref,
-                "b-",
-                lw=1,
-                # label="Reference"
-            )
-            sim_line, = ax.plot(
-                x_sim,
-                rho_sim,
-                "ro-",
-                ms=1,
-                lw=0.5,
-                # label="Simulation"
-            )
-            ax.grid()
-            ax.set_title(r"$N={}$".format(N))
+    for ax in axes:
+        N = N_values[N_id]
+        sim_file = "dof{0}_{1}_{1}_N{2}_{3}/{4}/{5}".format(
+            dof, N+1, N, case_suffix, res_dir, sim_data_filename
+        )
+        print("Reading {}".format(sim_file))
+        sim_data = np.genfromtxt(sim_file, delimiter=",", names=True)
+        x_sim = sim_data["Points0"][sim_sample_mask]
+        rho_sim = sim_data["rho"][sim_sample_mask]
+        ref_line, = ax.plot(
+            x_ref,
+            rho_ref,
+            "b-",
+            lw=1,
+            # label="Reference"
+        )
+        sim_line, = ax.plot(
+            x_sim,
+            rho_sim,
+            "ro-",
+            ms=1,
+            lw=0.5,
+            # label="Simulation"
+        )
+        ax.grid()
+        ax.set_title(r"$N={}$".format(N))
 
-            # Now the inset
-            # mask for plotting simulation data in inset
-            inset_mask_sim = np.logical_and(x_sim >= x_range_inset[0], x_sim <= x_range_inset[1])
-            ax_ins = ax.inset_axes([0.02,0.02,0.59,0.57]) # [0.02,0.02,0.59,0.57] works best
-            ax_ins.plot(
-                x_ref[inset_mask_ref],
-                rho_ref[inset_mask_ref],
-                "b-",
-                lw=1,
-            )
-            ax_ins.plot(
-                x_sim[inset_mask_sim],
-                rho_sim[inset_mask_sim],
-                "ro-",
-                ms=1,
-                lw=0.5
-            )
-            # remove all inset axes ticks and labels
-            ax_ins.set_xticklabels([])
-            ax_ins.set_yticklabels([])
-            ax_ins.set_xticks([])
-            ax_ins.set_yticks([])
-            for s in ax_ins.spines.values(): s.set_edgecolor("darkgray") # inset border color
-            N_id += 1
-    fig.tight_layout(rect=[0,0,1,0.94], pad=0.25) # padding in fraction of font size
-    fig.set_size_inches(7.5, 6)
+        # Now the inset
+        # mask for plotting simulation data in inset
+        inset_mask_sim = np.logical_and(x_sim >= x_range_inset[0], x_sim <= x_range_inset[1])
+        ax_ins = ax.inset_axes([0.02,0.02,0.59,0.57]) # [0.02,0.02,0.59,0.57] works best
+        ax_ins.plot(
+            x_ref[inset_mask_ref],
+            rho_ref[inset_mask_ref],
+            "b-",
+            lw=1,
+        )
+        ax_ins.plot(
+            x_sim[inset_mask_sim],
+            rho_sim[inset_mask_sim],
+            "ro-",
+            ms=1,
+            lw=0.5
+        )
+        # remove all inset axes ticks and labels
+        ax_ins.set_xticklabels([])
+        ax_ins.set_yticklabels([])
+        ax_ins.set_xticks([])
+        ax_ins.set_yticks([])
+        for s in ax_ins.spines.values(): s.set_edgecolor("darkgray") # inset border color
+        N_id += 1
+    # https://stackoverflow.com/a/6541454/8028836
+    plt.subplots_adjust(
+        left=0.02,
+        # bottom=None,
+        right=0.99,
+        top=0.79,
+        wspace=0.1,
+        # hspace=None
+    )
+    # tight layout not working well
+    # fig.tight_layout(
+    #     rect=[0,0,1,0.9],
+    #       pad=1,
+    #       h_pad=0,
+    #       w_pad=0
+    # ) # padding in fraction of font size
+    fig.set_size_inches(15, 3.5)
     # legend outside figure
     fig.legend(
         handles=[ref_line, sim_line],
         labels=["Reference", "Simulation"],
         loc="lower center",
-        bbox_to_anchor=(0.5,0.94),
+        bbox_to_anchor=(0.5,0.88),
         ncol=2, # number of columns
         borderaxespad=0 # padding between axes and legend
     )
