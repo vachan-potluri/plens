@@ -48,27 +48,35 @@ def autoscale_y(ax,margin=0.1):
 
 
 
-case_suffix = "chandrashekhar"
-res_dir = "result_16Jun2022"
-sim_data_filename = "line_data.csv"
+case_suffix = "chandrashekhar" # generally the flux scheme
+res_dir = "result_16Jun2022" # the name of result directory
+sim_data_filename = "line_data.csv" # name of extracted line data file
 # ref_soln_file = "../data/rho_ref_data.csv"
 # ref_soln_file_delim = ","
-ref_soln_file = "../data/rho_ref_data_monotonic.txt"
+ref_soln_file = "../data/rho_ref_data_monotonic.txt" # reference solution
 ref_soln_file_delim = "\t"
-plot_dir = "../plots/"
+plot_dir = "../plots/" # where to save the plots
 N_values = [1,2,3,5]
 
 ref_data = np.genfromtxt(ref_soln_file, delimiter=ref_soln_file_delim)
+x_ref = ref_data[:,0]
+rho_ref = ref_data[:,1]
 
 # In case simulation data extracted has too much resolution, this will mask the resulting array
 # to only include a fraction of the data
 sim_sample_mask = np.arange(0, 6400, 4) # gives 1600 sampling points
 
 # Zoomed ranges on x-axis: the x limits of the figure will be changed to obtain individual zoomed
-# plots for the results
-x_zooms = [ [0.3, 2.5], [-4,0] ]
+# plots for the results. These figures will be stored as new figures
+x_zooms_new = [ [0.3, 2.5], [-4,0] ]
+x_zooms_new = []
 
-for dof in [200,400,800]:
+# Range for the inset picture
+x_range_inset = [0.3, 2.5]
+# mask for plotting reference solution in inset
+inset_mask_ref = np.logical_and(x_ref >= x_range_inset[0], x_ref <= x_range_inset[1])
+
+for dof in [200]:
     fig, axes = plt.subplots(2,2)
     N_id = 0
     for row in axes:
@@ -79,32 +87,68 @@ for dof in [200,400,800]:
             )
             print("Reading {}".format(sim_file))
             sim_data = np.genfromtxt(sim_file, delimiter=",", names=True)
-            ax.plot(
-                ref_data[:,0],
-                ref_data[:,1],
+            x_sim = sim_data["Points0"][sim_sample_mask]
+            rho_sim = sim_data["rho"][sim_sample_mask]
+            ref_line, = ax.plot(
+                x_ref,
+                rho_ref,
                 "b-",
                 lw=1,
-                label="Reference")
-            ax.plot(
-                sim_data["Points0"][sim_sample_mask],
-                sim_data["rho"][sim_sample_mask],
+                # label="Reference"
+            )
+            sim_line, = ax.plot(
+                x_sim,
+                rho_sim,
                 "ro-",
                 ms=1,
                 lw=0.5,
-                label="Simulation")
+                # label="Simulation"
+            )
             ax.grid()
-            if N==1: ax.legend(handlelength=1)
             ax.set_title(r"$N={}$".format(N))
+
+            # Now the inset
+            # mask for plotting simulation data in inset
+            inset_mask_sim = np.logical_and(x_sim >= x_range_inset[0], x_sim <= x_range_inset[1])
+            ax_ins = ax.inset_axes([0.02,0.02,0.59,0.57]) # [0.02,0.02,0.59,0.57] works best
+            ax_ins.plot(
+                x_ref[inset_mask_ref],
+                rho_ref[inset_mask_ref],
+                "b-",
+                lw=1,
+            )
+            ax_ins.plot(
+                x_sim[inset_mask_sim],
+                rho_sim[inset_mask_sim],
+                "ro-",
+                ms=1,
+                lw=0.5
+            )
+            # remove all inset axes ticks and labels
+            ax_ins.set_xticklabels([])
+            ax_ins.set_yticklabels([])
+            ax_ins.set_xticks([])
+            ax_ins.set_yticks([])
+            for s in ax_ins.spines.values(): s.set_edgecolor("darkgray") # inset border color
             N_id += 1
-    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
+    fig.tight_layout(rect=[0,0,1,0.94], pad=0.25) # padding in fraction of font size
     fig.set_size_inches(7.5, 6)
+    # legend outside figure
+    fig.legend(
+        handles=[ref_line, sim_line],
+        labels=["Reference", "Simulation"],
+        loc="lower center",
+        bbox_to_anchor=(0.5,0.94),
+        ncol=2, # number of columns
+        borderaxespad=0 # padding between axes and legend
+    )
     plt.show()
     for fmt in ["png", "pdf"]:
         fig_filename = plot_dir + "dof{}_".format(dof) + case_suffix + ".{}".format(fmt)
         fig.savefig(fig_filename, format=fmt)
         print("Saved figure {}".format(fig_filename))
     
-    for i,x_lim in enumerate(x_zooms):
+    for i,x_lim in enumerate(x_zooms_new):
         for row in axes:
             for ax in row:
                 ax.set_xlim(x_lim)
