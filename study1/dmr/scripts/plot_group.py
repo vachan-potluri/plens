@@ -17,8 +17,6 @@ N_values = [1,2,3,5]
 flux = "chandrashekhar" # flux scheme used, generally this is a suffix to the case dir
 res_dir_name = "result" # name of result dir within case dir
 line_loc_suffixes = ["x2.5", "y0.3"] # the suffixes for the different number of lines sampled
-plot_var = "rho" # variable for plotting, use to index the data file
-yaxis_label = r"$\rho$"
 plot_dir = "/home/vachan/Documents/Work/plens/study1/dmr/plots" # loc for saving plots
 
 # set the data file names
@@ -28,9 +26,11 @@ for N in N_values:
     for s in line_loc_suffixes:
         data_filenames.loc[N, s] = res_dir+ "line_data_{}.csv".format(s)
 
-# set the x-axis variable for different lines
-xaxis_var = pd.Series(data=["Points1", "Points0"], index=line_loc_suffixes)
+# set the axes variables for different lines
+xaxis_vars = pd.Series(data=["Points1", "Points0"], index=line_loc_suffixes)
 xaxis_labels = pd.Series(data=[r"$y$", r"$x$"], index=line_loc_suffixes)
+yaxis_vars = pd.Series(data=["rhov", "T"], index=line_loc_suffixes)
+yaxis_labels = pd.Series(data=[r"$\rho v$", r"$T$"], index=line_loc_suffixes)
 
 N_colors = pd.Series(data=["blue", "green", "red", "magenta"], index=N_values)
 N_linestyles = pd.Series(
@@ -47,8 +47,8 @@ for line_suffix in line_loc_suffixes:
     for N in N_values:
         data = np.genfromtxt(data_filenames.loc[N, line_suffix], delimiter=",", names=True)
         ax.plot(
-            data[xaxis_var.loc[line_suffix]],
-            data[plot_var],
+            data[xaxis_vars.loc[line_suffix]],
+            data[yaxis_vars.loc[line_suffix]],
             label=r"$N={}$".format(N),
             ls=N_linestyles.loc[N],
             marker="",
@@ -56,10 +56,10 @@ for line_suffix in line_loc_suffixes:
             alpha=0.75
         )
     ax.set_xlabel(xaxis_labels.loc[line_suffix])
-    ax.set_ylabel(yaxis_label)
+    ax.set_ylabel(yaxis_labels.loc[line_suffix])
     ax.grid()
     ax.legend()
-    fig.tight_layout()
+    fig.tight_layout(pad=0.25)
     plt.show()
     for fmt in ["png", "pdf"]:
         fig_filename = "{}/line_{}.{}".format(plot_dir, line_suffix, fmt)
