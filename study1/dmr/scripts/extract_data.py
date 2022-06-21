@@ -58,7 +58,7 @@ plotOverLine1 = PlotOverLine(
 )
 
 plotOverLine1.Source.Point1 = [2.5, 0, z_loc]
-plotOverLine1.Source.Point2 = [2.5, 0.5, z_loc]
+plotOverLine1.Source.Point2 = [2.5, 0.45, z_loc]
 plotOverLine1.Source.Resolution = args.resolution
 
 # save data
@@ -79,8 +79,8 @@ plotOverLine2 = PlotOverLine(
     Source='Line'
 )
 
-plotOverLine2.Source.Point1 = [2, 0.3, z_loc]
-plotOverLine2.Source.Point2 = [3, 0.3, z_loc]
+plotOverLine2.Source.Point1 = [2.15, 0.3, z_loc]
+plotOverLine2.Source.Point2 = [2.85, 0.3, z_loc]
 plotOverLine2.Source.Resolution = args.resolution
 
 # save data
