@@ -50,25 +50,25 @@ result = XMLPartitionedUnstructuredGridReader(FileName=full_op_filename)
 
 
 
-# create a new 'Plot Over Line'
-plotOverLine1 = PlotOverLine(
-    registrationName='PlotOverLine1',
-    Input=result,
-    Source='Line'
-)
+# # create a new 'Plot Over Line'
+# plotOverLine1 = PlotOverLine(
+#     registrationName='PlotOverLine1',
+#     Input=result,
+#     Source='Line'
+# )
 
-plotOverLine1.Source.Point1 = [2.5, 0, z_loc]
-plotOverLine1.Source.Point2 = [2.5, 0.45, z_loc]
-plotOverLine1.Source.Resolution = args.resolution
+# plotOverLine1.Source.Point1 = [2.5, 0, z_loc]
+# plotOverLine1.Source.Point2 = [2.5, 0.5, z_loc]
+# plotOverLine1.Source.Resolution = args.resolution
 
-# save data
-full_data_filename = res_dir + args.base_data_filename + "_x2.5.csv"
-SaveData(
-    full_data_filename,
-    proxy=plotOverLine1,
-    PointDataArrays=['Subdomain', 'T', 'alpha', 'arc_length', 'k', 'mu', 'p', 'qx', 'qy', 'qz', 'rho', 'rhoE', 'rhou', 'rhov', 'rhow', 'steady_state_error', 'txx', 'txy', 'txz', 'tyy', 'tyz', 'tzz', 'u', 'v', 'vtkValidPointMask', 'w']
-)
-print("Written data file {}".format(full_data_filename))
+# # save data
+# full_data_filename = res_dir + args.base_data_filename + "_x2.5.csv"
+# SaveData(
+#     full_data_filename,
+#     proxy=plotOverLine1,
+#     PointDataArrays=['Subdomain', 'T', 'alpha', 'arc_length', 'k', 'mu', 'p', 'qx', 'qy', 'qz', 'rho', 'rhoE', 'rhou', 'rhov', 'rhow', 'steady_state_error', 'txx', 'txy', 'txz', 'tyy', 'tyz', 'tzz', 'u', 'v', 'vtkValidPointMask', 'w']
+# )
+# print("Written data file {}".format(full_data_filename))
 
 
 
@@ -79,12 +79,12 @@ plotOverLine2 = PlotOverLine(
     Source='Line'
 )
 
-plotOverLine2.Source.Point1 = [2.15, 0.3, z_loc]
-plotOverLine2.Source.Point2 = [2.85, 0.3, z_loc]
+plotOverLine2.Source.Point1 = [2, 0.2, z_loc]
+plotOverLine2.Source.Point2 = [2.85, 0.2, z_loc]
 plotOverLine2.Source.Resolution = args.resolution
 
 # save data
-full_data_filename = res_dir + args.base_data_filename + "_y0.3.csv"
+full_data_filename = res_dir + args.base_data_filename + "_y0.2.csv"
 SaveData(
     full_data_filename,
     proxy=plotOverLine2,

@@ -16,7 +16,7 @@ run_dir = "/home/vachan/Documents/Work/plens/study1/dmr/run"
 N_values = [1,2,3,5]
 flux = "chandrashekhar" # flux scheme used, generally this is a suffix to the case dir
 res_dir_name = "result" # name of result dir within case dir
-line_loc_suffixes = ["x2.5", "y0.3"] # the suffixes for the different number of lines sampled
+line_loc_suffixes = ["x2.5", "y0.2", "y0.3"] # the suffixes for the different number of lines sampled
 plot_dir = "/home/vachan/Documents/Work/plens/study1/dmr/plots" # loc for saving plots
 
 # set the data file names
@@ -27,10 +27,10 @@ for N in N_values:
         data_filenames.loc[N, s] = res_dir+ "line_data_{}.csv".format(s)
 
 # set the axes variables for different lines
-xaxis_vars = pd.Series(data=["Points1", "Points0"], index=line_loc_suffixes)
-xaxis_labels = pd.Series(data=[r"$y$", r"$x$"], index=line_loc_suffixes)
-yaxis_vars = pd.Series(data=["rhov", "T"], index=line_loc_suffixes)
-yaxis_labels = pd.Series(data=[r"$\rho v$", r"$T$"], index=line_loc_suffixes)
+xaxis_vars = pd.Series(data=["Points1", "Points0", "Points0"], index=line_loc_suffixes)
+xaxis_labels = pd.Series(data=[r"$y$", r"$x$", r"$x$"], index=line_loc_suffixes)
+yaxis_vars = pd.Series(data=["rho", "rhov", "rho"], index=line_loc_suffixes)
+yaxis_labels = pd.Series(data=[r"$\rho$", r"$\rho v$", r"$\rho$"], index=line_loc_suffixes)
 
 N_colors = pd.Series(data=["blue", "green", "red", "magenta"], index=N_values)
 N_linestyles = pd.Series(
