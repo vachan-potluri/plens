@@ -7,7 +7,8 @@ plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
     "font.size": 14,
-    "axes.formatter.limits": [-2,2]
+    "axes.formatter.limits": [-2,2],
+    "text.latex.preamble": r"\usepackage{sansmath}"
 })
 import pandas as pd
 
@@ -59,6 +60,69 @@ for line_suffix in line_loc_suffixes:
     ax.set_ylabel(yaxis_labels.loc[line_suffix])
     ax.grid()
     ax.legend()
+
+    # annotations
+    if line_suffix == "x2.5":
+        if yaxis_vars.loc[line_suffix] == "rho":
+            ax.annotate(
+                r"(\sansmath{$r$})",
+                xy=(0.42, 10),
+                xytext=(0.45, 10.5),
+                arrowprops=dict(arrowstyle="->")
+            )
+            ax.annotate(
+                r"(\sansmath{$s$})",
+                xy=(0.24, 9),
+                xytext=(0.27, 8.5),
+                arrowprops=dict(arrowstyle="->")
+            )
+    elif line_suffix == "y0.2":
+        if yaxis_vars.loc[line_suffix] == "rhov":
+            ax.annotate(
+                r"(\sansmath{$s'$})",
+                xy=(2.19, -19),
+                xytext=(2.25, -15),
+                arrowprops=dict(arrowstyle="->")
+            )
+            ax.annotate(
+                r"(\sansmath{$r'$}) \& (\sansmath{$s$})",
+                xy=(2.475, -10),
+                xytext=(2.525, -15),
+                arrowprops=dict(arrowstyle="->")
+            )
+            ax.annotate(
+                r"(\sansmath{$m$})",
+                xy=(2.75, 5),
+                xytext=(2.65, 1),
+                arrowprops=dict(arrowstyle="->")
+            )
+    elif line_suffix == "y0.3":
+        if yaxis_vars.loc[line_suffix] == "rho":
+            ax.annotate(
+                r"(\sansmath{$s'$})",
+                xy=(2.19, 14.1),
+                xytext=(2.1, 12.35),
+                arrowprops=dict(arrowstyle="->")
+            )
+            ax.annotate(
+                r"(\sansmath{$r'$})",
+                xy=(2.3, 12.2),
+                xytext=(2.215, 10.35),
+                arrowprops=dict(arrowstyle="->")
+            )
+            ax.annotate(
+                r"(\sansmath{$s$})",
+                xy=(2.575, 9),
+                xytext=(2.475, 7.25),
+                arrowprops=dict(arrowstyle="->")
+            )
+            ax.annotate(
+                r"(\sansmath{$m$})",
+                xy=(2.74, 5),
+                xytext=(2.625, 3.25),
+                arrowprops=dict(arrowstyle="->")
+            )
+    else: pass
     fig.tight_layout(pad=0.25)
     plt.show()
     for fmt in ["png", "pdf"]:
