@@ -32,9 +32,9 @@ flare_data = np.genfromtxt(
     "{}flare_data_{}.csv".format(res_dir, counter), delimiter=",", names=True
 )
 harvey_cp = np.genfromtxt("../data/cp_harvey.csv", delimiter=",")
-candler_cp = np.genfromtxt("../data/cp_gnoffo.csv", delimiter=",")
+gnoffo_cp = np.genfromtxt("../data/cp_gnoffo.csv", delimiter=",")
 harvey_St = np.genfromtxt("../data/St_harvey.csv", delimiter=",")
-candler_St = np.genfromtxt("../data/St_gnoffo.csv", delimiter=",")
+gnoffo_St = np.genfromtxt("../data/St_gnoffo.csv", delimiter=",")
 
 x_cylinder = cylinder_data["Points0"]/L
 x_flare = flare_data["Points0"]/L
@@ -57,7 +57,7 @@ txy_mask = np.isfinite(txy)
 
 fig, ax = plt.subplots(1,1)
 ax.plot(harvey_cp[:,0], harvey_cp[:,1], "bo", label="Harvey et al (2001)\nexperiment")
-ax.plot(candler_cp[:,0], candler_cp[:,1], "g^", label="Gnoffo (2001)\nsimulation")
+ax.plot(gnoffo_cp[:,0], gnoffo_cp[:,1], "g^", label="Gnoffo (2001)\nsimulation")
 ax.plot(x[cp_mask], cp[cp_mask], "r-", label="PLENS")
 ax.set_xlabel(r"$x/L$")
 ax.set_ylabel(r"$\displaystyle\frac{p-p_\infty}{\frac{1}{2}\rho_\infty u_\infty^2}$", rotation=0, labelpad=25)
@@ -73,7 +73,7 @@ plt.show()
 del fig, ax
 fig, ax = plt.subplots(1,1)
 ax.plot(harvey_St[:,0], harvey_St[:,1], "bo", label="Harvey et al (2001)\nexperiment")
-ax.plot(candler_St[:,0], candler_St[:,1], "g^", label="Gnoffo (2001)\nsimulation")
+ax.plot(gnoffo_St[:,0], gnoffo_St[:,1], "g^", label="Gnoffo (2001)\nsimulation")
 ax.plot(x[St_mask], St[St_mask], "r-", label="PLENS")
 ax.set_xlabel(r"$x/L$")
 ax.set_ylabel(r"$\displaystyle\frac{2q^{\prime\prime}_w}{\rho_\infty u_\infty^3}$", rotation=0, labelpad=20)
