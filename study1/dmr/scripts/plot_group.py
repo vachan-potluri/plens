@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
-    "font.size": 14,
+    "font.size": 18,
     "axes.formatter.limits": [-2,2],
     "text.latex.preamble": r"\usepackage{sansmath}"
 })
@@ -54,7 +54,8 @@ for line_suffix in line_loc_suffixes:
             ls=N_linestyles.loc[N],
             marker="",
             c=N_colors.loc[N],
-            alpha=0.75
+            alpha=0.75,
+            lw=2
         )
     ax.set_xlabel(xaxis_labels.loc[line_suffix])
     ax.set_ylabel(yaxis_labels.loc[line_suffix])
@@ -93,7 +94,7 @@ for line_suffix in line_loc_suffixes:
             ax.annotate(
                 r"(\sansmath{$m$})",
                 xy=(2.75, 5),
-                xytext=(2.65, 1),
+                xytext=(2.62, 1),
                 arrowprops=dict(arrowstyle="->")
             )
     elif line_suffix == "y0.3":
