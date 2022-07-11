@@ -122,7 +122,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1]
+steps_to_do = [6]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -345,7 +345,7 @@ if 6 in steps_to_do:
             )
         )
     ax.set_xlabel(r"$N$")
-    ax.set_ylabel("CPU time/time step/dof [sec]")
+    ax.set_ylabel("CPU time/time step/DoF [sec]")
     ax.grid()
     ax.legend(handles=legend_elements)
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
