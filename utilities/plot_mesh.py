@@ -29,16 +29,16 @@ plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
     "font.serif": ["Palatino"],
-    "font.size": 14,
+    "font.size": 10,
     "axes.formatter.limits": [-2,2]
 })
 from matplotlib.patches import Polygon
 import numpy as np
 
-# mesh_filename = "/home/vachan/Documents/Work/plens/study2/degrez_16Apr2022/group1/N2_2d.msh"
-# mesh_filename = "/home/vachan/Documents/Work/plens/study2/degrez_16Apr2022/group1/N2.msh"
+mesh_filename = "/home/vachan/Documents/Work/plens/validation/mengaldo_subsonic_bl/mesh2.msh"
+# mesh_filename = "/home/vachan/Documents/Work/plens/validation/jacobs_supersonic_bl2/mesh.msh"
 # mesh_filename = "/home/vachan/Documents/Work/plens/study2/lewis_M6_Re1.5e5_adiabatic/lewis_M6_Re1.5e5_adiabatic_trial6.msh"
-mesh_filename = "/home/vachan/Documents/Work/plens/study2/hcef_run9/hcef_run14_trial2.msh"
+# mesh_filename = "/home/vachan/Documents/Work/plens/study2/hcef_run9/hcef_run14_trial2.msh"
 mesh_file = meshio.read(mesh_filename)
 points = mesh_file.points # points array with z coordinate (in general)
 points_2d = points[:, :2]
@@ -59,7 +59,7 @@ if len(mesh_file.cells) > 1:
             elem_conn = np.vstack((elem_conn, cur_cells_item_data))
         item_id -= 1
 
-fig, ax = plt.subplots(1,1)
+fig, ax = plt.subplots(1, 1, layout="constrained")
 elem_id = 0
 for quad_ids in elem_conn:
     poly = Polygon(
@@ -71,7 +71,7 @@ for quad_ids in elem_conn:
         ]),
         edgecolor="black",
         facecolor="gray",
-        lw=0.1
+        lw=0.05
     )
     ax.add_patch(poly)
     elem_id += 1
@@ -80,5 +80,11 @@ ax.set_xlim(np.min(points_2d[:,0]), np.max(points_2d[:,0]))
 ax.set_ylim(np.min(points_2d[:,1]), np.max(points_2d[:,1]))
 ax.set_xlabel(r"$x$")
 ax.set_ylabel(r"$y$", rotation=0, labelpad=5)
-fig.tight_layout(pad=0.25)
+# https://stackoverflow.com/a/73047823/8028836
+fig.draw_without_rendering()
+tb = fig.get_tightbbox(fig.canvas.get_renderer())
+fig.set_size_inches(tb.width, tb.height)
+# fig.tight_layout(pad=0.25)
+fig.savefig("mesh.pdf", format="pdf")
+print("(Over)Written file mesh.pdf")
 plt.show()
