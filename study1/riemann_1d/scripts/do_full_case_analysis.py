@@ -124,7 +124,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [7,8]
+steps_to_do = [8]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -418,6 +418,9 @@ if 8 in steps_to_do:
             marker=N_markers[N],
             c=N_markercolors[N],
         )
+    # y=1/x curve
+    x = np.linspace(1, cpu_time.loc[N, 800]/cpu_time.loc[1, 800])
+    ax.plot(x, 1/x, c="gray", ls=":")
     # legends
     legend_elements = []
     for N in N_values:
@@ -439,9 +442,14 @@ if 8 in steps_to_do:
                 label="{} DoFs".format(dof)
             )
         )
+    legend_elements.append(
+        Line2D(
+            [0], [0], c="gray", ls=":", label=r"$y=1/x$"
+        )
+    )
     ax.set_xlabel(r"CPU time($N, \bullet$)/CPU time($1, \bullet$)")
     ax.set_ylabel(r"$L^2$ error($N, \bullet$)/$L^2$ error($1, \bullet$)")
-    ax.legend(handles=legend_elements)
+    ax.legend(handles=legend_elements, ncol=2)
     ax.grid(which="major")
     fig.set_size_inches(4, 3)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
