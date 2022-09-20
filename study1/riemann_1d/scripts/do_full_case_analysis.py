@@ -9,6 +9,8 @@
 # 4. Visual comparison of results for all dofs and all values of N (outsourced)
 # 5. Error vs N for different values of dof (was suggested by KB, see WJ-04-Mar-2022)
 # 6. CPU time/DoF/time step vs N (for SIS2022, see WJ-16-Jun2022)
+# 7. CPU time/DoF vs N (for APS-3 presentation, see WJ-20-Sep-2022)
+# 8. Error vs cpu time for different values of N and across dofs (for APS-3 presentation, see WJ-20-Sep-2022)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -111,8 +113,8 @@ def format_dof_axis(axis, major_loc=100, minor_loc=None):
         ax.xaxis.set_minor_formatter(NullFormatter())
 
 
-def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
-    # similar to `format_error_axis`, but for the cpu time axis
+def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
+    # similar to `format_error_axis`, but for the cpu time/time step axis
     axis.set_major_locator(MultipleLocator(major_loc))
     axis.set_major_formatter(ScalarFormatter())
     axis.set_minor_locator(MultipleLocator(minor_loc))
@@ -122,7 +124,7 @@ def format_cpu_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [6]
+steps_to_do = [7,8]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -177,8 +179,8 @@ if 1 in steps_to_do:
             "../plots",
             "dof{}_12_12_{}".format(dof, flux),
             "--size",
-            "5",
-            "3.5"
+            "6",
+            "5"
         ])
 
 
@@ -192,6 +194,7 @@ l2_errors = pd.DataFrame(
 )
 wtpt = l2_errors.copy() # wall time per time step
 ctpt = l2_errors.copy() # cpu time per time step
+cpu_time = l2_errors.copy() # cpu time
 for N in N_values:
     for dof in dofs:
         df = pd.read_csv(
@@ -206,6 +209,7 @@ for N in N_values:
         l2_errors.loc[N, dof] = df.loc["l2 error", 1]
         wtpt.loc[N, dof] = df.loc["wall time per time step", 1]
         ctpt.loc[N, dof] = df.loc["cpu time per time step", 1]
+        cpu_time.loc[N, dof] = df.loc["cpu time", 1]
 
 if 2 in steps_to_do:
     fig, ax = plt.subplots(1,1)
@@ -255,7 +259,7 @@ if 3 in steps_to_do:
     ax.set_ylabel(r"$L^2$ error")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    format_cpu_axis(ax.xaxis)
+    format_ctpt_axis(ax.xaxis)
     format_error_axis(ax.yaxis, error_ax_major_loc, error_ax_minor_loc)
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
@@ -263,7 +267,7 @@ if 3 in steps_to_do:
     fig.set_size_inches(5, 3.5)
     fig.tight_layout(rect=[0,0,1,1])
     plt.show()
-    mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))
+    mysavefig(fig, "../plots", "error_vs_cputime_per_timestep_{}".format(flux))
 
 
 
@@ -310,7 +314,7 @@ if 5 in steps_to_do:
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(5, 3)
+    fig.set_size_inches(4, 3)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
@@ -349,7 +353,97 @@ if 6 in steps_to_do:
     ax.grid()
     ax.legend(handles=legend_elements)
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(5, 3)
+    fig.set_size_inches(4, 3)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "cputime_per_timestep_vs_N_{}".format(flux))
+
+
+
+# 7. CPU time/DoF vs N (for APS-3 presentation, see WJ-20-Sep-2022)
+if 7 in steps_to_do:
+    fig, ax = plt.subplots(1,1)
+    # plot
+    for N in N_values:
+        for dof in dofs:
+            ax.scatter(
+                N,
+                cpu_time.loc[N, dof]/cpu_time.loc[1, dof],
+                marker=dof_markers.loc[dof],
+                edgecolor=dof_linecolors.loc[dof],
+                facecolor="none"
+            )
+    # for legend
+    legend_elements = []
+    for dof in dofs:
+        legend_elements.append(
+            Line2D(
+                [0], [0],
+                ls="",
+                marker=dof_markers.loc[dof],
+                markeredgecolor=dof_linecolors.loc[dof],
+                markerfacecolor="none",
+                label="{} DoFs".format(dof)
+            )
+        )
+    ax.set_xlabel(r"$N$")
+    ax.set_ylabel(r"CPU time($N, \bullet$)/CPU time($1, \bullet$)")
+    ax.grid()
+    ax.legend(handles=legend_elements)
+    ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
+    fig.set_size_inches(4, 3)
+    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
+    plt.show()
+    mysavefig(fig, "../plots", "cputime_vs_N_{}".format(flux))
+
+
+
+# 8. Error vs cpu time for different values of N and across dofs (for APS-3 presentation, see WJ-20-Sep-2022)
+if 8 in steps_to_do:
+    fig, ax = plt.subplots(1,1)
+    # draw connecting lines for the same dof count
+    for dof in dofs:
+        ax.plot(
+            cpu_time.loc[:, dof]/cpu_time.loc[1, dof],
+            l2_errors.loc[:, dof]/l2_errors.loc[1, dof],
+            ls=dof_linestyles.loc[dof],
+            c="gray"
+        )
+    # add data points
+    for N in N_values:
+        ax.plot(
+            cpu_time.loc[N, :]/cpu_time.loc[1, :],
+            l2_errors.loc[N, :]/l2_errors.loc[1, :],
+            ls="",
+            marker=N_markers[N],
+            c=N_markercolors[N],
+        )
+    # legends
+    legend_elements = []
+    for N in N_values:
+        legend_elements.append(
+            Line2D(
+                [0], [0],
+                ls="",
+                marker=N_markers[N],
+                c=N_markercolors[N],
+                label=r"$N={}$".format(N)
+            )
+        )
+    for dof in dofs:
+        legend_elements.append(
+            Line2D(
+                [0], [0],
+                ls=dof_linestyles.loc[dof],
+                c="gray",
+                label="{} DoFs".format(dof)
+            )
+        )
+    ax.set_xlabel(r"CPU time($N, \bullet$)/CPU time($1, \bullet$)")
+    ax.set_ylabel(r"$L^2$ error($N, \bullet$)/$L^2$ error($1, \bullet$)")
+    ax.legend(handles=legend_elements)
+    ax.grid(which="major")
+    fig.set_size_inches(4, 3)
+    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
+    plt.show()
+    mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))

@@ -3,12 +3,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-plt.rcParams["text.usetex"] = True
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["font.size"] = 10
-plt.rcParams["mathtext.fontset"] = "dejavuserif"
-plt.rcParams["axes.formatter.limits"] = [-2,2]
-plt.rcParams["axes.formatter.use_mathtext"] = True
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.size": 10,
+    "axes.formatter.limits": [-2,2],
+})
 
 parser = argparse.ArgumentParser(
     description = "A script to compare numerical and exact results for different values of N, for "
@@ -188,7 +188,7 @@ for row in axes:
         i += 1
 if figtitle != "": fig.suptitle(figtitle)
 fig.set_size_inches(args.size[0], args.size[1])
-fig.tight_layout(rect=[0,0,1,1], pad=0.25)
+fig.tight_layout(rect=[0,0,1,1], pad=0.75)
 # def on_resize(event):
 #     fig.tight_layout(rect=[0,0,1,1])
 #     fig.canvas.draw()
