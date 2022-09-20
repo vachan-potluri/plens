@@ -12,7 +12,7 @@ plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
     # "font.serif": ["Palatino"],
-    "font.size": 14,
+    "font.size": 10,
     # "axes.formatter.limits": [-2,2]
 })
 
@@ -77,9 +77,9 @@ x_range_inset = [0.3, 2.5]
 inset_mask_ref = np.logical_and(x_ref >= x_range_inset[0], x_ref <= x_range_inset[1])
 
 for dof in [200,400,800]:
-    fig, axes = plt.subplots(1,4)
+    fig, axes = plt.subplots(2,2)
     N_id = 0
-    for ax in axes:
+    for ax in np.reshape(axes, 4):
         N = N_values[N_id]
         sim_file = "dof{0}_{1}_{1}_N{2}_{3}/{4}/{5}".format(
             dof, N+1, N, case_suffix, res_dir, sim_data_filename
@@ -93,7 +93,7 @@ for dof in [200,400,800]:
             rho_ref,
             "b-",
             lw=1,
-            # label="Reference"
+            label="Reference"
         )
         sim_line, = ax.plot(
             x_sim,
@@ -101,7 +101,7 @@ for dof in [200,400,800]:
             "ro-",
             ms=1,
             lw=0.5,
-            # label="Simulation"
+            label="Simulation"
         )
         ax.grid()
         ax.set_title(r"$N={}$".format(N))
@@ -131,28 +131,26 @@ for dof in [200,400,800]:
         for s in ax_ins.spines.values(): s.set_edgecolor("darkgray") # inset border color
         N_id += 1
     # https://stackoverflow.com/a/6541454/8028836
-    plt.subplots_adjust(
-        left=0.02,
-        # bottom=None,
-        right=0.99,
-        top=0.79,
-        wspace=0.1,
-        # hspace=None
-    )
-    # tight layout not working well
-    # fig.tight_layout(
-    #     rect=[0,0,1,0.9],
-    #       pad=1,
-    #       h_pad=0,
-    #       w_pad=0
-    # ) # padding in fraction of font size
-    fig.set_size_inches(15, 3.5)
+    # plt.subplots_adjust(
+    #     left=0.02,
+    #     # bottom=None,
+    #     right=0.99,
+    #     top=0.79,
+    #     wspace=0.1,
+    #     # hspace=None
+    # )
+    # tight layout not working well for 1x4 array
+    fig.tight_layout(
+        rect=[0,0,1,0.96],
+        pad=0.5
+    ) # padding in fraction of font size
+    fig.set_size_inches(6,5.5)
     # legend outside figure
     fig.legend(
         handles=[ref_line, sim_line],
-        labels=["Reference", "Simulation"],
-        loc="lower center",
-        bbox_to_anchor=(0.5,0.88),
+        # labels=["Reference", "Simulation"],
+        loc="upper center",
+        bbox_to_anchor=(0.5,1),
         ncol=2, # number of columns
         borderaxespad=0 # padding between axes and legend
     )
