@@ -1,6 +1,7 @@
 # A script to extract surface data from pvtu files for HCEF geometry
 
 import argparse
+import numpy as np
 from paraview.simple import *
 
 parser = argparse.ArgumentParser(
@@ -24,7 +25,58 @@ parser.add_argument(
     default=100,
     action="store"
 )
+parser.add_argument(
+    "-a",
+    "--azimuths",
+    help="Extract data on multiple azimuthal angles (in degrees). Default: ''. If this argument is "
+        + "empty, only the zero-degree azimuthal angle is used for extracting.",
+    default=[0.0],
+    type=float,
+    action="store",
+    nargs="*"
+)
 args = parser.parse_args()
+
+
+
+# function to save cylinder and flare data on a given azimuthal angle
+def extract_data(result, res_dir, counter, azimuth=0):
+    phi = np.pi*azimuth/180
+    eps = 1e-6
+    r1 = 0.0325 + eps
+    r2 = 0.1008 + eps
+    x1 = 0.01
+    x2 = 0.1017
+    x3 = 0.22
+    plotOverLine1 = PlotOverLine(
+        registrationName='PlotOverLine1',
+        Input=result,
+    )
+    plotOverLine1.Point1 = [x1, r1*np.cos(phi), r1*np.sin(phi)]
+    plotOverLine1.Point2 = [x2, r1*np.cos(phi), r1*np.sin(phi)]
+    plotOverLine1.Resolution = args.resolution
+    temp_filename = '{}cylinder_data_phi{:.0f}_{}.csv'.format(res_dir, azimuth, counter)
+    SaveData(
+        temp_filename,
+        proxy=plotOverLine1,
+    )
+    print("Written file {}".format(temp_filename))
+
+    plotOverLine2 = PlotOverLine(
+        registrationName='PlotOverLine2',
+        Input=result,
+    )
+    plotOverLine2.Point1 = plotOverLine1.Point2
+    plotOverLine2.Point2 = [x3, r2*np.cos(phi), r2*np.sin(phi)]
+    plotOverLine1.Resolution = args.resolution
+    temp_filename = '{}flare_data_phi{:.0f}_{}.csv'.format(res_dir, azimuth, counter)
+    SaveData(
+        temp_filename,
+        proxy=plotOverLine2,
+    )
+    print("Written file {}".format(temp_filename))
+
+
 
 res_dir = args.res_dir
 if res_dir[-1] != "/":
@@ -36,43 +88,4 @@ result = XMLPartitionedUnstructuredGridReader(
 )
 print("Read file {}".format(full_data_filename))
 
-# create a new 'Plot Over Line'
-plotOverLine1 = PlotOverLine(
-    registrationName='PlotOverLine1',
-    Input=result,
-    Source='Line'
-)
-
-plotOverLine1.Source.Point1 = [0.01, 0.0325, 1e-8]
-plotOverLine1.Source.Point2 = [0.1017, 0.0325, 1e-8]
-plotOverLine1.Source.Resolution = args.resolution
-
-# save data
-temp_filename = '{}cylinder_data_{}.csv'.format(res_dir, counter)
-SaveData(
-    temp_filename,
-    proxy=plotOverLine1,
-    PointDataArrays=['Subdomain', 'T', 'alpha', 'arc_length', 'k', 'mu', 'p', 'qx', 'qy', 'qz', 'rho', 'rhoE', 'rhou', 'rhov', 'rhow', 'steady_state_error', 'txx', 'txy', 'txz', 'tyy', 'tyz', 'tzz', 'u', 'v', 'vtkValidPointMask', 'w']
-)
-print("Written file {}".format(temp_filename))
-
-# create a new 'Plot Over Line'
-plotOverLine2 = PlotOverLine(
-    registrationName='PlotOverLine2',
-    Input=result,
-    Source='Line'
-)
-
-plotOverLine2.Source.Point1 = [0.1017, 0.0325, 1e-8]
-plotOverLine2.Source.Point2 = [0.22, 0.100801, 1e-8]
-plotOverLine1.Source.Resolution = args.resolution
-
-# save data
-temp_filename = '{}flare_data_{}.csv'.format(res_dir, counter)
-SaveData(
-    temp_filename,
-    proxy=plotOverLine2,
-    PointDataArrays=['Subdomain', 'T', 'alpha', 'arc_length', 'k', 'mu', 'p', 'qx', 'qy', 'qz', 'rho', 'rhoE', 'rhou', 'rhov', 'rhow', 'steady_state_error', 'txx', 'txy', 'txz', 'tyy', 'tyz', 'tzz', 'u', 'v', 'vtkValidPointMask', 'w']
-)
-print("Written file {}".format(temp_filename))
-
+for azimuth in args.azimuths: extract_data(result, res_dir, counter, azimuth)

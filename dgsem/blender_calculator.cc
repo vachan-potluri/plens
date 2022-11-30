@@ -44,7 +44,7 @@ cbm(d)
     if(d>1){
         for(usi k=0; k<d-1; k++){
             for(usi j=0; j<d-1; j++){
-                for(usi i=0; i<d; i++){
+                for(usi i=0; i<d-1; i++){
                     usi index = i + j*(d+1) + k*(d+1)*(d+1);
                     mode_indices_Nm2.emplace_back(index);
                 }
