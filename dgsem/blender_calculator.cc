@@ -187,8 +187,10 @@ double BlenderCalculator::get_blender(
     double e_Nm2 = 0; // energy of modes only upto (N-2)-th polynomial degree
     for(usi i: mode_indices_Nm2) e_Nm2 += modes[i]*modes[i];
 
-    if(cbm.degree>2) return std::max(1-e_Nm1/e_tot, 1-e_Nm2/e_Nm1);
-    else return 1-e_Nm1/e_tot; // degree=1
+    // if(cbm.degree>2) return std::max(1-e_Nm1/e_tot, 1-e_Nm2/e_Nm1);
+    // else return 1-e_Nm1/e_tot; // degree=1,2
+
+    return 1-e_Nm1/e_tot;
 }
 
 
