@@ -45,6 +45,26 @@ IF(CVAR_GRAD)
     ADD_DEFINITIONS(-DCVAR_GRAD)
 ENDIF(CVAR_GRAD)
 
+# For 2d simulations
+OPTION(
+    PLENS_2D
+    "Manually set RHS of z-direction momentum to 0. Useful for 2d order of convergence tests"
+    OFF
+)
+IF(PLENS_2D)
+    ADD_DEFINITIONS(-DPLENS_2D)
+ENDIF(PLENS_2D)
+
+# For using Persson's indicator, without Hennemenn's modification
+OPTION(
+    PERSSON_INDICATOR
+    "Use purely Persson's version of trouble energy calculation, without Hennemenn's modification"
+    OFF
+)
+IF(PERSSON_INDICATOR)
+    ADD_DEFINITIONS(-DPERSSON_INDICATOR)
+ENDIF(PERSSON_INDICATOR)
+
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14") # required for 9.3.0
 
 ADD_SUBDIRECTORY(utilities)

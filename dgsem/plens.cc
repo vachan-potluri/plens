@@ -3720,6 +3720,9 @@ void PLENS::calc_rhs(const bool print_wall_blender_limit)
                         (1-alpha)*ho_inv_residual[i][var];
                 }
             }
+#           ifdef PLENS_2D
+                gcrk_rhs[cvar::rhow][dof_ids[i]] = 0;
+#           endif
         } // loop over dofs
     } // loop over owned cells
 
