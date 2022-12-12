@@ -55,6 +55,15 @@ IF(PLENS_2D)
     ADD_DEFINITIONS(-DPLENS_2D)
 ENDIF(PLENS_2D)
 
+# Constant viscosity
+OPTION(
+    CONST_VISCOSITY
+    "Use constant viscosity for simulations"
+)
+IF(CONST_VISCOSITY)
+    ADD_DEFINITIONS(-DCONST_VISCOSITY)
+ENDIF(CONST_VISCOSITY)
+
 # For using Persson's indicator, without Hennemenn's modification
 OPTION(
     PERSSON_INDICATOR

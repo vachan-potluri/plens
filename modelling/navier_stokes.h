@@ -345,7 +345,11 @@ class NavierStokes
      */
     inline double get_mu(const double T) const
     {
-        return mu0_*std::pow(T/T0_, 1.5)*(T0_+S_)/(T+S_);
+#       ifdef CONST_VISCOSITY
+            return mu0_;
+#       else
+            return mu0_*std::pow(T/T0_, 1.5)*(T0_+S_)/(T+S_);
+#       endif
     }
 
     /**
