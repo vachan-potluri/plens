@@ -82,6 +82,7 @@
 #include <IBCs/empty.h>
 #include <IBCs/periodic.h>
 #include <IBCs/varying_inflow.h>
+#include <IBCs/zpg_inflow.h>
 #include <utilities/minmod.h>
 
 #ifdef DEBUG

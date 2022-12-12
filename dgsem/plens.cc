@@ -278,7 +278,7 @@ void PLENS::declare_parameters()
                     "none",
                     Patterns::Selection(
                         "none|free|outflow|uniform inflow|uniform temp wall|symmetry|empty|"
-                        "periodic|insulated wall|varying inflow"
+                        "periodic|insulated wall|varying inflow|ZPG inflow"
                     ),
                     "Type of BC. Options: 'none|free|outflow|uniform inflow|uniform temp wall"
                     "|symmetry|empty|periodic|insulated wall'. 'none' type cannot be specified "
@@ -1397,6 +1397,22 @@ void PLENS::set_BC()
                         p_expr,
                         T_expr,
                         vel_expr,
+                        ns_ptr.get()
+                    );
+                }
+                else if(type == "ZPG inflow"){
+                    const std::string vel_str = prm.get("prescribed velocity");
+                    std::vector<std::string> splits;
+                    Tensor<1,dim> vel;
+                    utilities::split_string(vel_str, " ", splits);
+                    for(int d=0; d<dim; d++) vel[d] = std::stod(splits[d]);
+                    pcout << "\t Prescribed U: " << vel << "\n";
+
+                    bc_list[cur_bid] = new BCs::ZPGInflow(
+                        dof_handler,
+                        gcrk_cvars,
+                        gcrk_avars,
+                        vel,
                         ns_ptr.get()
                     );
                 }
