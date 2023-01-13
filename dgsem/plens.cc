@@ -1515,7 +1515,23 @@ void PLENS::run()
         file << "\n# FE degree " << fe.degree
             << "\n# Mapping degree " << mapping_ptr->get_degree()
             << "\n# Processors " << Utilities::MPI::n_mpi_processes(mpi_comm)
-            << "\n# DoFs per variable " << dof_handler.n_dofs() << "\n";
+            << "\n# DoFs per variable " << dof_handler.n_dofs()
+#           ifdef PERSSON_INDICATOR
+                << "\n# Indicator: Persson"
+#           else
+                << "\n# Indicator: Hennemenn"
+#           endif
+#           ifdef CVAR_GRAD
+                << "\n# Lifting: conservative variables"
+#           else
+                << "\n# Lifting: entropy variables"
+#           endif
+#           ifdef CONST_VISCOSITY
+                << "\n# Viscosity: constant"
+#           else
+                << "\n# Viscosity: Sutherland"
+#           endif
+            << "\n";
         file.close();
     }
 
