@@ -30,7 +30,7 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import ScalarFormatter, NullFormatter, MultipleLocator
 from scipy.stats import linregress
 plt.rcParams["text.usetex"] = True
-plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.family"] = "Times"
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
 plt.rcParams["font.size"] = 10 # ineffective
 plt.rcParams["axes.formatter.limits"] = [-2,2]
@@ -124,7 +124,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [8]
+steps_to_do = [1]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -153,7 +153,7 @@ dof_markers = pd.Series(["o", "s", "^"], index=dofs)
 # varying data (requires user intervention)
 flux = "chandrashekhar"
 flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
-result_dir = "result_28Mar2022"
+result_dir = "result_16Jan2023_persson"
 case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
