@@ -49,7 +49,7 @@ def autoscale_y(ax,margin=0.1):
 
 
 case_suffix = "chandrashekhar" # generally the flux scheme
-res_dir = "result_16Jun2022" # the name of result directory
+res_dir = "result_16Jan2023_persson" # the name of result directory
 sim_data_filename = "line_data.csv" # name of extracted line data file
 # ref_soln_file = "../data/rho_ref_data.csv"
 # ref_soln_file_delim = ","
@@ -99,7 +99,7 @@ for dof in [200,400,800]:
             x_sim,
             rho_sim,
             "ro-",
-            ms=1,
+            ms=0.5,
             lw=0.5,
             label="Simulation"
         )

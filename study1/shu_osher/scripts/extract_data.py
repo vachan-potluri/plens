@@ -44,19 +44,17 @@ result = XMLPartitionedUnstructuredGridReader(FileName=full_op_filename)
 # create a new 'Plot Over Line'
 plotOverLine1 = PlotOverLine(
     registrationName='PlotOverLine1',
-    Input=result,
-    Source='Line'
+    Input=result
 )
 
-plotOverLine1.Source.Point1 = [-5.0, 0.5, 0.5]
-plotOverLine1.Source.Point2 = [5.0, 0.5, 0.5]
-plotOverLine1.Source.Resolution = args.resolution
+plotOverLine1.Point1 = [-5.0, 0.5, 0.5]
+plotOverLine1.Point2 = [5.0, 0.5, 0.5]
+plotOverLine1.Resolution = args.resolution
 
 # save data
 full_data_filename = res_dir + args.data_filename + ".csv"
 SaveData(
     full_data_filename,
-    proxy=plotOverLine1,
-    PointDataArrays=['Subdomain', 'T', 'alpha', 'arc_length', 'k', 'mu', 'p', 'qx', 'qy', 'qz', 'rho', 'rhoE', 'rhou', 'rhov', 'rhow', 'steady_state_error', 'txx', 'txy', 'txz', 'tyy', 'tyz', 'tzz', 'u', 'v', 'vtkValidPointMask', 'w']
+    proxy=plotOverLine1
 )
 print("Written data file {}".format(full_data_filename))
