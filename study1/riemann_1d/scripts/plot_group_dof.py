@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import argparse
 plt.rcParams.update({
     "text.usetex": True,
-    "font.family": "serif",
+    "font.family": "Times",
     "font.size": 10,
     "axes.formatter.limits": [-2,2],
 })
@@ -174,21 +174,30 @@ figtitle = r"{}".format(args.plot_title)
 #     "../test1-5/run/dof800_12_12_N5_rusanov/result1/comparison_data.csv"
 # ]
 
-fig, axes = plt.subplots(2,2)
+fig, axes = plt.subplots(2,2,figsize=(args.size[0], args.size[1]))
 i = 0
 for row in axes:
     for ax in row:
         print("Reading data from {}".format(data_files[i]))
         data = np.genfromtxt(data_files[i], delimiter=",")
-        ax.plot(data[:,0], data[:,1], "b--", lw=1, label="Exact")
-        ax.plot(data[:,0], data[:,2], "r-", lw=1, label="Simulation")
+        line_exact, = ax.plot(data[:,0], data[:,1], "b--", lw=1, label="Exact")
+        line_simulation, = ax.plot(data[:,0], data[:,2], "r-", lw=1, label="Simulation")
         ax.set_title(subtitles[i])
         ax.grid()
-        if i==0: ax.legend(loc="best", handlelength=1)
+        # if i==0: ax.legend(loc="best", handlelength=1)
         i += 1
 if figtitle != "": fig.suptitle(figtitle)
-fig.set_size_inches(args.size[0], args.size[1])
-fig.tight_layout(rect=[0,0,1,1], pad=0.75)
+fig.legend(
+    [line_exact, line_simulation],
+    ["Exact", "Simulation"],
+    ncol=2,
+    loc="lower center",
+    bbox_to_anchor=(0.5,1),
+    borderpad=0.25,
+    borderaxespad=0
+)
+# fig.set_size_inches(args.size[0], args.size[1])
+fig.tight_layout(pad=0.25)
 # def on_resize(event):
 #     fig.tight_layout(rect=[0,0,1,1])
 #     fig.canvas.draw()
@@ -198,5 +207,5 @@ plt.show()
 if args.save[0] != "" and args.save[1] != "":
     for fmt in ["png", "pdf"]:
         full_plot_filename = "{}/{}.{}".format(args.save[0], args.save[1], fmt)
-        fig.savefig(full_plot_filename, format=fmt)
+        fig.savefig(full_plot_filename, format=fmt, bbox_inches="tight", pad_inches=3./72)
         print("Written file {}".format(full_plot_filename))

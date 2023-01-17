@@ -31,7 +31,7 @@ from matplotlib.ticker import ScalarFormatter, NullFormatter, MultipleLocator
 from scipy.stats import linregress
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "Times"
-plt.rcParams["mathtext.fontset"] = "dejavuserif"
+# plt.rcParams["mathtext.fontset"] = "dejavuserif"
 plt.rcParams["font.size"] = 10 # ineffective
 plt.rcParams["axes.formatter.limits"] = [-2,2]
 plt.rcParams["axes.formatter.use_mathtext"] = True
@@ -180,7 +180,7 @@ if 1 in steps_to_do:
             "dof{}_12_12_{}".format(dof, flux),
             "--size",
             "6",
-            "5"
+            "4"
         ])
 
 
