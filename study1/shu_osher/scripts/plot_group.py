@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams.update({
     "text.usetex": True,
-    "font.family": "serif",
+    "font.family": "Times",
     # "font.serif": ["Palatino"],
     "font.size": 10,
     # "axes.formatter.limits": [-2,2]
@@ -77,10 +77,8 @@ x_range_inset = [0.3, 2.5]
 inset_mask_ref = np.logical_and(x_ref >= x_range_inset[0], x_ref <= x_range_inset[1])
 
 for dof in [200,400,800]:
-    fig, axes = plt.subplots(2,2)
-    N_id = 0
-    for ax in np.reshape(axes, 4):
-        N = N_values[N_id]
+    fig, axes = plt.subplots(1,4,figsize=(10,2.5))
+    for ax,N in zip(axes,N_values):
         sim_file = "dof{0}_{1}_{1}_N{2}_{3}/{4}/{5}".format(
             dof, N+1, N, case_suffix, res_dir, sim_data_filename
         )
@@ -120,7 +118,7 @@ for dof in [200,400,800]:
             x_sim[inset_mask_sim],
             rho_sim[inset_mask_sim],
             "ro-",
-            ms=1,
+            ms=0.5,
             lw=0.5
         )
         # remove all inset axes ticks and labels
@@ -129,7 +127,6 @@ for dof in [200,400,800]:
         ax_ins.set_xticks([])
         ax_ins.set_yticks([])
         for s in ax_ins.spines.values(): s.set_edgecolor("darkgray") # inset border color
-        N_id += 1
     # https://stackoverflow.com/a/6541454/8028836
     # plt.subplots_adjust(
     #     left=0.02,
@@ -141,23 +138,22 @@ for dof in [200,400,800]:
     # )
     # tight layout not working well for 1x4 array
     fig.tight_layout(
-        rect=[0,0,1,0.96],
         pad=0.5
     ) # padding in fraction of font size
-    fig.set_size_inches(6,5.5)
     # legend outside figure
     fig.legend(
         handles=[ref_line, sim_line],
         # labels=["Reference", "Simulation"],
-        loc="upper center",
+        loc="lower center",
         bbox_to_anchor=(0.5,1),
         ncol=2, # number of columns
+        borderpad=0.5,
         borderaxespad=0 # padding between axes and legend
     )
     plt.show()
     for fmt in ["png", "pdf"]:
         fig_filename = plot_dir + "dof{}_".format(dof) + case_suffix + ".{}".format(fmt)
-        fig.savefig(fig_filename, format=fmt)
+        fig.savefig(fig_filename, format=fmt, bbox_inches="tight", pad_inches=2./72)
         print("Saved figure {}".format(fig_filename))
     
     for i,x_lim in enumerate(x_zooms_new):

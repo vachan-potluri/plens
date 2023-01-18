@@ -179,7 +179,7 @@ if 1 in steps_to_do:
             "../plots",
             "dof{}_12_12_{}".format(dof, flux),
             "--size",
-            "6",
+            "5",
             "4"
         ])
 
