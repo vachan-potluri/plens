@@ -16,12 +16,14 @@ def delete_time_dirs(file, times, n_del):
     # it is checked that "times" doesn't contain "0"
     # only one in every "n_del" time directories is retained
     # the last time directory is not deleted
+    if len(times) == 0: return
+
     if times[0] == "0":
         times = times[1:]
     n_times = len(times)
 
     # return if only one non-zero time directory is seen
-    if n_times == 1: return
+    if n_times <= 1: return
 
     retain_indices = np.arange(n_times-1,0,-n_del)
     del_indices = list(set(range(n_times)) - set(retain_indices))
