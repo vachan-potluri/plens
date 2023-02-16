@@ -77,7 +77,7 @@ x_range_inset = [0.3, 2.5]
 inset_mask_ref = np.logical_and(x_ref >= x_range_inset[0], x_ref <= x_range_inset[1])
 
 for dof in [200,400,800]:
-    fig, axes = plt.subplots(1,4,figsize=(10,2.5))
+    fig, axes = plt.subplots(1,4,figsize=(10,2.5),sharex=True,sharey=True)
     for ax,N in zip(axes,N_values):
         sim_file = "dof{0}_{1}_{1}_N{2}_{3}/{4}/{5}".format(
             dof, N+1, N, case_suffix, res_dir, sim_data_filename

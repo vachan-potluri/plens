@@ -174,7 +174,7 @@ figtitle = r"{}".format(args.plot_title)
 #     "../test1-5/run/dof800_12_12_N5_rusanov/result1/comparison_data.csv"
 # ]
 
-fig, axes = plt.subplots(2,2,figsize=(args.size[0], args.size[1]))
+fig, axes = plt.subplots(2,2,figsize=(args.size[0], args.size[1]),sharex=True,sharey=True)
 i = 0
 for row in axes:
     for ax in row:
