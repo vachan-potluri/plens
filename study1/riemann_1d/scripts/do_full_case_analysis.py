@@ -321,14 +321,14 @@ if 5 in steps_to_do:
             label=r"{} DoFs".format(dof)
         )
     ax.set_xlabel(r"$N$")
-    ax.set_ylabel(r"$L^1$ error")
+    ax.set_ylabel(r"Normalised $L^1$ error")
     ax.set_yscale("log")
     format_error_axis(ax.yaxis, error_ax_major_loc, error_ax_minor_loc)
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(4, 3)
+    fig.set_size_inches(5, 3.5)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
@@ -486,7 +486,7 @@ if 9 in steps_to_do:
                 f"dof{dof}_12_12_N{N}_{flux}/{result_dir}/comparison_data.csv",
                 delimiter=","
             )
-            tv.loc[N, dof] = calc_total_variation(data[:,1]-data[:,2])
+            tv.loc[N, dof] = calc_total_variation(data[:,1]-data[:,2])/calc_total_variation(data[:,1])
     fig, ax = plt.subplots(1,1)
     for dof in dofs:
         ax.plot(
@@ -500,11 +500,11 @@ if 9 in steps_to_do:
             label=r"{} DoFs".format(dof)
         )
     ax.set_xlabel(r"$N$")
-    ax.set_ylabel("Total Variation")
+    ax.set_ylabel("Normalised total variation")
     ax.legend(loc="best", handlelength=3)
     ax.grid()
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(4, 3)
+    fig.set_size_inches(5, 3.5)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "tv_vs_N_{}".format(flux))
