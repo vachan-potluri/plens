@@ -11,6 +11,7 @@
 # 6. CPU time/DoF/time step vs N (for SIS2022, see WJ-16-Jun2022)
 # 7. CPU time/DoF vs N (for APS-3 presentation, see WJ-20-Sep-2022)
 # 8. Error vs cpu time for different values of N and across dofs (for APS-3 presentation, see WJ-20-Sep-2022)
+# 9. Total variation vs N for different values of dof (see WJ-21-Mar-2023)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -35,6 +36,15 @@ plt.rcParams["font.family"] = "Times"
 plt.rcParams["font.size"] = 10 # ineffective
 plt.rcParams["axes.formatter.limits"] = [-2,2]
 plt.rcParams["axes.formatter.use_mathtext"] = True
+
+
+
+def calc_total_variation(array):
+    # calculates total variation of an array
+    tv = 0.0
+    for i in range(len(array)-1):
+        tv += abs(array[i+1] - array[i])
+    return tv
 
 
 
@@ -124,7 +134,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1]
+steps_to_do = [5,9]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -157,7 +167,11 @@ result_dir = "result_16Jan2023_persson"
 case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
-error_ax_major_loc = 2e-2
+# error_ax_major_loc = 5e-3 # test1-1
+# error_ax_major_loc = 1e-1 # test1-2
+# error_ax_major_loc = 5e-2 # test1-3
+# error_ax_major_loc = 1e-2 # test1-4
+error_ax_major_loc = 3e-2 # test1-5
 error_ax_minor_loc = error_ax_major_loc/4
 
 
@@ -187,14 +201,14 @@ if 1 in steps_to_do:
 
 # 2. Error vs dof for different values of N
 # Create a data frames for this purpose
-l2_errors = pd.DataFrame(
+l1_errors = pd.DataFrame(
     np.zeros((len(N_values), len(dofs))),
     index=N_values,
     columns=dofs
 )
-wtpt = l2_errors.copy() # wall time per time step
-ctpt = l2_errors.copy() # cpu time per time step
-cpu_time = l2_errors.copy() # cpu time
+wtpt = l1_errors.copy() # wall time per time step
+ctpt = l1_errors.copy() # cpu time per time step
+cpu_time = l1_errors.copy() # cpu time
 for N in N_values:
     for dof in dofs:
         df = pd.read_csv(
@@ -206,7 +220,7 @@ for N in N_values:
         )
         # clean the data: keep only latest logged data
         df = df[~df.index.duplicated(keep="last")]
-        l2_errors.loc[N, dof] = df.loc["l2 error", 1]
+        l1_errors.loc[N, dof] = df.loc["l1 error", 1]
         wtpt.loc[N, dof] = df.loc["wall time per time step", 1]
         ctpt.loc[N, dof] = df.loc["cpu time per time step", 1]
         cpu_time.loc[N, dof] = df.loc["cpu time", 1]
@@ -216,7 +230,7 @@ if 2 in steps_to_do:
     for N in N_values:
         ax.plot(
             actual_dof_values.loc[N, :],
-            l2_errors.loc[N, :],
+            l1_errors.loc[N, :],
             ls=N_linestyles.loc[N],
             marker=N_markers[N],
             c=N_markercolors[N],
@@ -224,13 +238,13 @@ if 2 in steps_to_do:
             # markeredgecolor=N_markercolors[N],
             label=r"$N={}$".format(N)
         )
-    plot_convergence_rate(ax, actual_dof_values.loc[5, :], l2_errors.loc[5, :], "below")
+    plot_convergence_rate(ax, actual_dof_values.loc[5, :], l1_errors.loc[5, :], "below")
     ax.set_xscale("log")
     ax.set_yscale("log")
     format_dof_axis(ax.xaxis)
     format_error_axis(ax.yaxis, error_ax_major_loc, error_ax_minor_loc)
     ax.set_xlabel("Degrees of freedom")
-    ax.set_ylabel(r"$L^2$ error")
+    ax.set_ylabel(r"$L^1$ error")
     # ax.set_title("{}, {}".format(case_name, flux_display))
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
@@ -247,7 +261,7 @@ if 3 in steps_to_do:
     for N in N_values:
         ax.plot(
             ctpt.loc[N, :],
-            l2_errors.loc[N, :],
+            l1_errors.loc[N, :],
             ls=N_linestyles.loc[N],
             marker=N_markers[N],
             c=N_markercolors[N],
@@ -256,7 +270,7 @@ if 3 in steps_to_do:
             label=r"$N={}$".format(N)
         )
     ax.set_xlabel("CPU time/time step [sec]")
-    ax.set_ylabel(r"$L^2$ error")
+    ax.set_ylabel(r"$L^1$ error")
     ax.set_xscale("log")
     ax.set_yscale("log")
     format_ctpt_axis(ax.xaxis)
@@ -298,7 +312,7 @@ if 5 in steps_to_do:
     for dof in dofs:
         ax.plot(
             N_values,
-            l2_errors.loc[:, dof],
+            l1_errors.loc[:, dof],
             ls=dof_linestyles.loc[dof],
             marker=dof_markers.loc[dof],
             c=dof_linecolors.loc[dof],
@@ -307,7 +321,7 @@ if 5 in steps_to_do:
             label=r"{} DoFs".format(dof)
         )
     ax.set_xlabel(r"$N$")
-    ax.set_ylabel(r"$L^2$ error")
+    ax.set_ylabel(r"$L^1$ error")
     ax.set_yscale("log")
     format_error_axis(ax.yaxis, error_ax_major_loc, error_ax_minor_loc)
     # ax.set_title("{}, {}".format(case_name, flux_display))
@@ -407,7 +421,7 @@ if 8 in steps_to_do:
     for dof in dofs:
         line, = ax.plot(
             cpu_time.loc[:, dof]/cpu_time.loc[1, dof],
-            l2_errors.loc[:, dof]/l2_errors.loc[1, dof],
+            l1_errors.loc[:, dof]/l1_errors.loc[1, dof],
             ls=dof_linestyles.loc[dof],
             c="gray",
             label="{} DoFs".format(dof)
@@ -421,7 +435,7 @@ if 8 in steps_to_do:
     for N in N_values:
         line, = ax.plot(
             cpu_time.loc[N, :]/cpu_time.loc[1, :],
-            l2_errors.loc[N, :]/l2_errors.loc[1, :],
+            l1_errors.loc[N, :]/l1_errors.loc[1, :],
             ls="",
             marker=N_markers[N],
             c=N_markercolors[N],
@@ -453,10 +467,44 @@ if 8 in steps_to_do:
     #     )
     # )
     ax.set_xlabel(r"CPU time($N, \bullet$)/CPU time($1, \bullet$)")
-    ax.set_ylabel(r"$L^2$ error($N, \bullet$)/$L^2$ error($1, \bullet$)")
+    ax.set_ylabel(r"$L^1$ error($N, \bullet$)/$L^1$ error($1, \bullet$)")
     ax.legend(handles=legend_elements, ncol=2)
     ax.grid(which="major")
     fig.set_size_inches(4, 3)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "error_vs_cputime_{}".format(flux))
+
+
+
+# Calculate and plot the total variation of the simulation error
+if 9 in steps_to_do:
+    tv = pd.DataFrame(index=N_values, columns=dofs)
+    for dof in dofs:
+        for N in N_values:
+            data = np.genfromtxt(
+                f"dof{dof}_12_12_N{N}_{flux}/{result_dir}/comparison_data.csv",
+                delimiter=","
+            )
+            tv.loc[N, dof] = calc_total_variation(data[:,1]-data[:,2])
+    fig, ax = plt.subplots(1,1)
+    for dof in dofs:
+        ax.plot(
+            N_values,
+            tv.loc[:, dof],
+            ls=dof_linestyles.loc[dof],
+            marker=dof_markers.loc[dof],
+            c=dof_linecolors.loc[dof],
+            # markerfacecolor=N_markercolors[N],
+            # markeredgecolor=N_markercolors[N],
+            label=r"{} DoFs".format(dof)
+        )
+    ax.set_xlabel(r"$N$")
+    ax.set_ylabel("Total Variation")
+    ax.legend(loc="best", handlelength=3)
+    ax.grid()
+    ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
+    fig.set_size_inches(4, 3)
+    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
+    plt.show()
+    mysavefig(fig, "../plots", "tv_vs_N_{}".format(flux))
