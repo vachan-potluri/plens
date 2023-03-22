@@ -134,7 +134,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [5,9]
+steps_to_do = [9]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -486,7 +486,9 @@ if 9 in steps_to_do:
                 f"dof{dof}_12_12_N{N}_{flux}/{result_dir}/comparison_data.csv",
                 delimiter=","
             )
-            tv.loc[N, dof] = calc_total_variation(data[:,1]-data[:,2])/calc_total_variation(data[:,1])
+            tv_sim = calc_total_variation(data[:,2])
+            tv_ex = calc_total_variation(data[:,1])
+            tv.loc[N, dof] = (tv_sim-tv_ex)/tv_ex
     fig, ax = plt.subplots(1,1)
     for dof in dofs:
         ax.plot(
