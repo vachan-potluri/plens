@@ -12,6 +12,7 @@
 # 7. CPU time/DoF vs N (for APS-3 presentation, see WJ-20-Sep-2022)
 # 8. Error vs cpu time for different values of N and across dofs (for APS-3 presentation, see WJ-20-Sep-2022)
 # 9. Total variation vs N for different values of dof (see WJ-21-Mar-2023)
+# 10. Variations of cumulative total variations (see WJ-22-Mar-2023)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -45,6 +46,16 @@ def calc_total_variation(array):
     for i in range(len(array)-1):
         tv += abs(array[i+1] - array[i])
     return tv
+
+
+
+def get_cumulative_total_variation(array):
+    # calculates cumulative total variation: total variation of a segment from the start to current
+    # location
+    tv_cum = np.zeros_like(array)
+    for i in range(len(array)-1):
+        tv_cum[i+1] = tv_cum[i] + abs(array[i+1] - array[i])
+    return tv_cum
 
 
 
@@ -134,7 +145,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [9]
+steps_to_do = [10]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -510,3 +521,23 @@ if 9 in steps_to_do:
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "tv_vs_N_{}".format(flux))
+
+
+
+# 10: cumulative total variation
+if 10 in steps_to_do:
+    fig, ax = plt.subplots(1,1,figsize=(8,6))
+    for dof in [800]:
+        for N in N_values:
+            data = np.genfromtxt(
+                f"dof{dof}_12_12_N{N}_{flux}/{result_dir}/comparison_data.csv",
+                delimiter=","
+            )
+            tv_cum = get_cumulative_total_variation(data[:,2])
+            ax.plot(data[:,0], tv_cum, label=rf"{dof} DoF, $N$={N}")
+    ax.set_xlabel("$x$")
+    ax.set_ylabel(r"$\textrm{TV}(\phi(\xi))$ for $\xi \in [0,x]$")
+    ax.grid()
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
