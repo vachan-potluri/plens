@@ -12,6 +12,7 @@
 # 7. CPU time/DoF vs N (for APS-3 presentation, see WJ-20-Sep-2022)
 # 8. Error vs cpu time for different values of N and across dofs (for APS-3 presentation, see WJ-20-Sep-2022)
 # 9. Total variation vs N for different values of dof (see WJ-21-Mar-2023)
+# 91. A second formula for total variation (see WJ-23-Mar-2023)
 # 10. Variations of cumulative total variations (see WJ-22-Mar-2023)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
@@ -145,7 +146,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [10]
+steps_to_do = [91]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -205,7 +206,7 @@ if 1 in steps_to_do:
             "dof{}_12_12_{}".format(dof, flux),
             "--size",
             "5",
-            "4"
+            "3"
         ])
 
 
@@ -339,7 +340,7 @@ if 5 in steps_to_do:
     ax.legend(loc="best", handlelength=3)
     ax.grid(which="major")
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(5, 3.5)
+    fig.set_size_inches(5, 2.5)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
@@ -488,7 +489,7 @@ if 8 in steps_to_do:
 
 
 
-# Calculate and plot the total variation of the simulation error
+# 9. Calculate and plot the total variation of the simulation error
 if 9 in steps_to_do:
     tv = pd.DataFrame(index=N_values, columns=dofs)
     for dof in dofs:
@@ -517,17 +518,67 @@ if 9 in steps_to_do:
     ax.legend(loc="best", handlelength=3)
     ax.grid()
     ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
-    fig.set_size_inches(5, 3.5)
+    fig.set_size_inches(5, 2.5)
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "tv_vs_N_{}".format(flux))
 
 
 
+# 91. Calculate and plot the total variation of the simulation error
+if 91 in steps_to_do:
+    tv = pd.DataFrame(index=N_values, columns=dofs)
+    tv2 = tv.copy()
+    for dof in dofs:
+        for N in N_values:
+            data = np.genfromtxt(
+                f"dof{dof}_12_12_N{N}_{flux}/{result_dir}/comparison_data.csv",
+                delimiter=","
+            )
+            tv_ex = calc_total_variation(data[:,1])
+            tv_sim = calc_total_variation(data[:,2])
+            tv.loc[N, dof] = (tv_sim-tv_ex)/tv_ex
+            tv2.loc[N, dof] = calc_total_variation(data[:,2]-data[:,1])
+    fig, axes = plt.subplots(1,2)
+    for dof in dofs:
+        axes[0].plot(
+            N_values,
+            tv.loc[:, dof],
+            ls=dof_linestyles.loc[dof],
+            marker=dof_markers.loc[dof],
+            c=dof_linecolors.loc[dof],
+            # markerfacecolor=N_markercolors[N],
+            # markeredgecolor=N_markercolors[N],
+            label=r"{} DoFs".format(dof)
+        )
+        axes[0].set_ylabel("Normalised TV difference")
+        axes[1].plot(
+            N_values,
+            tv2.loc[:, dof],
+            ls=dof_linestyles.loc[dof],
+            marker=dof_markers.loc[dof],
+            c=dof_linecolors.loc[dof],
+            # markerfacecolor=N_markercolors[N],
+            # markeredgecolor=N_markercolors[N],
+            label=r"{} DoFs".format(dof)
+        )
+        axes[1].set_ylabel("TV of the error")
+    for ax in axes:
+        ax.set_xlabel(r"$N$")
+        ax.legend(loc="best", handlelength=3)
+        ax.grid()
+        ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
+    fig.set_size_inches(6, 2.5)
+    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
+    plt.show()
+    mysavefig(fig, "../plots", "tv_tv2_vs_N_{}".format(flux))
+
+
+
 # 10: cumulative total variation
 if 10 in steps_to_do:
     fig, ax = plt.subplots(1,1,figsize=(8,6))
-    for dof in [800]:
+    for dof in [200,400,800]:
         for N in N_values:
             data = np.genfromtxt(
                 f"dof{dof}_12_12_N{N}_{flux}/{result_dir}/comparison_data.csv",
