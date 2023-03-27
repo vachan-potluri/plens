@@ -8,6 +8,8 @@
 
 #include <deal.II/base/function_parser.h>
 #include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/polynomial.h>
+#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -129,6 +131,16 @@ class BlenderCalculator
      */
     double alpha_max;
 
+    /**
+     * The indices in a modes list that indicate linear modes. This vector is populated in the ctor.
+     */
+    std::vector<usi> mode_indices_linear;
+
+    /**
+     * Stores the total variations of legendre polynomials.
+     */
+    std::vector<double> legendre_total_variations_1d;
+
     double get_trouble(const std::vector<double>&) const;
 
     public:
@@ -154,6 +166,11 @@ class BlenderCalculator
     void parse_parameters(ParameterHandler& prm);
 
     double get_blender(
+        const DoFHandler<dim>::active_cell_iterator& cell
+    ) const;
+
+    double get_blender_post_filtering(
+        const double blender_pre_filter,
         const DoFHandler<dim>::active_cell_iterator& cell
     ) const;
 

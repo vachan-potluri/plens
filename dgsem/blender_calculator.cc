@@ -51,6 +51,39 @@ cbm(d)
             }
         }
     }
+
+    // for mode_indices_linear
+    for(usi k=0; k<=1; k++){
+        for(usi j=0; j<=1; j++){
+            for(usi i=0; i<=1; i++){
+                usi index = i + j*(d+1) + k*(d+1)*(d+1);
+                mode_indices_linear.emplace_back(index);
+            }
+        }
+    }
+
+    // set total variations
+    // just sum the absolute variation of the polynomial between the roots
+    // the roots are just the internal points of Lobatto quadrature
+    // first 0th and 1st order polynomials whose derivative doesn't have root
+    legendre_total_variations_1d.emplace_back(0.0); // 0th order polynomial
+    {
+        Polynomials::Legendre leg_poly(1); // 1st order polynomial
+        legendre_total_variations_1d.emplace_back(fabs(leg_poly.value(1) - leg_poly.value(0)));
+    }
+    for(usi i_poly=2; i_poly<=d; i_poly++){
+        Polynomials::Legendre leg_poly(i_poly);
+        // internal points are roots of derivative of i_poly-th legendre poly
+        QGaussLobatto<1> quad_gl(i_poly+1);
+        double tv_poly(0.0);
+        for(usi i_interval=0; i_interval<i_poly; i_interval++){
+            tv_poly += fabs(
+                leg_poly.value(quad_gl.point(i_interval+1)[0]) -
+                leg_poly.value(quad_gl.point(i_interval)[0])
+            );
+        }
+        legendre_total_variations_1d.emplace_back(tv_poly);
+    }
 }
 
 
@@ -151,6 +184,89 @@ double BlenderCalculator::get_blender(
     // if(trouble < 0.1) return 0;
     // else if(trouble < 0.15) return 3*(trouble-0.1)/trouble;
     // else return 1;
+}
+
+
+
+/**
+ * 27-Mar-2023
+ * Returns an updated blender value to account for filtering of the noise in smooth regions. The
+ * algorithm is based on the use of total variation.
+ */
+double BlenderCalculator::get_blender_post_filtering(
+    const double blender_pre_filter,
+    const DoFHandler<dim>::active_cell_iterator& cell
+) const
+{
+    AssertThrow(
+        parsed_params,
+        StandardExceptions::ExcMessage(
+            "You are trying to call get_blender() from a BlenderCalculator object that is not yet "
+            "completely set. You must first parse the parameters through "
+            "BlenderCalculator::parse_parameters() before calling this function."
+        )
+    );
+
+    if(blender_pre_filter > alpha_min){
+        return blender_pre_filter;
+    }
+    else{
+        const usi n_dofs_per_cell = cell->get_fe().dofs_per_cell;
+        std::vector<psize> dof_ids(n_dofs_per_cell);
+        cell->get_dof_indices(dof_ids);
+        // the values of variable vector in this cell, pre-calculated for performance
+        std::vector<double> cell_variable_values(n_dofs_per_cell);
+        for(usi i=0; i<n_dofs_per_cell; i++){
+            cell_variable_values[i] = variable[dof_ids[i]];
+        }
+
+        // get the modal coefficients times total variation
+        std::vector<double> modes_x_tvs(n_dofs_per_cell);
+        // upper bound: sum of product of absolute value of modes and total variations
+        double tv_upper_bound(0.0), tv_linear_modes(0.0);
+        // sum of absolute values of modes
+        double abs_modes_sum(0.0);
+        const double Np1 = (cbm.degree+1);
+        for(usi row=0; row<n_dofs_per_cell; row++){
+            modes_x_tvs[row] = 0;
+            for(usi col=0; col<n_dofs_per_cell; col++){
+                modes_x_tvs[row] += cbm(row,col)*cell_variable_values[col];
+            }
+            usi k = row/(Np1*Np1);
+            usi j = (row - k*Np1*Np1)/Np1;
+            usi i = (row - k*Np1*Np1 - j*Np1);
+            const double temp = fabs(modes_x_tvs[row]);
+            abs_modes_sum += temp;
+            modes_x_tvs[row] = (
+                temp*
+                legendre_total_variations_1d[i]*
+                legendre_total_variations_1d[j]*
+                legendre_total_variations_1d[k]
+            );
+            tv_upper_bound += modes_x_tvs[row];
+        } // loop over modes
+
+        for(usi row: mode_indices_linear){
+            usi k = row/(Np1*Np1);
+            usi j = (row - k*Np1*Np1)/Np1;
+            usi i = (row - k*Np1*Np1 - j*Np1);
+            tv_linear_modes += (
+                fabs(modes_x_tvs[row])*
+                legendre_total_variations_1d[i]*
+                legendre_total_variations_1d[j]*
+                legendre_total_variations_1d[k]
+            );
+        }
+
+        if(tv_upper_bound < 1e-2*abs_modes_sum){
+            // negligible noise
+            return blender_pre_filter;
+        }
+        else{
+            return blender_pre_filter +
+                (0.5*alpha_max - blender_pre_filter)*(1 - tv_linear_modes/tv_upper_bound);
+        }
+    }
 }
 
 
