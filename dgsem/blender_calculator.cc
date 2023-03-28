@@ -223,7 +223,7 @@ double BlenderCalculator::get_blender_post_filtering(
         // get the product of absolute modal coefficients times total variation
         std::vector<double> abs_modes_x_tvs(n_dofs_per_cell);
         // upper bound: sum of product of absolute value of modes and total variations
-        double tv_upper_bound(0.0), tv_linear_modes(0.0);
+        double tv_upper_bound(0.0);
         // sum of absolute values of modes
         double abs_modes_sum(0.0);
         const usi Np1 = (cbm.degree+1);
@@ -245,15 +245,15 @@ double BlenderCalculator::get_blender_post_filtering(
             tv_upper_bound += abs_modes_x_tvs[row];
         } // loop over modes
 
-        for(usi row: mode_indices_linear) tv_linear_modes += abs_modes_x_tvs[row];
-
         if(tv_upper_bound < 1e-2*abs_modes_sum){
             // negligible noise
             return blender_pre_filter;
         }
         else{
+            double tv_linear_modes(0.0);
+            for(usi row: mode_indices_linear) tv_linear_modes += abs_modes_x_tvs[row];
             return blender_pre_filter +
-                (0.5*alpha_max - blender_pre_filter)*(1 - tv_linear_modes/tv_upper_bound);
+                (alpha_max - blender_pre_filter)*(1 - tv_linear_modes/tv_upper_bound);
         }
     }
 }
