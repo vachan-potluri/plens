@@ -220,43 +220,32 @@ double BlenderCalculator::get_blender_post_filtering(
             cell_variable_values[i] = variable[dof_ids[i]];
         }
 
-        // get the modal coefficients times total variation
-        std::vector<double> modes_x_tvs(n_dofs_per_cell);
+        // get the product of absolute modal coefficients times total variation
+        std::vector<double> abs_modes_x_tvs(n_dofs_per_cell);
         // upper bound: sum of product of absolute value of modes and total variations
         double tv_upper_bound(0.0), tv_linear_modes(0.0);
         // sum of absolute values of modes
         double abs_modes_sum(0.0);
-        const double Np1 = (cbm.degree+1);
+        const usi Np1 = (cbm.degree+1);
         for(usi row=0; row<n_dofs_per_cell; row++){
-            modes_x_tvs[row] = 0;
+            abs_modes_x_tvs[row] = 0;
             for(usi col=0; col<n_dofs_per_cell; col++){
-                modes_x_tvs[row] += cbm(row,col)*cell_variable_values[col];
+                abs_modes_x_tvs[row] += cbm(row,col)*cell_variable_values[col];
             }
             usi k = row/(Np1*Np1);
             usi j = (row - k*Np1*Np1)/Np1;
             usi i = (row - k*Np1*Np1 - j*Np1);
-            const double temp = fabs(modes_x_tvs[row]);
+            const double temp = fabs(abs_modes_x_tvs[row]);
             abs_modes_sum += temp;
-            modes_x_tvs[row] = (
-                temp*
-                legendre_total_variations_1d[i]*
-                legendre_total_variations_1d[j]*
+            abs_modes_x_tvs[row] = temp*(
+                legendre_total_variations_1d[i] +
+                legendre_total_variations_1d[j] +
                 legendre_total_variations_1d[k]
             );
-            tv_upper_bound += modes_x_tvs[row];
+            tv_upper_bound += abs_modes_x_tvs[row];
         } // loop over modes
 
-        for(usi row: mode_indices_linear){
-            usi k = row/(Np1*Np1);
-            usi j = (row - k*Np1*Np1)/Np1;
-            usi i = (row - k*Np1*Np1 - j*Np1);
-            tv_linear_modes += (
-                fabs(modes_x_tvs[row])*
-                legendre_total_variations_1d[i]*
-                legendre_total_variations_1d[j]*
-                legendre_total_variations_1d[k]
-            );
-        }
+        for(usi row: mode_indices_linear) tv_linear_modes += abs_modes_x_tvs[row];
 
         if(tv_upper_bound < 1e-2*abs_modes_sum){
             // negligible noise

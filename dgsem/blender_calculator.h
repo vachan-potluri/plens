@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <iostream>
 
 #ifdef DEBUG
 #include <deal.II/base/index_set.h>
