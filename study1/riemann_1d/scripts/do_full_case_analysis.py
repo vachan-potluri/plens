@@ -146,7 +146,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [91]
+steps_to_do = [1,5,9]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -173,17 +173,19 @@ dof_linecolors = pd.Series(["r", "g", "b"], index=dofs)
 dof_markers = pd.Series(["o", "s", "^"], index=dofs)
 
 # varying data (requires user intervention)
-flux = "chandrashekhar"
-flux_display = "Chandrashekhar" # how the flux scheme should be printed/written on plots
-result_dir = "result_16Jan2023_persson"
+flux = "hllc"
+flux_display = "HLLC" # how the flux scheme should be printed/written on plots
+# result_dir = "result_16Jan2023_persson"
+# result_dir = "result_28Mar2022"
+result_dir = "result_logarithm"
 case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
 # error_ax_major_loc = 5e-3 # test1-1
 # error_ax_major_loc = 1e-1 # test1-2
 # error_ax_major_loc = 5e-2 # test1-3
-# error_ax_major_loc = 1e-2 # test1-4
-error_ax_major_loc = 3e-2 # test1-5
+error_ax_major_loc = 1e-2 # test1-4
+# error_ax_major_loc = 3e-2 # test1-5
 error_ax_minor_loc = error_ax_major_loc/4
 
 

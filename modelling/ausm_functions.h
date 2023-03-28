@@ -10,9 +10,7 @@
 namespace ausm
 {
 
-constexpr double fa = 1.0;
-
-constexpr double alpha = 3.0/16*(-4.0 + 5*fa*fa);
+constexpr double Minfty = 0.3;
 
 constexpr double beta = 0.125;
 
@@ -60,7 +58,7 @@ inline double mach_split_4_neg(const double M)
 }
 
 // eq (24) of Liou (2006)
-inline double pressure_split_5_pos(const double M)
+inline double pressure_split_5_pos(const double M, const double alpha)
 {
     if(fabs(M) >= 1){
         return mach_split_1_pos(M)/M;
@@ -73,7 +71,7 @@ inline double pressure_split_5_pos(const double M)
     }
 }
 
-inline double pressure_split_5_neg(const double M)
+inline double pressure_split_5_neg(const double M, const double alpha)
 {
     if(fabs(M) >= 1){
         return mach_split_1_neg(M)/M;
