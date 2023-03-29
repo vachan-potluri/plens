@@ -505,6 +505,12 @@ void PLENS::declare_parameters()
             "less than 1 ms and for cell centers lying within 10 mm on either side of the x-axis "
             "line."
         );
+        prm.declare_entry(
+            "do filtering",
+            "false",
+            Patterns::Bool(),
+            "Set true to filter out oscillations in solution in smooth regions."
+        );
     }
     prm.leave_subsection(); // blender parameters
 
@@ -2852,6 +2858,7 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
 {
     // first update gcrk_blender_var and read wall blender limit
     double vis_blending_cutoff_time;
+    bool do_filtering;
     prm.enter_subsection("blender parameters");
     {
         const std::string var_name = prm.get("variable");
@@ -2876,10 +2883,11 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
         wall_blender_limit_function.initialize(
             variables, prm.get("wall blender limit"), constants, true
         );
-
         vis_blending_region.initialize(
             variables, prm.get("viscous blending region"), constants, true
         );
+
+        do_filtering = prm.get_bool("do filtering");
     }
     prm.leave_subsection();
 
@@ -2913,7 +2921,7 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
     gcrk_alpha.compress(VectorOperation::insert);
     gh_gcrk_alpha = gcrk_alpha; // communicate
 
-    // now diffuse
+    // now diffuse and filter
     for(const auto& cell: dof_handler.active_cell_iterators()){
         if(!(cell->is_locally_owned())) continue;
 
@@ -2924,6 +2932,14 @@ void PLENS::calc_blender(const bool print_wall_blender_limit)
             const double nei_alpha =
                 gh_gcrk_alpha[cell->neighbor(face_id)->global_active_cell_index()];
             gcrk_alpha[cell->global_active_cell_index()] = std::max(cur_alpha, 0.5*nei_alpha);
+        }
+
+        // filter if requested
+        if(do_filtering){
+            gcrk_alpha[cell->global_active_cell_index()] = blender_calc.get_blender_post_filtering(
+                gcrk_alpha[cell->global_active_cell_index()],
+                cell
+            );
         }
     }
     gcrk_alpha.compress(VectorOperation::insert);

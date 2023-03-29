@@ -1064,27 +1064,29 @@ void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) c
  */
 void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State &f) const
 {
-    double pl = get_p(lcs), pr = get_p(rcs); // pressures
-    double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // velocities
-    double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0]; // total/stagnation enthalpies
+    const double pl = get_p(lcs), pr = get_p(rcs); // pressures
+    const double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // velocities
+    const double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0]; // total/stagnation enthalpies
 
-    double astl = sqrt(2*(gma_-1)/(gma_+1)*Hl),
+    const double astl = sqrt(2*(gma_-1)/(gma_+1)*Hl),
         astr = sqrt(2*(gma_-1)/(gma_+1)*Hr); // critical speed of sounds ('st'ar)
-    double ahl = astl*astl/std::max(astl, ul),
-        ahr = astr*astr/std::max(astr, -ur); // 'h'at velocities (eq 30 in Liou 2006)
-    double a12 = std::min(ahl, ahr); // a_1/2
+    const double ahl = astl*astl/std::max(astl, ul),
+        ahr = astr*astr/std::max(astr, ur); // 'h'at velocities (eq 30 in Liou 2006)
+    const double a12 = std::min(ahl, ahr); // a_1/2
 
-    double Ml = ul/a12, Mr = ur/a12; // Mach numbers
-    double Mavgsq = 0.5*(Ml*Ml + Mr*Mr);
+    const double Ml = ul/a12, Mr = ur/a12; // Mach numbers
+    const double Mavgsq = 0.5*(Ml*Ml + Mr*Mr);
+    const double M0 = sqrt(std::min(1.0 ,std::max(Mavgsq, ausm::Minfty*ausm::Minfty)));
+    const double fa = M0*(2-M0), alpha = 3/16*(-4+5*fa*fa);
 
     double M12 = ausm::mach_split_4_pos(Ml) + ausm::mach_split_4_neg(Mr) -
-        ausm::Kp/ausm::fa*std::max(1-ausm::sigma*Mavgsq, 0.0)*2*(pr-pl)/(a12*a12*(lcs[0]+rcs[0]));
+        ausm::Kp/fa*std::max(1-ausm::sigma*Mavgsq, 0.0)*2*(pr-pl)/(a12*a12*(lcs[0]+rcs[0]));
 
-    double p_split_pos = ausm::pressure_split_5_pos(Ml),
-        p_split_neg = ausm::pressure_split_5_neg(Mr);
+    double p_split_pos = ausm::pressure_split_5_pos(Ml, alpha),
+        p_split_neg = ausm::pressure_split_5_neg(Mr, alpha);
     
     double p12 = p_split_pos*pl + p_split_neg*pr -
-        ausm::Ku*ausm::fa*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
+        ausm::Ku*fa*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
     
     // set the final flux
     if(M12 > 0){
