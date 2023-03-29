@@ -167,7 +167,8 @@ class NavierStokes
         chandrashekhar,
         kennedy_gruber,
         rusanov_kennedy_gruber_blend,
-        ismail_roe
+        ismail_roe,
+        slau2
     };
     enum class inv_vol_flux_scheme{
         chandrashekhar,
@@ -205,6 +206,7 @@ class NavierStokes
     void kennedy_gruber_xflux(const State &lcs, const State &rcs, State &f) const;
     void rusanov_kennedy_gruber_blend_xflux(const State &lcs, const State &rcs, State &f) const;
     void ismail_roe_xflux(const State &lcs, const State &rcs, State &f) const;
+    void slau2_xflux(const State &lcs, const State &rcs, State &f) const;
     
     // inv vol fluxes
     void chandrashekhar_vol_flux(

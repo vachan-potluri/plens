@@ -184,9 +184,14 @@ void NavierStokes::set_inv_surf_flux_scheme(const inv_surf_flux_scheme isfs)
             this->rusanov_kennedy_gruber_blend_xflux(lcs, rcs, f);
         };
     }
-    else{
+    else if(isfs == inv_surf_flux_scheme::ismail_roe){
         inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
             this->ismail_roe_xflux(lcs, rcs, f);
+        };
+    }
+    else{
+        inv_surf_xflux = [=](const State &lcs, const State &rcs, State &f){
+            this->slau2_xflux(lcs, rcs, f);
         };
     }
 }
@@ -1381,7 +1386,7 @@ void NavierStokes::ismail_roe_xflux(
     double h_hat = gma_*p2_hat/((gma_-1)*rho_hat); // initialised here, will be modified using velocities
     dealii::Tensor<1,dim> vl, vr, vel_hat;
     for(int d=0; d<dim; d++){
-        vl[d] = lcs[1+d]/lcs[0], vr[d] = rcs[1+d]/rcs[0];
+        vl[d] = lcs[1+d]/lcs[0]; vr[d] = rcs[1+d]/rcs[0];
         vel_hat[d] = (z1l*vl[d] + z1r*vr[d])/(z1l + z1r);
         h_hat += 0.5*(vel_hat[d]*vel_hat[d]);
     }
@@ -1429,6 +1434,53 @@ void NavierStokes::ismail_roe_xflux(
     dealii::Tensor<1,dim+2> f_stab = 0.5*lambda_max*(H*(Vr-Vl));
 
     for(int i=0; i<dim+2; i++) f[i] -= f_stab[i];
+}
+
+
+
+/**
+ * SLAU2 surface flux. See Shima & Kitamura (2011), Appendix A.
+ */
+void NavierStokes::slau2_xflux(
+    const State &lcs, const State &rcs, State &f
+) const
+{
+    const double pl = get_p(lcs), pr = get_p(rcs);
+    const double al = get_a(lcs), ar = get_a(rcs), a_avg = 0.5*(al+ar);
+    const double Hl = (lcs[4]+pl)/lcs[0], Hr=(rcs[4]+pr)/rcs[0];
+    dealii::Tensor<1,dim> vl, vr;
+    for(int d=0; d<dim; d++){
+        vl[d] = lcs[1+d]/lcs[0];
+        vr[d] = rcs[1+d]/rcs[0];
+    }
+    const double abs_vn_avg = (lcs[0]*fabs(vl[0]) + rcs[0]*fabs(vr[0]))/(lcs[0] + rcs[0]);
+    const double Ml = vl[0]/a_avg, Mr=vr[0]/a_avg;
+    const double M_hat = std::min(
+        1.0,
+        sqrt(0.5*(dealii::scalar_product(vl,vl) + dealii::scalar_product(vr,vr)))/a_avg
+    );
+    const double chi = (1-M_hat)*(1-M_hat);
+    const double g = -std::max( std::min(Ml,0.0), -1.0 ) * std::min( std::max(Mr,0.0), 1.0 );
+    const double betal = slau2::pressure_split_pos(Ml), betar = slau2::pressure_split_neg(Mr);
+    const double p_avg = 0.5*(pl+pr)*(1 + (1-chi)*(betal+betar-1)) + 0.5*(betal-betar)*(pl-pr);
+    const double m = 0.5*(1-g)*(lcs[1] + rcs[1] - abs_vn_avg*(rcs[0] - lcs[0])) -
+        0.5*chi/a_avg*(pr-pl);
+    
+    // set the final flux
+    if(m > 0){
+        f[0] = m;
+        f[1] = m*vl[0] + p_avg;
+        f[2] = m*vl[1];
+        f[3] = m*vl[2];
+        f[4] = m*Hl;
+    }
+    else{
+        f[0] = m;
+        f[1] = m*vr[0] + p_avg;
+        f[2] = m*vr[1];
+        f[3] = m*vr[2];
+        f[4] = m*Hr;
+    }
 }
 
 

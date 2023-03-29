@@ -2,6 +2,7 @@
  * @file ausm_functions.h
  * @brief Contains AUSM family related functions. Most functions will not be documented as they are
  * straight forward to understand.
+ * 29-Mar-2023: also contains SLAU2-related functions
  */
 
 #ifndef AUSM_FUNCTIONS_H
@@ -85,5 +86,35 @@ inline double pressure_split_5_neg(const double M, const double alpha)
 }
 
 } // namespace ausm
+
+namespace slau2
+{
+
+inline double sign(const double x)
+{
+    return (0 < x) - (x < 0);
+}
+
+inline double pressure_split_pos(const double M)
+{
+    if(fabs(M) < 1){
+        return 0.25*(2-M)*(M+1)*(M+1);
+    }
+    else{
+        return 0.5*(1+sign(M));
+    }
+}
+
+inline double pressure_split_neg(const double M)
+{
+    if(fabs(M) < 1){
+        return 0.25*(2+M)*(M-1)*(M-1);
+    }
+    else{
+        return 0.5*(1+sign(-M));
+    }
+}
+
+} // namespace slau2
 
 #endif

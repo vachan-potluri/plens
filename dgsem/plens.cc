@@ -239,10 +239,10 @@ void PLENS::declare_parameters()
             "Chandrashekhar",
             Patterns::Selection(
                 "HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|Chandrashekhar|KG"
-                "|Rusanov-KG|IR"
+                "|Rusanov-KG|IR|SLAU2"
             ),
             "Options: 'HLLC|Rusanov|AUSM+-up|Rusanov-HLLC|Rusanov-AUSM+-up|Modified SW|"
-            "Chandrashekhar|KG|Rusanov-KG|IR'"
+            "Chandrashekhar|KG|Rusanov-KG|IR|SLAU2'"
         );
         prm.declare_entry(
             "inviscid volume flux scheme",
@@ -841,7 +841,8 @@ void PLENS::set_NS()
         else if(temp == "KG") isfs = NavierStokes::inv_surf_flux_scheme::kennedy_gruber;
         else if(temp == "Rusanov-KG")
             isfs = NavierStokes::inv_surf_flux_scheme::rusanov_kennedy_gruber_blend;
-        else isfs = NavierStokes::inv_surf_flux_scheme::ismail_roe;
+        else if(temp == "IR") isfs = NavierStokes::inv_surf_flux_scheme::ismail_roe;
+        else isfs == NavierStokes::inv_surf_flux_scheme::slau2;
 
         temp = prm.get("inviscid volume flux scheme");
         if(temp == "Chandrashekhar") ivfs = NavierStokes::inv_vol_flux_scheme::chandrashekhar;
