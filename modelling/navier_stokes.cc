@@ -1439,7 +1439,8 @@ void NavierStokes::ismail_roe_xflux(
 
 
 /**
- * SLAU2 surface flux. See Shima & Kitamura (2011), Appendix A.
+ * SLAU2 surface flux. See Kitamura & Shima (2013), Appendix A. Mass flux expressions in SLAU (see
+ * Appendix A of Shima & Kitamura (2011)) and SLAU2 are equivalent.
  */
 void NavierStokes::slau2_xflux(
     const State &lcs, const State &rcs, State &f
@@ -1455,16 +1456,16 @@ void NavierStokes::slau2_xflux(
     }
     const double abs_vn_avg = (lcs[0]*fabs(vl[0]) + rcs[0]*fabs(vr[0]))/(lcs[0] + rcs[0]);
     const double Ml = vl[0]/a_avg, Mr=vr[0]/a_avg;
-    const double M_hat = std::min(
-        1.0,
-        sqrt(0.5*(dealii::scalar_product(vl,vl) + dealii::scalar_product(vr,vr)))/a_avg
-    );
+    const double temp = sqrt(0.5*(dealii::scalar_product(vl,vl) + dealii::scalar_product(vr,vr)));
+    const double M_hat = std::min(1.0, temp/a_avg);
     const double chi = (1-M_hat)*(1-M_hat);
     const double g = -std::max( std::min(Ml,0.0), -1.0 ) * std::min( std::max(Mr,0.0), 1.0 );
-    const double betal = slau2::pressure_split_pos(Ml), betar = slau2::pressure_split_neg(Mr);
-    const double p_avg = 0.5*(pl+pr)*(1 + (1-chi)*(betal+betar-1)) + 0.5*(betal-betar)*(pl-pr);
+    const double fpl = slau2::pressure_split_pos(Ml), fpr = slau2::pressure_split_neg(Mr);
+    const double p_avg = (
+        0.5*(pl+pr) + 0.5*(fpl-fpr)*(pl-pr) + temp*(fpl+fpr-1)*0.5*(lcs[0]+rcs[0])*a_avg;
+    );
     const double m = 0.5*(1-g)*(lcs[1] + rcs[1] - abs_vn_avg*(rcs[0] - lcs[0])) -
-        0.5*chi/a_avg*(pr-pl);
+        0.5*chi/a_avg*(pr-pl); // SLAU version
     
     // set the final flux
     if(m > 0){
