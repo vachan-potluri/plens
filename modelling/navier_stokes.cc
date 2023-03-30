@@ -1070,19 +1070,24 @@ void NavierStokes::rusanov_xflux(const State &lcs, const State &rcs, State &f) c
 void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State &f) const
 {
     const double pl = get_p(lcs), pr = get_p(rcs); // pressures
-    const double ul = lcs[1]/lcs[0], ur = rcs[1]/rcs[0]; // velocities
+    dealii::Tensor<1,dim> vl, vr;
+    for(int d=0; d<dim; d++){
+        vl[d] = lcs[1+d]/lcs[0];
+        vr[d] = rcs[1+d]/rcs[0];
+    }
     const double Hl = (lcs[4]+pl)/lcs[0], Hr = (rcs[4]+pr)/rcs[0]; // total/stagnation enthalpies
 
-    const double astl = sqrt(2*(gma_-1)/(gma_+1)*Hl),
-        astr = sqrt(2*(gma_-1)/(gma_+1)*Hr); // critical speed of sounds ('st'ar)
-    const double ahl = astl*astl/std::max(astl, ul),
-        ahr = astr*astr/std::max(astr, ur); // 'h'at velocities (eq 30 in Liou 2006)
-    const double a12 = std::min(ahl, ahr); // a_1/2
+    // const double astl = sqrt(2*(gma_-1)/(gma_+1)*Hl),
+    //     astr = sqrt(2*(gma_-1)/(gma_+1)*Hr); // critical speed of sounds ('st'ar)
+    // const double ahl = astl*astl/std::max(astl, ul),
+    //     ahr = astr*astr/std::max(astr, -ur); // 'h'at velocities (eq 30 in Liou 2006)
+    // const double a12 = std::min(ahl, ahr); // a_1/2
+    const double a12 = 0.5*(get_a(lcs) + get_a(rcs));
 
-    const double Ml = ul/a12, Mr = ur/a12; // Mach numbers
+    const double Ml = vl[0]/a12, Mr = vr[0]/a12; // Mach numbers
     const double Mavgsq = 0.5*(Ml*Ml + Mr*Mr);
-    const double M0 = sqrt(std::min(1.0 ,std::max(Mavgsq, ausm::Minfty*ausm::Minfty)));
-    const double fa = M0*(2-M0), alpha = 3/16*(-4+5*fa*fa);
+    const double Mo = sqrt(std::min(1.0 ,std::max(Mavgsq, ausm::Minfty*ausm::Minfty)));
+    const double fa = Mo*(2-Mo), alpha = 3/16*(-4+5*fa*fa);
 
     double M12 = ausm::mach_split_4_pos(Ml) + ausm::mach_split_4_neg(Mr) -
         ausm::Kp/fa*std::max(1-ausm::sigma*Mavgsq, 0.0)*2*(pr-pl)/(a12*a12*(lcs[0]+rcs[0]));
@@ -1091,23 +1096,26 @@ void NavierStokes::ausm_plus_up_xflux(const State &lcs, const State &rcs, State 
         p_split_neg = ausm::pressure_split_5_neg(Mr, alpha);
     
     double p12 = p_split_pos*pl + p_split_neg*pr -
-        ausm::Ku*fa*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(ur-ul);
+        ausm::Ku*fa*p_split_pos*p_split_neg*(lcs[0]+rcs[0])*a12*(vr[0]-vl[0]);
+    // const double p12 = 0.5*(pl+pr) + 0.5*(p_split_pos-p_split_neg)*(pl-pr) +
+    //     sqrt(0.5*(dealii::scalar_product(vl,vl) + dealii::scalar_product(vr,vr)))*
+    //     (p_split_pos+p_split_neg-1)*0.5*(lcs[0]+rcs[0])*a12; // for AUSM+-up2 (Kitamura & Shima 2013)
     
     // set the final flux
     if(M12 > 0){
         double m12 = a12*M12*lcs[0]; // mass flow rate
         f[0] = m12;
-        f[1] = m12*ul + p12;
-        f[2] = m12*lcs[2]/lcs[0];
-        f[3] = m12*lcs[3]/lcs[0];
+        f[1] = m12*vl[0] + p12;
+        f[2] = m12*vl[1];
+        f[3] = m12*vl[2];
         f[4] = m12*Hl;
     }
     else{
         double m12 = a12*M12*rcs[0]; // mass flow rate
         f[0] = m12;
-        f[1] = m12*ur + p12;
-        f[2] = m12*rcs[2]/rcs[0];
-        f[3] = m12*rcs[3]/rcs[0];
+        f[1] = m12*vr[0] + p12;
+        f[2] = m12*vr[1];
+        f[3] = m12*vr[2];
         f[4] = m12*Hr;
     }
 }
@@ -1462,7 +1470,7 @@ void NavierStokes::slau2_xflux(
     const double g = -std::max( std::min(Ml,0.0), -1.0 ) * std::min( std::max(Mr,0.0), 1.0 );
     const double fpl = slau2::pressure_split_pos(Ml), fpr = slau2::pressure_split_neg(Mr);
     const double p_avg = (
-        0.5*(pl+pr) + 0.5*(fpl-fpr)*(pl-pr) + temp*(fpl+fpr-1)*0.5*(lcs[0]+rcs[0])*a_avg;
+        0.5*(pl+pr) + 0.5*(fpl-fpr)*(pl-pr) + temp*(fpl+fpr-1)*0.5*(lcs[0]+rcs[0])*a_avg
     );
     const double m = 0.5*(1-g)*(lcs[1] + rcs[1] - abs_vn_avg*(rcs[0] - lcs[0])) -
         0.5*chi/a_avg*(pr-pl); // SLAU version
