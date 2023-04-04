@@ -68,11 +68,10 @@ sim_sample_mask = np.arange(0, 6400, 4) # gives 1600 sampling points
 
 # Zoomed ranges on x-axis: the x limits of the figure will be changed to obtain individual zoomed
 # plots for the results. These figures will be stored as new figures
-x_zooms_new = [ [0.3, 2.5], [-4,0] ]
-x_zooms_new = []
+# x_zooms_new = [[2,5]]
 
 # Range for the inset picture
-x_range_inset = [0.3, 2.5]
+x_range_inset = [-3,0]
 # mask for plotting reference solution in inset
 inset_mask_ref = np.logical_and(x_ref >= x_range_inset[0], x_ref <= x_range_inset[1])
 
@@ -156,16 +155,16 @@ for dof in [200,400,800]:
         fig.savefig(fig_filename, format=fmt, bbox_inches="tight", pad_inches=2./72)
         print("Saved figure {}".format(fig_filename))
     
-    for i,x_lim in enumerate(x_zooms_new):
-        for row in axes:
-            for ax in row:
-                ax.set_xlim(x_lim)
-                autoscale_y(ax)
-        # fig.set_size_inches(7.5, 3)
-        fig.tight_layout() # don't pass any arguments for second time
-        # plt.show() # doesn't show second time
-        for fmt in ["png", "pdf"]:
-            fig_filename = (plot_dir + "dof{}_".format(dof) + case_suffix +
-                "_zoom{}.{}".format(i+1,fmt))
-            fig.savefig(fig_filename, format=fmt)
-            print("Saved figure {}".format(fig_filename))
+    # for i,x_lim in enumerate(x_zooms_new):
+    #     for row in axes:
+    #         for ax in row:
+    #             ax.set_xlim(x_lim)
+    #             autoscale_y(ax)
+    #     # fig.set_size_inches(7.5, 3)
+    #     fig.tight_layout() # don't pass any arguments for second time
+    #     # plt.show() # doesn't show second time
+    #     for fmt in ["png", "pdf"]:
+    #         fig_filename = (plot_dir + "dof{}_".format(dof) + case_suffix +
+    #             "_zoom{}.{}".format(i+1,fmt))
+    #         fig.savefig(fig_filename, format=fmt)
+    #         print("Saved figure {}".format(fig_filename))
