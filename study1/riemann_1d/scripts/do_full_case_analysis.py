@@ -14,6 +14,7 @@
 # 9. Total variation vs N for different values of dof (see WJ-21-Mar-2023)
 # 91. A second formula for total variation (see WJ-23-Mar-2023)
 # 10. Variations of cumulative total variations (see WJ-22-Mar-2023)
+# 11. Plot error vs wall time for different values of N across dofs (for manuscript2, see plot_error_cpu_vs.py)
 #
 # All the required data will automatically be generated when 'do_full_individual_analysis.py' has
 # been executed in a result directory.
@@ -32,12 +33,13 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.ticker import ScalarFormatter, NullFormatter, MultipleLocator
 from scipy.stats import linregress
-plt.rcParams["text.usetex"] = True
-plt.rcParams["font.family"] = "Times"
-# plt.rcParams["mathtext.fontset"] = "dejavuserif"
-plt.rcParams["font.size"] = 10 # ineffective
-plt.rcParams["axes.formatter.limits"] = [-2,2]
-plt.rcParams["axes.formatter.use_mathtext"] = True
+plt.rcParams.update({
+    "axes.formatter.limits": [-2,2],
+    "font.family": "Times",
+    "font.size": 12,
+    "text.latex.preamble": r"\usepackage{siunitx}",
+    "text.usetex": True,
+})
 
 
 
@@ -146,7 +148,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [1,5,9]
+steps_to_do = [11]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -173,19 +175,19 @@ dof_linecolors = pd.Series(["r", "g", "b"], index=dofs)
 dof_markers = pd.Series(["o", "s", "^"], index=dofs)
 
 # varying data (requires user intervention)
-flux = "hllc"
-flux_display = "HLLC" # how the flux scheme should be printed/written on plots
+flux = "ch_slau2"
+flux_display = "Ch-SLAU2" # how the flux scheme should be printed/written on plots
 # result_dir = "result_16Jan2023_persson"
 # result_dir = "result_28Mar2022"
-result_dir = "result_logarithm"
-case_name = "Test 1"
+result_dir = "result_04Apr2023_timing"
+case_name = "Test 5"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
 # error_ax_major_loc = 5e-3 # test1-1
 # error_ax_major_loc = 1e-1 # test1-2
 # error_ax_major_loc = 5e-2 # test1-3
-error_ax_major_loc = 1e-2 # test1-4
-# error_ax_major_loc = 3e-2 # test1-5
+# error_ax_major_loc = 1e-2 # test1-4
+error_ax_major_loc = 3e-2 # test1-5
 error_ax_minor_loc = error_ax_major_loc/4
 
 
@@ -223,6 +225,7 @@ l1_errors = pd.DataFrame(
 wtpt = l1_errors.copy() # wall time per time step
 ctpt = l1_errors.copy() # cpu time per time step
 cpu_time = l1_errors.copy() # cpu time
+wall_times = l1_errors.copy()
 for N in N_values:
     for dof in dofs:
         df = pd.read_csv(
@@ -238,6 +241,7 @@ for N in N_values:
         wtpt.loc[N, dof] = df.loc["wall time per time step", 1]
         ctpt.loc[N, dof] = df.loc["cpu time per time step", 1]
         cpu_time.loc[N, dof] = df.loc["cpu time", 1]
+        wall_times.loc[N, dof] = wtpt.loc[N, dof]*df.loc["time steps", 1]
 
 if 2 in steps_to_do:
     fig, ax = plt.subplots(1,1)
@@ -593,4 +597,28 @@ if 10 in steps_to_do:
     ax.grid()
     ax.legend()
     fig.tight_layout()
+    plt.show()
+
+
+
+# 11. Error vs wall time for manuscript2
+if 11 in steps_to_do:
+    fig, ax = plt.subplots(1,1,figsize=(6,4))
+    for N in N_values:
+        ax.plot(
+            wall_times.loc[N,:],
+            l1_errors.loc[N,:],
+            ls=N_linestyles.loc[N],
+            c=N_markercolors.loc[N],
+            marker=N_markers.loc[N],
+            label=rf"$N={N}$"
+        )
+    ax.grid(which="major", lw=1)
+    ax.grid(which="minor", lw=0.5)
+    ax.legend(handlelength=3)
+    ax.set_xlabel(r"Wall-clock time [\unit{s}]")
+    ax.set_ylabel(r"Normalised $L^1$ error")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    fig.tight_layout(pad=0.25)
     plt.show()
