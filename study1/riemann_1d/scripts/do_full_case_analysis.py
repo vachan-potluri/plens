@@ -8,6 +8,7 @@
 # 3. Error vs cpu time per time step for different values of N and across dofs
 # 4. Visual comparison of results for all dofs and all values of N (outsourced)
 # 5. Error vs N for different values of dof (was suggested by KB, see WJ-04-Mar-2022)
+# 51. Error*DoF vs N (for PMRF review May 2023)
 # 6. CPU time/DoF/time step vs N (for SIS2022, see WJ-16-Jun2022)
 # 7. CPU time/DoF vs N (for APS-3 presentation, see WJ-20-Sep-2022)
 # 8. Error vs cpu time for different values of N and across dofs (for APS-3 presentation, see WJ-20-Sep-2022)
@@ -148,7 +149,7 @@ def format_ctpt_axis(axis, major_loc=1.0, minor_loc=0.25):
 
 print("Doing case analysis in {}".format(os.getcwd()))
 
-steps_to_do = [11]
+steps_to_do = [51]
 
 # directory where outsourced scripts lie
 script_dir = "/home/vachan/Documents/Work/plens/study1/riemann_1d/scripts/"
@@ -175,19 +176,19 @@ dof_linecolors = pd.Series(["r", "g", "b"], index=dofs)
 dof_markers = pd.Series(["o", "s", "^"], index=dofs)
 
 # varying data (requires user intervention)
-flux = "ch_slau2"
-flux_display = "Ch-SLAU2" # how the flux scheme should be printed/written on plots
-# result_dir = "result_16Jan2023_persson"
+flux = "chandrashekhar"
+flux_display = "Chandrashekar" # how the flux scheme should be printed/written on plots
+result_dir = "result_16Jan2023_persson"
 # result_dir = "result_28Mar2022"
-result_dir = "result_04Apr2023_timing"
-case_name = "Test 5"
+# result_dir = "result_04Apr2023_timing"
+case_name = "Test 1"
 individual_analysis_file = "full_analysis.log"
 # major and minor locators for error axis, changes on test-by-test basis
-# error_ax_major_loc = 5e-3 # test1-1
+error_ax_major_loc = 5e-3 # test1-1
 # error_ax_major_loc = 1e-1 # test1-2
 # error_ax_major_loc = 5e-2 # test1-3
 # error_ax_major_loc = 1e-2 # test1-4
-error_ax_major_loc = 3e-2 # test1-5
+# error_ax_major_loc = 3e-2 # test1-5
 error_ax_minor_loc = error_ax_major_loc/4
 
 
@@ -350,6 +351,33 @@ if 5 in steps_to_do:
     fig.tight_layout(rect=[0,0,1,1], pad=0.25)
     plt.show()
     mysavefig(fig, "../plots", "error_vs_N_{}".format(flux))
+
+
+
+# 51. Error*DoFs vs N
+if 51 in steps_to_do:
+    fig, ax = plt.subplots(1,1)
+    for dof in dofs:
+        ax.plot(
+            N_values,
+            l1_errors.loc[:, dof]*dof,
+            ls=dof_linestyles.loc[dof],
+            marker=dof_markers.loc[dof],
+            c=dof_linecolors.loc[dof],
+            # markerfacecolor=N_markercolors[N],
+            # markeredgecolor=N_markercolors[N],
+            label=r"{} DoFs".format(dof)
+        )
+    ax.set_xlabel(r"$N$")
+    ax.set_ylabel(r"Error*DoFs")
+    ax.set_yscale("log")
+    ax.legend(loc="best", handlelength=3)
+    ax.grid(which="major")
+    ax.xaxis.set_major_locator(MultipleLocator(1)) # don't need non-integer values for N
+    fig.set_size_inches(5, 2.5)
+    fig.tight_layout(rect=[0,0,1,1], pad=0.25)
+    plt.show()
+    # mysavefig(fig, "../plots", "error_per_dof_vs_N_{}".format(flux))
 
 
 
